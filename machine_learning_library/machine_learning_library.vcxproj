@@ -142,6 +142,7 @@
     <ClInclude Include="active_functions.h" />
     <ClInclude Include="layer.h" />
     <ClInclude Include="matrix.h" />
+    <ClInclude Include="network.h" />
     <ClInclude Include="neuron.h" />
   </ItemGroup>
   <ItemGroup>
@@ -149,6 +150,7 @@
     <ClCompile Include="check.c" />
     <ClCompile Include="Layer.c" />
     <ClCompile Include="Matrix_library.c" />
+    <ClCompile Include="Network.c" />
     <ClCompile Include="Neuron.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

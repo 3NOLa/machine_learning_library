@@ -10,4 +10,5 @@ typedef struct {
 } neuron;
 
 neuron* neuron_create(int weightslength, ActivationType func);
-double dot_product(Matrix* input, neuron* n);
+double neuron_activation(Matrix* input, neuron* n);
+void neuron_free(neuron* n);

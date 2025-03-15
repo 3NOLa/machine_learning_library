@@ -8,3 +8,5 @@ typedef struct {
 }layer;
 
 layer* layer_create(int neuronAmount,int neuronDim ,ActivationType Activationfunc);
+Matrix* layer_forward(layer* l, Matrix* input);  
+void layer_free(layer* l);
