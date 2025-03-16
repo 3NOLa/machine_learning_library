@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include "matrix.h"
+#include "network.h"
 
 void test_matrix_operations() {
     // Create matrices
@@ -37,7 +38,24 @@ void test_matrix_operations() {
 
 }
 
+void test_neural_net()
+{
+    Matrix* data = matrix_random_create(1, 200);
+    int layerssize[5] = { 10,5,3,2,2 };
+    ActivationType functions[5] = { RELu,Sigmoid,Tanh,RELu,Sigmoid };
+    network* net = network_create(5, layerssize, 200, functions, 0.01);
+
+    Matrix* output = forwardPropagation(net, data);
+    for (int i = 0; i < output->rows; i++)
+    {
+        for (int j = 0; j < output->cols;j++)
+        {
+            printf("[%lf]", matrix_get(output, i, j));
+        }
+    }
+}
 int main() {
-    test_matrix_operations();
+    //test_matrix_operations();
+    test_neural_net();
     return 0;
 }

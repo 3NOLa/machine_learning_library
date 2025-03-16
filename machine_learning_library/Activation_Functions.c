@@ -23,17 +23,17 @@ void Tanh_layer(Matrix* mat)
 		
 }
 
-double RELu(double value)
+double RELu_function(double value)
 {
 	return (value > 0) ? value : 0;
 }
 
-double Sigmoid(double value)
+double Sigmoid_function(double value)
 {
 	return 1 / (1 + exp(-value));
 }
 
-double Tanh(double value)
+double Tanh_function(double value)
 {
 	double x = exp(value);
 	double y = exp(-value);
@@ -42,6 +42,6 @@ double Tanh(double value)
 
 void (*ActivationTypeMap(ActivationType function))(double value)
 {
-	static void (*map[])(double) = { RELu, Sigmoid, Tanh };
+	static void (*map[])(double) = { RELu_function, Sigmoid_function, Tanh_function };
 	return map[function];
 }

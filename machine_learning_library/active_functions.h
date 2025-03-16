@@ -11,7 +11,7 @@ typedef enum {
 void RELu_layer(Matrix* mat);
 void Sigmoid_layer(Matrix* mat);
 void Tanh_layer(Matrix* mat);
-double RELu(double value);
-double Sigmoid(double value);
-double Tanh(double value);
+double RELu_function(double value);
+double Sigmoid_function(double value);
+double Tanh_function(double value);
 void (*ActivationTypeMap(ActivationType function))(double value);

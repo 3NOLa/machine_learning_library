@@ -13,4 +13,5 @@ network* network_create_empty();
 void add_layer(network* net, int layerSize, ActivationType Activationfunc, int input_dim);// add input layer if first layer otherwise put 0
 void network_free(network* net);
 
-double forwardPropagation(network* net);
+Matrix* forwardPropagation(network* net, Matrix* data);
+double  squared_error(Matrix* y_hat, Matrix* y_real);

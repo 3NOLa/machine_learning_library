@@ -22,7 +22,7 @@ Matrix* matrix_random_create(int rows, int cols) {
     srand(time(NULL)); 
     Matrix* mat = matrix_create(rows, cols);
     for (int i = 0; i < rows * cols; i++)
-        mat->data[i] = (double)rand() / RAND_MAX; 
+        mat->data[i] = (double)(rand() / RAND_MAX); 
     return mat;
 }
 

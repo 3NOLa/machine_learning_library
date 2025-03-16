@@ -49,10 +49,10 @@ void network_free(network* net)
 
 }
 
-double forwardPropagation(network* net,Matrix* data)
+Matrix* forwardPropagation(network* net,Matrix* data)
 {
     double y_hat = 0;
-    Matrix* current_output,*current_input=data;
+    Matrix* current_output = data,*current_input=data;
     
     for (int i = 0; i < net->layerAmount; i++)
     {
@@ -62,5 +62,20 @@ double forwardPropagation(network* net,Matrix* data)
             matrix_free(current_input);
         current_input = current_output;
     }
+
+    return current_output;
+}
+
+double  squared_error(Matrix* y_hat, Matrix* y_real)
+{
+    if (y_hat->rows != y_real->rows && y_hat->cols != y_real->cols) return 0.0;
+
+    double error = 0.0;
+    for (int i = 0; i < y_hat->cols * y_hat->rows; i++)
+    {
+        error += ((y_real->data[i] - y_hat->data[i]) * (y_real->data[i] - y_hat->data[i])) / 2;
+    }
+
+    return error;
 }
 
