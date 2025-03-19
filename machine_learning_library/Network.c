@@ -66,16 +66,30 @@ Matrix* forwardPropagation(network* net,Matrix* data)
     return current_output;
 }
 
-double  squared_error(Matrix* y_hat, Matrix* y_real)
+double  squared_error(Matrix* y_hat, Matrix* y_real)//1 / n * sum(y_real - y_hat)^2
 {
     if (y_hat->rows != y_real->rows && y_hat->cols != y_real->cols) return 0.0;
 
     double error = 0.0;
     for (int i = 0; i < y_hat->cols * y_hat->rows; i++)
     {
-        error += ((y_real->data[i] - y_hat->data[i]) * (y_real->data[i] - y_hat->data[i])) / 2;
+        error += (y_real->data[i] - y_hat->data[i]) * (y_real->data[i] - y_hat->data[i]);
     }
 
-    return error;
+    return error / y_hat->cols;
+}
+
+Matrix* derivative_squared_error(Matrix* y_hat, Matrix* y_real) // differentiate before summing for every y_hat
+{
+    if (y_hat->rows != y_real->rows && y_hat->cols != y_real->cols) return NULL;
+
+    Matrix* derivative_squared = matrix_create(y_hat->rows, y_hat->cols);
+
+    for (int i = 0; i < y_hat->cols * y_hat->rows; i++)
+    {
+        derivative_squared->data[i] += 2 * (y_real->data[i] - y_hat->data[i]);
+    }
+
+    return derivative_squared;
 }
 
