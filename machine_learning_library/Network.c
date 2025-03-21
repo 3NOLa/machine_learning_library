@@ -2,25 +2,67 @@
 
 network* network_create(int layerAmount, int* layersSize, int input_dim, ActivationType* activations, double learnningRate)
 {
-	network* net = (network*)malloc(sizeof(network));
-	net->learnningRate = learnningRate;
-	net->layerAmount = layerAmount;
+    if (layerAmount <= 0 || !layersSize || !activations || input_dim <= 0) {
+        fprintf(stderr, "Error: Invalid parameters in network_create\n");
+        return NULL;
+    }
 
-	net->layers = (layer**)malloc(sizeof(layer*) * layerAmount);
-	net->layersSize = (int*)malloc(sizeof(int) * layerAmount);
-	int lastLayerSize = input_dim;
-	for (int i = 0; i < layerAmount; i++)
-	{
-		net->layers[i] = layer_create(layersSize[i], lastLayerSize, activations[i]);
-		net->layersSize[i] = lastLayerSize = layersSize[i];
-	}
+    network* net = (network*)malloc(sizeof(network));
+    if (!net) {
+        fprintf(stderr, "Error: Memory allocation failed for network\n");
+        return NULL;
+    }
 
-	return net; 
+    net->learnningRate = learnningRate;
+    net->layerAmount = layerAmount;
+
+    net->layers = (layer**)malloc(sizeof(layer*) * layerAmount);
+    if (!net->layers) {
+        fprintf(stderr, "Error: Memory allocation failed for layers array\n");
+        free(net);
+        return NULL;
+    }
+
+    net->layersSize = (int*)malloc(sizeof(int) * layerAmount);
+    if (!net->layersSize) {
+        fprintf(stderr, "Error: Memory allocation failed for layersSize array\n");
+        free(net->layers);
+        free(net);
+        return NULL;
+    }
+
+    int lastLayerSize = input_dim;
+    for (int i = 0; i < layerAmount; i++) {
+        net->layers[i] = layer_create(layersSize[i], lastLayerSize, activations[i]);
+        if (!net->layers[i]) {
+            fprintf(stderr, "Error: Failed to create layer %d\n", i);
+
+            // Free previously created layers
+            for (int j = 0; j < i; j++) {
+                layer_free(net->layers[j]);
+            }
+
+            free(net->layersSize);
+            free(net->layers);
+            free(net);
+            return NULL;
+        }
+
+        net->layersSize[i] = layersSize[i];
+        lastLayerSize = layersSize[i];
+    }
+
+    return net;
 }
 
 network* network_create_empty()
 {
     network* net = (network*)malloc(sizeof(network));
+    if (!net) {
+        fprintf(stderr, "Error: Memory allocation failed for empty network\n");
+        return NULL;
+    }
+
     net->learnningRate = 0.0;
     net->layerAmount = 0;
     net->layers = NULL;
@@ -29,67 +71,249 @@ network* network_create_empty()
     return net;
 }
 
-void add_layer(network* net, int layerSize,ActivationType Activationfunc, int input_dim)
+int add_layer(network* net, int layerSize, ActivationType Activationfunc, int input_dim)
 {
-    input_dim = (input_dim > 0) ? input_dim : net->layersSize[net->layerAmount];
-    net->layersSize = (int*)realloc(net->layersSize, sizeof(int)* (net->layerAmount+1));
-    net->layersSize[net->layerAmount+1] = layerSize;
-    net->layers = (layer**)realloc(net->layers, sizeof(layer*) * (net->layerAmount + 1));
-    net->layers[net->layerAmount++] = layer_create(layerSize, input_dim, Activationfunc);
+    if (!net) {
+        fprintf(stderr, "Error: NULL network in add_layer\n");
+        return 0;
+    }
+
+    if (layerSize <= 0) {
+        fprintf(stderr, "Error: Invalid layer size %d in add_layer\n", layerSize);
+        return 0;
+    }
+
+    // Determine input dimension for the new layer
+    int actual_input_dim;
+    if (input_dim > 0) {
+        actual_input_dim = input_dim;
+    }
+    else if (net->layerAmount > 0) {
+        actual_input_dim = net->layersSize[net->layerAmount - 1];
+    }
+    else {
+        fprintf(stderr, "Error: Cannot determine input dimension for first layer\n");
+        return 0;
+    }
+
+    // Resize the layersSize array
+    int* new_layersSize = (int*)realloc(net->layersSize, sizeof(int) * (net->layerAmount + 1));
+    if (!new_layersSize) {
+        fprintf(stderr, "Error: Memory reallocation failed for layersSize in add_layer\n");
+        return 0;
+    }
+    net->layersSize = new_layersSize;
+
+    // Resize the layers array
+    layer** new_layers = (layer**)realloc(net->layers, sizeof(layer*) * (net->layerAmount + 1));
+    if (!new_layers) {
+        fprintf(stderr, "Error: Memory reallocation failed for layers in add_layer\n");
+        return 0;
+    }
+    net->layers = new_layers;
+
+    // Create the new layer
+    net->layers[net->layerAmount] = layer_create(layerSize, actual_input_dim, Activationfunc);
+    if (!net->layers[net->layerAmount]) {
+        fprintf(stderr, "Error: Failed to create layer in add_layer\n");
+        return 0;
+    }
+
+    // Update layer size and count
+    net->layersSize[net->layerAmount] = layerSize;
+    net->layerAmount++;
+
+    return 1;
 }
 
 void network_free(network* net)
 {
     if (net) {
-        for (int i = 0; i < net->layersSize; i++)
-            layer_free(net->layers[i]);
-        free(net->layers);
+        if (net->layers) {
+            for (int i = 0; i < net->layerAmount; i++) {
+                if (net->layers[i]) {
+                    layer_free(net->layers[i]);
+                }
+            }
+            free(net->layers);
+        }
+
+        if (net->layersSize) {
+            free(net->layersSize);
+        }
+
         free(net);
     }
-
 }
 
-Matrix* forwardPropagation(network* net,Matrix* data)
+Matrix* forwardPropagation(network* net, Matrix* data)
 {
-    double y_hat = 0;
-    Matrix* current_output = data,*current_input=data;
-    
-    for (int i = 0; i < net->layerAmount; i++)
-    {
+    if (!net || !data) {
+        fprintf(stderr, "Error: NULL network or data in forwardPropagation\n");
+        return NULL;
+    }
+
+    if (net->layerAmount <= 0) {
+        fprintf(stderr, "Error: Network has no layers in forwardPropagation\n");
+        return NULL;
+    }
+
+    Matrix* current_output = NULL;
+    Matrix* current_input = data;
+
+    for (int i = 0; i < net->layerAmount; i++) {
         current_output = layer_forward(net->layers[i], current_input);
-        
-        if (i > 0)
+        if (!current_output) {
+            fprintf(stderr, "Error: Layer %d forward propagation failed\n", i);
+
+            // Free previous intermediate outputs
+            if (i > 0 && current_input != data) {
+                matrix_free(current_input);
+            }
+
+            return NULL;
+        }
+
+        // Free previous intermediate output (but not the original input)
+        if (i > 0 && current_input != data) {
             matrix_free(current_input);
+        }
+
         current_input = current_output;
     }
 
     return current_output;
 }
 
-double  squared_error(Matrix* y_hat, Matrix* y_real)//1 / n * sum(y_real - y_hat)^2
+double squared_error(Matrix* y_hat, Matrix* y_real)
 {
-    if (y_hat->rows != y_real->rows && y_hat->cols != y_real->cols) return 0.0;
+    if (!y_hat || !y_real) {
+        fprintf(stderr, "Error: NULL matrices in squared_error\n");
+        return 0.0;
+    }
+
+    if (y_hat->rows != y_real->rows || y_hat->cols != y_real->cols) {
+        fprintf(stderr, "Error: Size mismatch in squared_error - prediction: (%d,%d), target: (%d,%d)\n",
+            y_hat->rows, y_hat->cols, y_real->rows, y_real->cols);
+        return 0.0;
+    }
 
     double error = 0.0;
-    for (int i = 0; i < y_hat->cols * y_hat->rows; i++)
-    {
-        error += (y_real->data[i] - y_hat->data[i]) * (y_real->data[i] - y_hat->data[i]);
+    for (int i = 0; i < y_hat->rows * y_hat->cols; i++) {
+        double diff = y_real->data[i] - y_hat->data[i];
+        error += diff * diff;
     }
 
-    return error / y_hat->cols;
+    return error / (y_hat->rows * y_hat->cols);
 }
 
-Matrix* derivative_squared_error(Matrix* y_hat, Matrix* y_real) // differentiate before summing for every y_hat
+Matrix* derivative_squared_error(Matrix* y_hat, Matrix* y_real)
 {
-    if (y_hat->rows != y_real->rows && y_hat->cols != y_real->cols) return NULL;
-
-    Matrix* derivative_squared = matrix_create(y_hat->rows, y_hat->cols);
-
-    for (int i = 0; i < y_hat->cols * y_hat->rows; i++)
-    {
-        derivative_squared->data[i] += 2 * (y_real->data[i] - y_hat->data[i]);
+    if (!y_hat || !y_real) {
+        fprintf(stderr, "Error: NULL matrices in derivative_squared_error\n");
+        return NULL;
     }
 
-    return derivative_squared;
+    if (y_hat->rows != y_real->rows || y_hat->cols != y_real->cols) {
+        fprintf(stderr, "Error: Size mismatch in derivative_squared_error - prediction: (%d,%d), target: (%d,%d)\n",
+            y_hat->rows, y_hat->cols, y_real->rows, y_real->cols);
+        return NULL;
+    }
+
+    Matrix* derivative = matrix_create(y_hat->rows, y_hat->cols);
+    if (!derivative) {
+        fprintf(stderr, "Error: Failed to create derivative matrix in derivative_squared_error\n");
+        return NULL;
+    }
+
+    // Derivative is 2*(y_real - y_hat) for MSE
+    // Note: This implements -2*(y_hat - y_real) which is equivalent since we're minimizing
+    for (int i = 0; i < y_hat->rows * y_hat->cols; i++) {
+        derivative->data[i] = 2 * (y_real->data[i] - y_hat->data[i]);
+    }
+
+    return derivative;
 }
 
+int backpropagation(network* net, Matrix* predictions, Matrix* targets)
+{
+    if (!net || !predictions || !targets) {
+        fprintf(stderr, "Error: NULL parameters in backpropagation\n");
+        return 0;
+    }
+
+    if (net->layerAmount <= 0) {
+        fprintf(stderr, "Error: Network has no layers in backpropagation\n");
+        return 0;
+    }
+
+    // Calculate error derivatives
+    Matrix* output_gradients = derivative_squared_error(predictions, targets);
+    if (!output_gradients) {
+        fprintf(stderr, "Error: Failed to compute error derivatives in backpropagation\n");
+        return 0;
+    }
+
+    // Gradients to be passed to each layer
+    Matrix* current_gradients = output_gradients;
+    Matrix* new_gradients = NULL;
+
+    // Backpropagate through each layer in reverse order
+    for (int i = net->layerAmount - 1; i >= 0; i--) {
+        new_gradients = layer_backward(net->layers[i], current_gradients, net->learnningRate);
+        if (!new_gradients) {
+            fprintf(stderr, "Error: Layer %d backpropagation failed\n", i);
+
+            // Free current gradients if they're not the output gradients (which we'll free later)
+            if (current_gradients != output_gradients) {
+                matrix_free(current_gradients);
+            }
+
+            matrix_free(output_gradients);
+            return 0;
+        }
+
+        // Free previous gradients (except the original output gradients which we'll free after the loop)
+        if (current_gradients != output_gradients) {
+            matrix_free(current_gradients);
+        }
+
+        current_gradients = new_gradients;
+    }
+
+    // Free the final gradients and output gradients
+    matrix_free(current_gradients);
+    matrix_free(output_gradients);
+
+    return 1;
+}
+
+double train(network* net, Matrix* input, Matrix* target)
+{
+    if (!net || !input || !target) {
+        fprintf(stderr, "Error: NULL parameters in train\n");
+        return -1.0;  // Return negative error to indicate failure
+    }
+
+    // Forward pass
+    Matrix* predictions = forwardPropagation(net, input);
+    if (!predictions) {
+        fprintf(stderr, "Error: Forward propagation failed in train\n");
+        return -1.0;
+    }
+
+    // Calculate error
+    double error = squared_error(predictions, target);
+
+    // Backward pass
+    if (!backpropagation(net, predictions, target)) {
+        fprintf(stderr, "Error: Backpropagation failed in train\n");
+        matrix_free(predictions);
+        return -1.0;
+    }
+
+    // Free resources
+    matrix_free(predictions);
+
+    return error;
+}

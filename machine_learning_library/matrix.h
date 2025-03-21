@@ -16,6 +16,7 @@ void matrix_free(Matrix* m);
 
 double matrix_get(Matrix* mat, int row, int col);
 void matrix_set(Matrix* mat, int row, int col, double value);
+int matrix_copy(Matrix* a, Matrix* b);
 
 Matrix* matrix_add(Matrix* a, Matrix* b);
 Matrix* matrix_sub(Matrix* a, Matrix* b);

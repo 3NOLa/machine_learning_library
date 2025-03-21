@@ -54,8 +54,27 @@ void test_neural_net()
         }
     }
 }
+
+void test_trainnig_neural_net()
+{
+    Matrix* data = matrix_random_create(10, 100);
+    Matrix* y_real = matrix_random_create(1, 1);
+    for (int i = 0; i < 10; i++)
+        y_real->data[i] = i;
+    int layerssize[5] = { 10,5,3,2,1};
+    ActivationType functions[5] = { RELu,Sigmoid,Tanh,RELu,Sigmoid };
+    network* net = network_create(5, layerssize, 100, functions, 0.01);
+    
+    for (int i = 0; i < 30; i++)
+    {
+        double error = train(net, data, y_real);
+        printf("loop %d error [%lf]\n", i, error);
+    }
+
+}
 int main() {
     //test_matrix_operations();
-    test_neural_net();
+    //test_neural_net();
+    test_trainnig_neural_net();
     return 0;
 }

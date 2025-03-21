@@ -60,3 +60,9 @@ double Tanh_derivative_function(double Tanh)
 {
 	return 1 - Tanh * Tanh; // 1 - tanh^2
 }
+
+void (*ActivationTypeDerivativeMap(ActivationType function))(double value)
+{
+	static void (*map[])(double) = { RELu_derivative_function, Sigmoid_derivative_function, Tanh_derivative_function };
+	return map[function];
+}
