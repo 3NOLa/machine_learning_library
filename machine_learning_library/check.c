@@ -71,9 +71,9 @@ void test_trainnig_neural_net()
     }
 
 }
-int main() {
+//int main() {
     //test_matrix_operations();
     //test_neural_net();
-    test_trainnig_neural_net();
-    return 0;
-}
+//    test_trainnig_neural_net();
+//    return 0;
+//}

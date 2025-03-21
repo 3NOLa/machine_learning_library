@@ -152,6 +152,7 @@
     <ClCompile Include="Matrix_library.c" />
     <ClCompile Include="Network.c" />
     <ClCompile Include="Neuron.c" />
+    <ClCompile Include="test_library.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -50,5 +50,8 @@
     <ClCompile Include="Network.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="test_library.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
