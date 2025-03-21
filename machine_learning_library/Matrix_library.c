@@ -67,13 +67,49 @@ void matrix_free(Matrix* mat) {
     }
 }
 
+
+Matrix* get_row(Matrix* m,int row) {
+    if (!m) {
+        fprintf(stderr, "Error: NULL matrix get_row\n");
+        return NULL;
+    }
+
+    Matrix* m_row = (Matrix*)malloc(sizeof(Matrix));
+    if (!m_row) {
+        fprintf(stderr, "Error: Memory allocation failed for matrix in get_row\n");
+        return NULL;
+    }
+    m_row->cols = m->cols;
+    m_row->rows = 1;
+    m_row->data = &m->data[row * m->cols];
+
+    return m_row;
+}
+/*Matrix* get_col(Matrix* m, int col) {
+    if (!m) {
+        fprintf(stderr, "Error: NULL matrix get_row\n");
+        return NULL;
+    }
+
+    Matrix* m_row = (Matrix*)malloc(sizeof(Matrix));
+    if (!m_row) {
+        fprintf(stderr, "Error: Memory allocation failed for matrix in get_row\n");
+        return NULL;
+    }
+    m_row->cols = m->cols;
+    m_row = 1;
+    m_row->data = &m->data[col * m->rows];
+
+    return m_row;
+}*/
+
 double matrix_get(Matrix* mat, int row, int col) {
     if (!mat) {
         fprintf(stderr, "Error: NULL matrix in matrix_get\n");
         return 0.0;
     }
     if (row < 0 || row >= mat->rows || col < 0 || col >= mat->cols) {
-        fprintf(stderr, "Error: Index out of bounds (%d,%d) for matrix size (%d,%d)\n",
+        fprintf(stderr, "matrix get Error: Index out of bounds (%d,%d) for matrix size (%d,%d)\n",
             row, col, mat->rows, mat->cols);
         return 0.0;
     }
@@ -86,7 +122,7 @@ void matrix_set(Matrix* mat, int row, int col, double value) {
         return;
     }
     if (row < 0 || row >= mat->rows || col < 0 || col >= mat->cols) {
-        fprintf(stderr, "Error: Index out of bounds (%d,%d) for matrix size (%d,%d)\n",
+        fprintf(stderr, "matrix set Error: Index out of bounds (%d,%d) for matrix size (%d,%d)\n",
             row, col, mat->rows, mat->cols);
         return;
     }

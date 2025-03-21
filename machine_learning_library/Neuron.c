@@ -33,7 +33,7 @@ neuron* neuron_create(int weightslength, ActivationType func)
     return n;
 }
 
-double neuron_activation(Matrix* input, neuron* n,int input_row)
+double neuron_activation(Matrix* input, neuron* n)
 {
     if (!input || !n) {
         fprintf(stderr, "Error: NULL input or neuron in neuron_activation\n");
@@ -65,7 +65,7 @@ double neuron_activation(Matrix* input, neuron* n,int input_row)
     // Calculate weighted sum
     double sum = 0.0;
     for (int i = 0; i < input->cols; i++) {
-        sum += matrix_get(input,input_row,i) * n->weights->data[i];
+        sum += matrix_get(input,0,i) * n->weights->data[i];
     }
 
     // Add bias

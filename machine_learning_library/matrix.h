@@ -14,6 +14,8 @@ Matrix* matrix_random_create(int rows, int cols);
 Matrix* matrix_identity_create(int rows);
 void matrix_free(Matrix* m);
 
+Matrix* get_row(Matrix* m);
+Matrix* get_col(Matrix* m);
 double matrix_get(Matrix* mat, int row, int col);
 void matrix_set(Matrix* mat, int row, int col, double value);
 int matrix_copy(Matrix* a, Matrix* b);

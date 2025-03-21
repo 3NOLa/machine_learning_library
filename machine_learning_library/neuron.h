@@ -13,6 +13,6 @@ typedef struct {
 } neuron;
 
 neuron* neuron_create(int weightslength, ActivationType func);
-double neuron_activation(Matrix* input, neuron* n, int input_row);
+double neuron_activation(Matrix* input, neuron* n);
 Matrix* neuron_backward(double derivative, neuron* n, double learning_rate);
 void neuron_free(neuron* n);
