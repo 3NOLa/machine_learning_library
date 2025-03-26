@@ -56,7 +56,7 @@ Matrix* layer_forward(layer* l, Matrix* input)
     }
 
     for (int i = 0; i < l->neuronAmount; i++) {
-        double activation = neuron_activation(get_row(input,i), l->neurons[i],i);
+        double activation = neuron_activation(input, l->neurons[i],i);
         matrix_set(output, 0, i, activation);
     }
 

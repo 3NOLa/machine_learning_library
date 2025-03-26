@@ -1,4 +1,4 @@
-#include <stdio.h>
+﻿#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include "matrix.h"
@@ -6,6 +6,23 @@
 #include "layer.h"
 #include "network.h"
 #include "active_functions.h"
+
+
+void print_network_weights(network* net) {
+    printf("Network weights:\n");
+    for (int l = 0; l < net->layerAmount; l++) {
+        printf("Layer %d:\n", l);
+        for (int n = 0; n < net->layersSize[l]; n++) {
+            neuron* neuron = net->layers[l]->neurons[n];
+            printf("  Neuron %d: bias=%.4f weights=[", n, neuron->bias);
+            for (int w = 0; w < neuron->weights->cols; w++) {
+                printf("%.4f", neuron->weights->data[w]);
+                if (w < neuron->weights->cols - 1) printf(", ");
+            }
+            printf("]\n");
+        }
+    }
+}
 
 // Function to create a simple XOR dataset
 void create_xor_dataset(Matrix** inputs, Matrix** outputs, int num_samples) {
@@ -134,6 +151,13 @@ void test_activation_functions() {
 
         printf("%.1f\t%.4f\t%.4f\t%.4f\n", x, relu_deriv, sigmoid_deriv, tanh_deriv);
     }
+
+    // In test_activation_functions, add this test
+    double x = 0.5;
+    double sigmoid_val = Sigmoid_function(x);
+    double sigmoid_deriv = sigmoid_val * (1 - sigmoid_val);
+    printf("Manual check: sigmoid(%.1f)=%.4f, sigmoid'(%.1f)=%.4f\n",
+        x, sigmoid_val, x, sigmoid_deriv);
 }
 
 // Function to test a single neuron
@@ -250,9 +274,9 @@ void test_neural_network() {
 
     // Create a simple XOR network
     int layers[] = { 4, 1 };           // Hidden layer with 4 neurons, output layer with 1 neuron
-    ActivationType activations[] = { Sigmoid, Sigmoid };
+    ActivationType activations[] = { Tanh, Sigmoid };
 
-    network* net = network_create(2, layers, 2, activations, 0.1);
+    network* net = network_create(2, layers, 2, activations, 0.5);
     if (!net) {
         fprintf(stderr, "Network creation failed\n");
         return;
@@ -273,8 +297,9 @@ void test_neural_network() {
 
     // Train the network
     printf("\nTraining network on XOR problem for 10000 epochs...\n");
-    int epochs = 10000;
-
+    int epochs = 100000;
+    print_network_weights(net);
+    
     for (int epoch = 0; epoch < epochs; epoch++) {
         double total_error = 0.0;
 
@@ -294,6 +319,7 @@ void test_neural_network() {
         }
     }
 
+    print_network_weights(net);
     // Test the trained network
     printf("\nTesting trained network on XOR problem:\n");
     printf("Input\t\tTarget\tPrediction\n");

@@ -100,7 +100,7 @@ Matrix* neuron_backward(double output_gradient, neuron* n, double learning_rate)
     // Calculate gradients for this neuron's parameters and inputs
     for (int i = 0; i < n->weights->cols; i++) {
         // Gradient for this weight: dL/dw = dL/dout * dout/dz * dz/dw = output_gradient * activation_derivative * input
-        double weight_gradient = pre_activation_gradient * n->input->data[i];
+        double weight_gradient = pre_activation_gradient * matrix_get(n->input, 0, i);;
 
         // Update weight
         n->weights->data[i] -= weight_gradient * learning_rate;
