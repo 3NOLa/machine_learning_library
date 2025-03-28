@@ -40,7 +40,7 @@ double Tanh_function(double value)
 	return (x - y) / (x + y);
 }
 
-void (*ActivationTypeMap(ActivationType function))(double value)
+void (*ActivationTypeMap(ActivationType function))(double)
 {
 	static void (*map[])(double) = { RELu_function, Sigmoid_function, Tanh_function };
 	return map[function];
@@ -61,7 +61,7 @@ double Tanh_derivative_function(double Tanh)
 	return 1 - Tanh * Tanh; // 1 - tanh^2
 }
 
-void (*ActivationTypeDerivativeMap(ActivationType function))(double value)
+void (*ActivationTypeDerivativeMap(ActivationType function))(double)
 {
 	static void (*map[])(double) = { RELu_derivative_function, Sigmoid_derivative_function, Tanh_derivative_function };
 	return map[function];

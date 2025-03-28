@@ -73,7 +73,7 @@ double neuron_activation(Matrix* input, neuron* n)
 
     // Apply activation function and store output
     n->output = n->ActivationFunc(sum);
-
+    
     return n->output;
 }
 
@@ -99,18 +99,18 @@ Matrix* neuron_backward(double output_gradient, neuron* n, double learning_rate)
 
     // Calculate gradients for this neuron's parameters and inputs
     for (int i = 0; i < n->weights->cols; i++) {
-        // Gradient for this weight: dL/dw = dL/dout * dout/dz * dz/dw = output_gradient * activation_derivative * input
-        double weight_gradient = pre_activation_gradient * matrix_get(n->input, 0, i);;
+        double original_weight = matrix_get(n->weights, 0, i);
+        double weight_gradient = pre_activation_gradient * matrix_get(n->input, 0, i);
 
-        // Update weight
-        n->weights->data[i] -= weight_gradient * learning_rate;
+        // Store input gradient using original weight
+        matrix_set(input_gradients, 0, i, pre_activation_gradient * original_weight);
 
-        // Gradient for the input: dL/din = dL/dout * dout/dz * dz/din = output_gradient * activation_derivative * weight
-        matrix_set(input_gradients, 0, i, pre_activation_gradient * n->weights->data[i]);
+        // Now update weight
+        matrix_set(n->weights, 0, i, original_weight + weight_gradient * learning_rate);
     }
 
     // Gradient for bias: dL/db = dL/dout * dout/dz * dz/db = output_gradient * activation_derivative * 1
-    n->bias -= pre_activation_gradient * learning_rate;
+    n->bias += pre_activation_gradient * learning_rate;
 
     return input_gradients;
 }

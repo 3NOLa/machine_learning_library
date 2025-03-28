@@ -191,7 +191,7 @@ void test_single_neuron() {
 
     // Test backward pass
     printf("\nTesting backward pass with output gradient 1.0...\n");
-    Matrix* input_gradients = neuron_backward(1.0, n, 0.1);
+    Matrix* input_gradients = neuron_backward(1.0, n, 0.01);
     if (input_gradients) {
         printf("Input gradients: [%.4f, %.4f]\n",
             matrix_get(input_gradients, 0, 0),
@@ -276,7 +276,7 @@ void test_neural_network() {
     int layers[] = { 4, 1 };           // Hidden layer with 4 neurons, output layer with 1 neuron
     ActivationType activations[] = { Tanh, Sigmoid };
 
-    network* net = network_create(2, layers, 2, activations, 0.5);
+    network* net = network_create(2, layers, 2, activations, 0.01);
     if (!net) {
         fprintf(stderr, "Network creation failed\n");
         return;
@@ -297,7 +297,7 @@ void test_neural_network() {
 
     // Train the network
     printf("\nTraining network on XOR problem for 10000 epochs...\n");
-    int epochs = 100000;
+    int epochs = 10000;
     print_network_weights(net);
     
     for (int epoch = 0; epoch < epochs; epoch++) {
