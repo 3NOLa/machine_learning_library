@@ -65,7 +65,7 @@ double neuron_activation(Matrix* input, neuron* n)
     // Calculate weighted sum
     double sum = 0.0;
     for (int i = 0; i < input->cols; i++) {
-        sum += matrix_get(input,0,i) * n->weights->data[i];
+        sum += matrix_get(input,0,i) * matrix_get(n->weights, 0, i);
     }
 
     // Add bias
