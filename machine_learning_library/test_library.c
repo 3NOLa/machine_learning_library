@@ -303,7 +303,7 @@ void test_neural_network() {
 
     // Create a simple XOR network
     int layers[] = { 4, 1 };           // Hidden layer with 4 neurons, output layer with 1 neuron
-    ActivationType activations[] = { TANH, TANH };
+    ActivationType activations[] = { GELU, LEAKY_RELU };
 
     network* net = network_create(2, layers, 2, activations, 0.1);
     if (!net) {

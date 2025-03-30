@@ -15,7 +15,8 @@ typedef enum {
 	SIGMOID,
 	TANH,
 	LINEAR,
-	GELU
+	GELU,
+	SWISH
 }ActivationType;
 
 double RELu_function(double value);
@@ -35,6 +36,9 @@ double linear_derivative_function(neuron* n);
 
 double gelu_function(double value);
 double gelu_derivative_function(neuron* n);
+
+double swish_function(double value);
+double swish_derivative_function(neuron* n);
 
 double (*ActivationTypeMap(ActivationType function))(double); 
 double (*ActivationTypeDerivativeMap(ActivationType function))(neuron*);

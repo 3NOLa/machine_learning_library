@@ -34,9 +34,18 @@ double gelu_function(double value)
 	return 0.5 * value * (1 + Tanh_function(s));
 }
 
+double swish_function(double value)
+{
+	return value * Sigmoid_function(value);
+}
+
 double (*ActivationTypeMap(ActivationType function))(double)
 {
-	static void (*map[])(double) = { RELu_function, leaky_RELu_function, Sigmoid_function, Tanh_function,linear_function,gelu_function };
+	static void (*map[])(double) = { RELu_function, 
+		leaky_RELu_function, 
+		Sigmoid_function, 
+		Tanh_function,
+		linear_function,gelu_function };
 	return map[function];
 }
 
@@ -69,6 +78,11 @@ double gelu_derivative_function(neuron* n)
 {
 	double tanh = (2 * n->output) / n->pre_activation - 1;
 	return 0.5 * (1 + tanh) + 0.5 * n->pre_activation * (1 - tanh * tanh) * sqrt(2 / M_PI) * (1 + 3 * 0.044715 * n->pre_activation * n->pre_activation);
+}
+
+double swish_derivative_function(neuron* n)
+{
+	return Sigmoid_function(n->pre_activation) + Sigmoid_derivative_function(n) * n->pre_activation;
 }
 
 double (*ActivationTypeDerivativeMap(ActivationType function))(neuron*)
