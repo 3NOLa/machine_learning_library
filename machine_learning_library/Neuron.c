@@ -31,6 +31,7 @@ neuron* neuron_create(int weightslength, ActivationType func)
     // Initialize bias to a random value between -1 and 1
     n->bias = ((double)rand() / RAND_MAX) * 2 - 1;
     n->output = 0.0;  // Initialize output to 0
+    n->pre_activation = 0.0;
 
     return n;
 }
@@ -76,6 +77,7 @@ double neuron_activation(Tensor* input, neuron* n)
     // Add bias
     sum += n->bias;
 
+    n->pre_activation = sum;
     // Apply activation function and store output
     n->output = n->ActivationFunc(sum);
 
@@ -88,9 +90,8 @@ Tensor* neuron_backward(double output_gradient, neuron* n, double learning_rate)
         fprintf(stderr, "Error: NULL neuron or input in neuron_backward\n");
         return NULL;
     }
-
     // Derivative of activation function w.r.t. its input
-    double activation_derivative = n->ActivationderivativeFunc(n->output);
+    double activation_derivative = n->ActivationderivativeFunc(n);
 
     // Chain rule - gradient flows through activation function
     double pre_activation_gradient = output_gradient * activation_derivative;

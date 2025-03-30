@@ -2,14 +2,17 @@
 #include "tensor.h"
 #include "active_functions.h"
 
-typedef struct {
+typedef struct neuron neuron;
+
+typedef struct neuron {
     Tensor* weights;
     double bias;
     Tensor* input;
+    double pre_activation;
     double output;
     ActivationType Activationenum;          
     double (*ActivationFunc)(double value); 
-    double (*ActivationderivativeFunc)(double value);
+    double (*ActivationderivativeFunc)(neuron* );
 } neuron;
 
 neuron* neuron_create(int weightslength, ActivationType func);

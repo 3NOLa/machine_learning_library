@@ -131,34 +131,46 @@ void test_activation_functions() {
     double test_values[] = { -2.0, -1.0, -0.5, 0.0, 0.5, 1.0, 2.0 };
     int num_values = sizeof(test_values) / sizeof(test_values[0]);
 
-    printf("Input\tReLU\tSigmoid\tTanh\n");
+    printf("Input\tReLU\tSigmoid\tTanh\tlinear\tGelu\tleaky_relu\n");
     for (int i = 0; i < num_values; i++) {
         double x = test_values[i];
         double relu = RELu_function(x);
         double sigmoid = Sigmoid_function(x);
         double tanh_val = Tanh_function(x);
+        double linear = linear_function(x);
+        double gelu = gelu_function(x);
+        double leaky_relu = leaky_RELu_function(x);
 
-        printf("%.1f\t%.4f\t%.4f\t%.4f\n", x, relu, sigmoid, tanh_val);
+        printf("%.1f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\n", x, relu, sigmoid, tanh_val,linear,gelu,leaky_relu);
     }
 
     // Test derivatives
-    printf("\nInput\tReLU'\tSigmoid'\tTanh'\n");
+    neuron* n = neuron_create(1,RELU);
+    printf("Input\tReLU'\tSigmoid'\tTanh'\tlinear'\tGelu'\tleaky_relu'\n");
     for (int i = 0; i < num_values; i++) {
-        double x = test_values[i];
+        n->pre_activation = test_values[i];
 
-        // For relu derivative
-        double relu_deriv = RELu_derivative_function(x);
+        n->output = RELu_function(n->pre_activation);
+        double relu_derivative = RELu_derivative_function(n);
 
-        // For sigmoid, we need to calculate sigmoid first
-        double sigmoid = Sigmoid_function(x);
-        double sigmoid_deriv = Sigmoid_derivative_function(sigmoid);
+        n->output = Sigmoid_function(n->pre_activation);
+        double sigmoid_derivative = Sigmoid_derivative_function(n);
 
-        // For tanh, we need to calculate tanh first
-        double tanh_val = Tanh_function(x);
-        double tanh_deriv = Tanh_derivative_function(tanh_val);
+        n->output = Tanh_function(n->pre_activation);
+        double tanh_derivative = Tanh_derivative_function(n);
 
-        printf("%.1f\t%.4f\t%.4f\t%.4f\n", x, relu_deriv, sigmoid_deriv, tanh_deriv);
+        n->output = linear_function(n->pre_activation);
+        double linear_derivative = linear_derivative_function(n);
+
+        n->output = gelu_function(n->pre_activation);
+        double gelu_derivative = gelu_derivative_function(n);
+
+        double leaky_relu = leaky_RELu_function(n->pre_activation);
+        double leaky_relu_derivative = leaky_RELu_derivative_function(n);
+
+        printf("%.1f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\n", test_values[i], relu_derivative, sigmoid_derivative, tanh_derivative, linear_derivative, gelu_derivative, leaky_relu_derivative);
     }
+    neuron_free(n);
 
     // In test_activation_functions, add this test
     double x = 0.5;
