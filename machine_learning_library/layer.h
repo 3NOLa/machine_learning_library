@@ -9,6 +9,6 @@ typedef struct {
 }layer;
 
 layer* layer_create(int neuronAmount,int neuronDim ,ActivationType Activationfunc);
-Matrix* layer_forward(layer* l, Matrix* input);
-Matrix* layer_backward(layer* l, Matrix* input_gradients, double learning_rate);
+Tensor* layer_forward(layer* l, Tensor* input);
+Tensor* layer_backward(layer* l, Tensor* input_gradients, double learning_rate);
 void layer_free(layer* l);

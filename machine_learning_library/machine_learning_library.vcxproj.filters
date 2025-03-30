@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="matrix.h">
+    <ClInclude Include="tensor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="active_functions.h">
@@ -32,7 +32,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Matrix_library.c">
+    <ClCompile Include="Tensor_library.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="check.c">

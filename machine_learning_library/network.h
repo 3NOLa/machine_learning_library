@@ -14,11 +14,11 @@ network* network_create_empty();
 int add_layer(network* net, int layerSize, ActivationType Activationfunc, int input_dim);// add input layer if first layer otherwise put 0
 void network_free(network* net);
 
-Matrix* forwardPropagation(network* net, Matrix* data);
-int backpropagation(network* net, Matrix* predictions, Matrix* targets);
+Tensor* forwardPropagation(network* net, Tensor* data);
+int backpropagation(network* net, Tensor* predictions, Tensor* targets);
 
-double  squared_error(Matrix* y_hat, Matrix* y_real);
-Matrix* derivative_squared_error(Matrix* y_hat, Matrix* y_real); // differentiate before summing for every y_hat
+double  squared_error(Tensor* y_hat, Tensor* y_real);
+Tensor* derivative_squared_error(Tensor* y_hat, Tensor* y_real); // differentiate before summing for every y_hat
 
-double train(network* net, Matrix* input, Matrix* target);
+double train(network* net, Tensor* input, Tensor* target);
 

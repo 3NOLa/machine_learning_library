@@ -1,7 +1,7 @@
 ﻿#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "matrix.h"
+#include "tensor.h"
 #include "neuron.h"
 #include "layer.h"
 #include "network.h"
@@ -15,31 +15,60 @@ void print_network_weights(network* net) {
         for (int n = 0; n < net->layersSize[l]; n++) {
             neuron* neuron = net->layers[l]->neurons[n];
             printf("  Neuron %d: bias=%.4f weights=[", n, neuron->bias);
-            for (int w = 0; w < neuron->weights->cols; w++) {
-                printf("%.4f", neuron->weights->data[w]);
-                if (w < neuron->weights->cols - 1) printf(", ");
-            }
+            tensor_print(neuron->weights);
             printf("]\n");
         }
     }
 }
 
 // Function to create a simple XOR dataset
-void create_xor_dataset(Matrix** inputs, Matrix** outputs, int num_samples) {
+void create_xor_dataset(Tensor** inputs, Tensor** outputs, int num_samples) {
     // Create inputs: [0,0], [0,1], [1,0], [1,1]
-    *inputs = matrix_create(num_samples, 2);
-    *outputs = matrix_create(num_samples, 1);
+    int input_shape[2] = { num_samples, 2 };  // num_samples x 2 tensor
+    int output_shape[2] = { num_samples, 1 }; // num_samples x 1 tensor
+
+    *inputs = tensor_create(2, input_shape);
+    *outputs = tensor_create(2, output_shape);
 
     if (!*inputs || !*outputs) {
-        fprintf(stderr, "Failed to create dataset matrices\n");
+        fprintf(stderr, "Failed to create dataset tensors\n");
         return;
     }
 
-    // XOR truth table
-    matrix_set(*inputs, 0, 0, 0.0); matrix_set(*inputs, 0, 1, 0.0); matrix_set(*outputs, 0, 0, 0.0);
-    matrix_set(*inputs, 1, 0, 0.0); matrix_set(*inputs, 1, 1, 1.0); matrix_set(*outputs, 1, 0, 1.0);
-    matrix_set(*inputs, 2, 0, 1.0); matrix_set(*inputs, 2, 1, 0.0); matrix_set(*outputs, 2, 0, 1.0);
-    matrix_set(*inputs, 3, 0, 1.0); matrix_set(*inputs, 3, 1, 1.0); matrix_set(*outputs, 3, 0, 0.0);
+    // XOR truth table - using proper tensor indexing
+    int indices[2];
+
+    // Sample 0: [0,0] -> 0
+    indices[0] = 0; indices[1] = 0;
+    tensor_set(*inputs, indices, 0.0);
+    indices[0] = 0; indices[1] = 1;
+    tensor_set(*inputs, indices, 0.0);
+    indices[0] = 0; indices[1] = 0;
+    tensor_set(*outputs, indices, 0.0);
+
+    // Sample 1: [0,1] -> 1
+    indices[0] = 1; indices[1] = 0;
+    tensor_set(*inputs, indices, 0.0);
+    indices[0] = 1; indices[1] = 1;
+    tensor_set(*inputs, indices, 1.0);
+    indices[0] = 1; indices[1] = 0;
+    tensor_set(*outputs, indices, 1.0);
+
+    // Sample 2: [1,0] -> 1
+    indices[0] = 2; indices[1] = 0;
+    tensor_set(*inputs, indices, 1.0);
+    indices[0] = 2; indices[1] = 1;
+    tensor_set(*inputs, indices, 0.0);
+    indices[0] = 2; indices[1] = 0;
+    tensor_set(*outputs, indices, 1.0);
+
+    // Sample 3: [1,1] -> 0
+    indices[0] = 3; indices[1] = 0;
+    tensor_set(*inputs, indices, 1.0);
+    indices[0] = 3; indices[1] = 1;
+    tensor_set(*inputs, indices, 1.0);
+    indices[0] = 3; indices[1] = 0;
+    tensor_set(*outputs, indices, 0.0);
 }
 
 // Function to test matrix operations
@@ -47,72 +76,51 @@ void test_matrix_operations2() {
     printf("\n===== Testing Matrix Operations =====\n");
 
     // Test matrix creation
-    Matrix* a = matrix_random_create(2, 3);
-    Matrix* b = matrix_random_create(3, 2);
-    Matrix* c = matrix_identity_create(3);
+    int shape1[2] = { 2,3 };
+    int shape2[2] = { 3,2 };
+
+    Tensor* a = tensor_random_create(2, shape1);
+    printf("Matrix A (2x3, random):\n");
+    for (int i = 0; i < a->count; i++)
+        printf("%f, ", a->data[i]);
+    tensor_print(a);
+
+    Tensor* b = tensor_random_create(2, shape2);
+    Tensor* c = tensor_identity_create(3);
 
     if (!a || !b || !c) {
         fprintf(stderr, "Matrix creation failed\n");
         return;
     }
 
-    printf("Matrix A (2x3, random):\n");
-    for (int i = 0; i < a->rows; i++) {
-        for (int j = 0; j < a->cols; j++) {
-            printf("%.4f ", matrix_get(a, i, j));
-        }
-        printf("\n");
-    }
-
     printf("\nMatrix B (3x2, random):\n");
-    for (int i = 0; i < b->rows; i++) {
-        for (int j = 0; j < b->cols; j++) {
-            printf("%.4f ", matrix_get(b, i, j));
-        }
-        printf("\n");
-    }
+    tensor_print(b);
 
     printf("\nMatrix C (3x3, identity):\n");
-    for (int i = 0; i < c->rows; i++) {
-        for (int j = 0; j < c->cols; j++) {
-            printf("%.4f ", matrix_get(c, i, j));
-        }
-        printf("\n");
-    }
+    tensor_print(c);
 
-    // Test matrix multiplication
-    Matrix* ab = matrix_mul(a, b);
+    // Test tensor multiplication
+    Tensor* ab = tensor_multiply(a, b);
     if (ab) {
         printf("\nMatrix A * B (2x2):\n");
-        for (int i = 0; i < ab->rows; i++) {
-            for (int j = 0; j < ab->cols; j++) {
-                printf("%.4f ", matrix_get(ab, i, j));
-            }
-            printf("\n");
-        }
-        matrix_free(ab);
+        tensor_print(ab);
     }
     else {
         printf("Matrix multiplication failed\n");
     }
 
-    // Test matrix scalar operations
-    Matrix* a_scaled = matrix_scalar_mul(a, 2.0);
+    // Test tensor scalar operations
+    Tensor* a_scaled = tensor_multiply_scalar(a,2.0);
     if (a_scaled) {
         printf("\nMatrix A * 2.0:\n");
-        for (int i = 0; i < a_scaled->rows; i++) {
-            for (int j = 0; j < a_scaled->cols; j++) {
-                printf("%.4f ", matrix_get(a_scaled, i, j));
-            }
-            printf("\n");
-        }
-        matrix_free(a_scaled);
+        tensor_print(a_scaled);
+        tensor_free(a_scaled);
     }
 
     // Clean up
-    matrix_free(a);
-    matrix_free(b);
-    matrix_free(c);
+    tensor_free(a);
+    tensor_free(b);
+    tensor_free(c);
 }
 
 // Function to test activation functions
@@ -165,7 +173,7 @@ void test_single_neuron() {
     printf("\n===== Testing Single Neuron =====\n");
 
     // Create a neuron with 2 inputs and sigmoid activation
-    neuron* n = neuron_create(2, Sigmoid);
+    neuron* n = neuron_create(2, SIGMOID);
     if (!n) {
         fprintf(stderr, "Neuron creation failed\n");
         return;
@@ -176,33 +184,36 @@ void test_single_neuron() {
     printf("Initial bias: %.4f\n", n->bias);
 
     // Test activation with sample input
-    Matrix* input = matrix_create(1, 2);
+    int shape[2] = {1,2};
+    Tensor* input = tensor_create(2, shape);
     if (!input) {
         fprintf(stderr, "Failed to create input matrix\n");
         neuron_free(n);
         return;
     }
 
-    matrix_set(input, 0, 0, 0.5);
-    matrix_set(input, 0, 1, -0.5);
+    int index1[2] = { 0,0 };
+    int index2[2] = { 0,1 };
+    tensor_set(input, index1, 0.5);
+    tensor_set(input, index2, -0.5);
 
     double output = neuron_activation(input, n);
     printf("Input: [0.5, -0.5]\nOutput: %.4f\n", output);
 
     // Test backward pass
     printf("\nTesting backward pass with output gradient 1.0...\n");
-    Matrix* input_gradients = neuron_backward(1.0, n, 0.01);
+    Tensor* input_gradients = neuron_backward(1.0, n, 0.01);
     if (input_gradients) {
         printf("Input gradients: [%.4f, %.4f]\n",
-            matrix_get(input_gradients, 0, 0),
-            matrix_get(input_gradients, 0, 1));
+            tensor_get_element_by_index(input_gradients, 0),
+            tensor_get_element_by_index(input_gradients, 1));
         printf("Updated weights: [%.4f, %.4f]\n", n->weights->data[0], n->weights->data[1]);
         printf("Updated bias: %.4f\n", n->bias);
-        matrix_free(input_gradients);
+        tensor_free(input_gradients);
     }
 
     // Clean up
-    matrix_free(input);
+    tensor_free(input);
     neuron_free(n);
 }
 
@@ -211,7 +222,7 @@ void test_single_layer() {
     printf("\n===== Testing Single Layer =====\n");
 
     // Create a layer with 3 neurons, each with 2 inputs
-    layer* l = layer_create(3, 2, Sigmoid);
+    layer* l = layer_create(3, 2, SIGMOID);
     if (!l) {
         fprintf(stderr, "Layer creation failed\n");
         return;
@@ -219,52 +230,58 @@ void test_single_layer() {
 
     // Print layer structure
     printf("Layer created with %d neurons, each with %d inputs\n",
-        l->neuronAmount, l->neurons[0]->weights->cols);
+        l->neuronAmount, l->neurons[0]->weights->shape[1]);
 
     // Test forward pass
-    Matrix* input = matrix_create(1, 2);
+    int shape[2] = { 1, 2 };
+    Tensor* input = tensor_create(2,shape);
     if (!input) {
         fprintf(stderr, "Failed to create input matrix\n");
         layer_free(l);
         return;
     }
 
-    matrix_set(input, 0, 0, 0.5);
-    matrix_set(input, 0, 1, -0.5);
+    int index1[2] = { 0,0 };
+    int index2[2] = { 0,1 };
+    tensor_set(input, index1, 0.5);
+    tensor_set(input, index2, -0.5);
 
-    Matrix* output = layer_forward(l, input);
+    Tensor* output = layer_forward(l, input);
     if (output) {
         printf("Layer output for input [0.5, -0.5]:\n[");
-        for (int i = 0; i < output->cols; i++) {
-            printf("%.4f", matrix_get(output, 0, i));
-            if (i < output->cols - 1) printf(", ");
+        for (int i = 0; i < output->shape[1]; i++) {
+            int index3[2] = { 0,i };
+            printf("%.4lf", tensor_get_element(output, index3));
+            if (i < output->shape[1] - 1) printf(", ");
         }
         printf("]\n");
 
         // Test backward pass
         printf("\nTesting backward pass...\n");
-        Matrix* gradients = matrix_create(1, 3);
+        int shape3[2] = { 1, 3 };
+        Tensor* gradients = tensor_create(2,shape3);
         if (gradients) {
             // Set some gradients for the output
-            for (int i = 0; i < gradients->cols; i++) {
-                matrix_set(gradients, 0, i, 1.0);
+            for (int i = 0; i < gradients->shape[1]; i++) {
+                int index4[2] = { 0,i };
+                tensor_set(gradients, index4, 1.0);
             }
 
-            Matrix* input_gradients = layer_backward(l, gradients, 0.1);
+            Tensor* input_gradients = layer_backward(l, gradients, 0.1);
             if (input_gradients) {
                 printf("Input gradients: [%.4f, %.4f]\n",
-                    matrix_get(input_gradients, 0, 0),
-                    matrix_get(input_gradients, 0, 1));
-                matrix_free(input_gradients);
+                    tensor_get_element(input_gradients, index1),
+                    tensor_get_element(input_gradients, index2));
+                tensor_free(input_gradients);
             }
-            matrix_free(gradients);
+            tensor_free(gradients);
         }
 
-        matrix_free(output);
+        tensor_free(output);
     }
 
     // Clean up
-    matrix_free(input);
+    tensor_free(input);
     layer_free(l);
 }
 
@@ -274,7 +291,7 @@ void test_neural_network() {
 
     // Create a simple XOR network
     int layers[] = { 4, 1 };           // Hidden layer with 4 neurons, output layer with 1 neuron
-    ActivationType activations[] = { Tanh, Tanh };
+    ActivationType activations[] = { TANH, TANH };
 
     network* net = network_create(2, layers, 2, activations, 0.1);
     if (!net) {
@@ -285,8 +302,8 @@ void test_neural_network() {
     printf("Network created with %d layers\n", net->layerAmount);
 
     // Create XOR dataset
-    Matrix* inputs;
-    Matrix* outputs;
+    Tensor* inputs;
+    Tensor* outputs;
     create_xor_dataset(&inputs, &outputs, 4);
 
     if (!inputs || !outputs) {
@@ -299,18 +316,29 @@ void test_neural_network() {
     printf("\nTraining network on XOR problem for 10000 epochs...\n");
     int epochs = 10000;
     print_network_weights(net);
-    
+
     for (int epoch = 0; epoch < epochs; epoch++) {
         double total_error = 0.0;
 
         for (int i = 0; i < 4; i++) {
-            // Get a single training example
-            Matrix* single_input = get_row(inputs, i);
-            Matrix* single_output = get_row(outputs, i);
+            // Get a single training example using tensor_slice instead of tensor_get_row
+            int start_indices[2] = { i, 0 };
+            int end_indices[2] = { i + 1, inputs->shape[1] };
+            Tensor* single_input = tensor_get_row(inputs,i);
+            Tensor* single_output = tensor_get_row(outputs,i);
+
+            if (!single_input || !single_output) {
+                fprintf(stderr, "Failed to slice training example %d\n", i);
+                continue;
+            }
 
             // Train on this example
             double error = train(net, single_input, single_output);
             total_error += error;
+
+            // Free the sliced tensors
+            tensor_free(single_input);
+            tensor_free(single_output);
         }
 
         // Print progress every 1000 epochs
@@ -320,28 +348,44 @@ void test_neural_network() {
     }
 
     print_network_weights(net);
+
     // Test the trained network
     printf("\nTesting trained network on XOR problem:\n");
     printf("Input\t\tTarget\tPrediction\n");
 
     for (int i = 0; i < 4; i++) {
-        Matrix* single_input = get_row(inputs, i);
-        Matrix* prediction = forwardPropagation(net, single_input);
+        // Get input example
+        Tensor* single_input = tensor_get_row(inputs, i);
+        if (!single_input) {
+            fprintf(stderr, "Failed to slice test example %d\n", i);
+            continue;
+        }
+
+        // Forward pass
+        Tensor* prediction = forwardPropagation(net, single_input);
 
         if (prediction) {
-            printf("[%.1f, %.1f]\t%.1f\t%.4f\n",
-                matrix_get(inputs, i, 0),
-                matrix_get(inputs, i, 1),
-                matrix_get(outputs, i, 0),
-                matrix_get(prediction, 0, 0));
+            // Get the input values using proper tensor indexing
+            int input_indices1[2] = { i, 0 };
+            int input_indices2[2] = { i, 1 };
+            int output_indices[2] = { i, 0 };
+            int pred_indices[2] = { 0,0 }; // Assuming prediction is a 1D tensor
 
-            matrix_free(prediction);
+            printf("[%.1f, %.1f]\t%.1f\t%.4f\n",
+                tensor_get_element(inputs, input_indices1),
+                tensor_get_element(inputs, input_indices2),
+                tensor_get_element(outputs, output_indices),
+                tensor_get_element(prediction, pred_indices));
+
+            tensor_free(prediction);
         }
+
+        tensor_free(single_input);
     }
 
     // Clean up
-    matrix_free(inputs);
-    matrix_free(outputs);
+    tensor_free(inputs);
+    tensor_free(outputs);
     network_free(net);
 }
 
@@ -358,7 +402,7 @@ void test_network_empty_constructor() {
     printf("Empty network created\n");
 
     // Add layers manually
-    if (add_layer(net, 4, Sigmoid, 2)) {
+    if (add_layer(net, 4, SIGMOID, 2)) {
         printf("Added first layer: 2 inputs -> 4 neurons (SIGMOID)\n");
     }
     else {
@@ -367,7 +411,7 @@ void test_network_empty_constructor() {
         return;
     }
 
-    if (add_layer(net, 1, Sigmoid, 0)) {
+    if (add_layer(net, 1, SIGMOID, 0)) {
         printf("Added second layer: 4 inputs -> 1 neuron (SIGMOID)\n");
     }
     else {

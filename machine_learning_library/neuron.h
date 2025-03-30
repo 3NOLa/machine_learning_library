@@ -1,11 +1,11 @@
 #pragma once
-#include "matrix.h"
+#include "tensor.h"
 #include "active_functions.h"
 
 typedef struct {
-    Matrix* weights;
+    Tensor* weights;
     double bias;
-    Matrix* input;
+    Tensor* input;
     double output;
     ActivationType Activationenum;          
     double (*ActivationFunc)(double value); 
@@ -13,6 +13,6 @@ typedef struct {
 } neuron;
 
 neuron* neuron_create(int weightslength, ActivationType func);
-double neuron_activation(Matrix* input, neuron* n);
-Matrix* neuron_backward(double derivative, neuron* n, double learning_rate);
+double neuron_activation(Tensor* input, neuron* n);
+Tensor* neuron_backward(double derivative, neuron* n, double learning_rate);
 void neuron_free(neuron* n);

@@ -1,16 +1,13 @@
 #pragma once
-#include "matrix.h"
+#include "tensor.h"
 #include <math.h>
 
 typedef enum {
-	RELu,
-	Sigmoid,
-	Tanh
+	RELU,
+	SIGMOID,
+	TANH
 }ActivationType;
 
-void RELu_layer(Matrix* mat);
-void Sigmoid_layer(Matrix* mat);
-void Tanh_layer(Matrix* mat);
 double RELu_function(double value);
 double RELu_derivative_function(double value);
 double Sigmoid_function(double value);

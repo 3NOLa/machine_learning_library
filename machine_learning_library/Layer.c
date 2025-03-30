@@ -42,37 +42,42 @@ layer* layer_create(int neuronAmount, int neuronDim, ActivationType Activationfu
     return L;
 }
 
-Matrix* layer_forward(layer* l, Matrix* input)
+Tensor* layer_forward(layer* l, Tensor* input)
 {
     if (!l || !input) {
         fprintf(stderr, "Error: NULL layer or input in layer_forward\n");
         return NULL;
     }
 
-    Matrix* output = matrix_create(1, l->neuronAmount);
+    // Create a 1D tensor for output
+    int outShape[2] = {1, l->neuronAmount };
+    Tensor* output = tensor_create(2, outShape);
     if (!output) {
-        fprintf(stderr, "Error: Failed to create output matrix in layer_forward\n");
+        fprintf(stderr, "Error: Failed to create output tensor in layer_forward\n");
         return NULL;
     }
 
     for (int i = 0; i < l->neuronAmount; i++) {
-        double activation = neuron_activation(input, l->neurons[i],i);
-        matrix_set(output, 0, i, activation);
-    }
+        // Remove the third parameter from neuron_activation call
+        double activation = neuron_activation(input, l->neurons[i]);
 
+        // Using the proper tensor_set function
+        int indices[2] = {0, i };
+        tensor_set(output, indices, activation);
+    }
     return output;
 }
 
-Matrix* layer_backward(layer* l, Matrix* input_gradients, double learning_rate)
+Tensor* layer_backward(layer* l, Tensor* input_gradients, double learning_rate)
 {
     if (!l || !input_gradients) {
         fprintf(stderr, "Error: NULL layer or gradients in layer_backward\n");
         return NULL;
     }
 
-    if (input_gradients->cols != l->neuronAmount) {
+    if (input_gradients->count != l->neuronAmount) { // count because only one row
         fprintf(stderr, "Error: Gradient size mismatch in layer_backward - got: %d, expected: %d\n",
-            input_gradients->cols, l->neuronAmount);
+            input_gradients->count, l->neuronAmount);
         return NULL;
     }
 
@@ -82,7 +87,8 @@ Matrix* layer_backward(layer* l, Matrix* input_gradients, double learning_rate)
     }
 
     // Output gradients with respect to this layer's inputs
-    Matrix* output_gradients = matrix_zero_create(1, l->neurons[0]->weights->cols);
+    // Create a tensor with the same shape as neuron weights
+    Tensor* output_gradients = tensor_zero_create(2, l->neurons[0]->weights->shape);
     if (!output_gradients) {
         fprintf(stderr, "Error: Failed to create output gradients in layer_backward\n");
         return NULL;
@@ -90,27 +96,32 @@ Matrix* layer_backward(layer* l, Matrix* input_gradients, double learning_rate)
 
     // For each neuron in the layer
     for (int i = 0; i < l->neuronAmount; i++) {
-        // Get this neuron's portion of the gradient
-        double neuron_gradient = matrix_get(input_gradients, 0, i);
+        // Get this neuron's portion of the gradient using proper tensor access
+        int grad_indices[2] = {0, i };
+        double neuron_gradient = tensor_get_element(input_gradients, grad_indices);
 
         // Compute gradients for this neuron's weights and bias
         // Also get gradients with respect to inputs
-        Matrix* neuron_input_gradients = neuron_backward(neuron_gradient, l->neurons[i], learning_rate);
+        Tensor* neuron_input_gradients = neuron_backward(neuron_gradient, l->neurons[i], learning_rate);
         if (!neuron_input_gradients) {
             fprintf(stderr, "Error: Failed to compute neuron gradients in layer_backward\n");
-            matrix_free(output_gradients);
+            tensor_free(output_gradients);
             return NULL;
         }
 
         // Accumulate input gradients from this neuron
-        for (int j = 0; j < output_gradients->cols; j++) {
-            double current = matrix_get(output_gradients, 0, j);
-            double to_add = matrix_get(neuron_input_gradients, 0, j);
-            matrix_set(output_gradients, 0, j, current + to_add);
+        for (int j = 0; j < output_gradients->count; j++) {
+            int out_indices[2] = {0, j };
+            int in_indices[2] = {0, j };
+
+            double current = tensor_get_element(output_gradients, out_indices);
+            double to_add = tensor_get_element(neuron_input_gradients, in_indices);
+
+            tensor_set(output_gradients, out_indices, current + to_add);
         }
 
         // Free the temporary gradients
-        matrix_free(neuron_input_gradients);
+        tensor_free(neuron_input_gradients);
     }
 
     return output_gradients;
