@@ -250,7 +250,7 @@ int backpropagation(network* net, Tensor* predictions, Tensor* targets)
     }
 
     // Calculate error derivatives
-    Tensor* output_gradients = derivative_squared_error(predictions, targets);
+    Tensor* output_gradients = derivative_squared_error_net(net, targets);
     if (!output_gradients) {
         fprintf(stderr, "Error: Failed to compute error derivatives in backpropagation\n");
         return 0;
@@ -305,7 +305,7 @@ double train(network* net, Tensor* input, Tensor* target)
     }
 
     // Calculate error
-    double error = squared_error(predictions, target);
+    double error = squared_error_net(net, target);
 
     // Backward pass
     if (!backpropagation(net, predictions, target)) {
