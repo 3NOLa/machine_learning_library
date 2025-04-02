@@ -328,7 +328,6 @@ void test_neural_network() {
     printf("\nTraining network on XOR problem for 10000 epochs...\n");
     int epochs = 10000;
     print_network_weights(net);
-
     for (int epoch = 0; epoch < epochs; epoch++) {
         double total_error = 0.0;
 

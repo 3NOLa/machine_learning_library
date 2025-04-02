@@ -1,12 +1,12 @@
 #pragma once
 #define _USE_MATH_DEFINES
-#include "tensor.h"
+#include <math.h>
+
 #ifndef ACTIVE_FUNCTIONS_H  
 #define ACTIVE_FUNCTIONS_H
 #endif
-#include <math.h>
 
-
+// Forward declaration of neuron struct
 typedef struct neuron neuron;
 
 typedef enum {

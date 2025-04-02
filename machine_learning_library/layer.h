@@ -1,9 +1,11 @@
 #pragma once
 #include "neuron.h"
+#include "active_functions.h"
 #include <stdio.h>
 
 typedef struct {
 	int neuronAmount;
+	Tensor* output;
 	neuron** neurons;
 	ActivationType Activationenum;
 }layer;

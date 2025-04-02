@@ -1,5 +1,6 @@
 #include "active_functions.h"
 #include "neuron.h"
+#include <math.h>
 
 double RELu_function(double value)
 {
@@ -41,11 +42,14 @@ double swish_function(double value)
 
 double (*ActivationTypeMap(ActivationType function))(double)
 {
-	static void (*map[])(double) = { RELu_function, 
+	static void (*map[])(double) = { 
+		RELu_function, 
 		leaky_RELu_function, 
 		Sigmoid_function, 
 		Tanh_function,
-		linear_function,gelu_function };
+		linear_function,
+		gelu_function,
+		swish_function };
 	return map[function];
 }
 
@@ -93,7 +97,8 @@ double (*ActivationTypeDerivativeMap(ActivationType function))(neuron*)
 		Sigmoid_derivative_function,
 		Tanh_derivative_function,
 		linear_derivative_function,
-		gelu_derivative_function
+		gelu_derivative_function,
+		swish_derivative_function
 	};
 	return map[function];
 }

@@ -16,6 +16,7 @@ layer* layer_create(int neuronAmount, int neuronDim, ActivationType Activationfu
 
     L->Activationenum = Activationfunc;
     L->neuronAmount = neuronAmount;
+    L->output = NULL;
 
     L->neurons = (neuron**)malloc(sizeof(neuron*) * neuronAmount);
     if (!L->neurons) {
@@ -65,6 +66,12 @@ Tensor* layer_forward(layer* l, Tensor* input)
         int indices[2] = {0, i };
         tensor_set(output, indices, activation);
     }
+
+    if (l->output)
+        free(l->output);
+    l->output = tensor_create(output->dims,output->shape);
+    tensor_copy(l->output, output);
+
     return output;
 }
 
@@ -138,6 +145,8 @@ void layer_free(layer* l)
             }
             free(l->neurons);
         }
+        if (l->output)
+            free(l->output);
         free(l);
     }
 }

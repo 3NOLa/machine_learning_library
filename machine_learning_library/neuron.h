@@ -2,8 +2,6 @@
 #include "tensor.h"
 #include "active_functions.h"
 
-typedef struct neuron neuron;
-
 typedef struct neuron {
     Tensor* weights;
     double bias;

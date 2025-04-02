@@ -1,4 +1,6 @@
 #include "network.h"
+#include "loss_functions.h"
+#include <string.h>
 
 network* network_create(int layerAmount, int* layersSize, int input_dim, ActivationType* activations, double learnningRate)
 {
