@@ -43,6 +43,51 @@ layer* layer_create(int neuronAmount, int neuronDim, ActivationType Activationfu
     return L;
 }
 
+void layer_removeLastNeuron(layer* l)
+{
+    neuron* last = l->neurons[l->neuronAmount - 1];
+    if (!last)return;
+    neuron_free(last);
+
+    l->neurons = (neuron**)realloc(l->neurons, sizeof(neuron*) * (--l->neuronAmount));
+}
+
+void layer_addNeuron(layer* l)
+{
+    neuron* newn = neuron_create(l->neurons[0]->weights->shape[1],l->Activationenum);
+    l->neurons = (neuron**)realloc(l->neurons, sizeof(neuron*) * (l->neuronAmount+1));
+    l->neurons[l->neuronAmount++] = newn;
+}
+
+void layer_set_neuronAmount(layer* l, int neuronAmount)
+{
+    if (l->neuronAmount == neuronAmount) return;
+    else if(l->neuronAmount > neuronAmount)
+    {
+        for (int i = l->neuronAmount; i > neuronAmount; i--)
+            removeLastNeuron(l);
+    }
+    else
+    {
+        for (int i = neuronAmount; i < neuronAmount; i++)
+            addNeuron(l);
+    }
+    
+}
+
+void layer_set_activtion(layer* l, ActivationType Activationfunc)
+{
+    if(!l) {
+        fprintf(stderr, "Error: NULL layer in set_layer_activtion\n");
+        return NULL;
+    }
+
+    for (int i = 0; i < l->neuronAmount; i++)
+    {
+        neuron_set_ActivationType(l->neurons[i], Activationfunc);
+    }
+}
+
 Tensor* layer_forward(layer* l, Tensor* input)
 {
     if (!l || !input) {

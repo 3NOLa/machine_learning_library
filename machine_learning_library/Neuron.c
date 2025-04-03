@@ -1,7 +1,7 @@
 #include "neuron.h"
 #include <stdio.h>
 
-neuron* neuron_create(int weightslength, ActivationType func)
+neuron* neuron_create(int weightslength, ActivationType Activation)
 {
     if (weightslength <= 0) {
         fprintf(stderr, "Error: Invalid weights length %d in neuron_create\n", weightslength);
@@ -14,10 +14,8 @@ neuron* neuron_create(int weightslength, ActivationType func)
         return NULL;
     }
 
-    n->Activationenum = func;
+    set_ActivationType(n, Activation);
     n->input = NULL;  // Initialize to NULL, will be set during activation
-    n->ActivationFunc = ActivationTypeMap(func);
-    n->ActivationderivativeFunc = ActivationTypeDerivativeMap(func);
 
     // Create a 1D tensor for weights
     int weightShape[2] = { 1,weightslength };
@@ -34,6 +32,13 @@ neuron* neuron_create(int weightslength, ActivationType func)
     n->pre_activation = 0.0;
 
     return n;
+}
+
+void set_ActivationType(neuron* n, ActivationType Activation)
+{
+    n->Activation = Activation;
+    n->ActivationFunc = ActivationTypeMap(Activation);
+    n->ActivationderivativeFunc = ActivationTypeDerivativeMap(Activation);
 }
 
 double neuron_activation(Tensor* input, neuron* n)
