@@ -1,11 +1,7 @@
 ﻿#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "tensor.h"
-#include "neuron.h"
-#include "layer.h"
 #include "network.h"
-#include "active_functions.h"
 
 
 void print_network_weights(network* net) {
@@ -305,7 +301,7 @@ void test_neural_network() {
     int layers[] = { 4, 1 };           // Hidden layer with 4 neurons, output layer with 1 neuron
     ActivationType activations[] = { GELU, LEAKY_RELU };
 
-    network* net = network_create(2, layers, 2, activations, 0.1);
+    network* net = network_create(2, layers, 2, activations, 0.1,MSE);
     if (!net) {
         fprintf(stderr, "Network creation failed\n");
         return;
@@ -326,7 +322,7 @@ void test_neural_network() {
 
     // Train the network
     printf("\nTraining network on XOR problem for 10000 epochs...\n");
-    int epochs = 10000;
+    int epochs = 1000;
     print_network_weights(net);
     for (int epoch = 0; epoch < epochs; epoch++) {
         double total_error = 0.0;
@@ -353,7 +349,7 @@ void test_neural_network() {
         }
 
         // Print progress every 1000 epochs
-        if ((epoch + 1) % 1000 == 0) {
+        if ((epoch + 1) % 100 == 0) {
             printf("Epoch %d: Average error = %.6f\n", epoch + 1, total_error / 4);
         }
     }

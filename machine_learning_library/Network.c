@@ -1,8 +1,7 @@
 #include "network.h"
-#include "loss_functions.h"
 #include <string.h>
 
-network* network_create(int layerAmount, int* layersSize, int input_dim, ActivationType* activations, double learnningRate)
+network* network_create(int layerAmount, int* layersSize, int input_dim, ActivationType* activations, double learnningRate, LossType lossFunction)
 {
     if (layerAmount <= 0 || !layersSize || !activations || input_dim <= 0) {
         fprintf(stderr, "Error: Invalid parameters in network_create\n");
@@ -15,8 +14,11 @@ network* network_create(int layerAmount, int* layersSize, int input_dim, Activat
         return NULL;
     }
 
-    net->learnningRate = learnningRate;
+    net->learnningRate = learnningRate; 
     net->layerAmount = layerAmount;
+    net->lossFunction = lossFunction;
+    net->LossFuntionPointer = LossTypeMap(lossFunction);
+    net->LossDerivativePointer = LossTypeDerivativeMap(lossFunction);
 
     net->layers = (layer**)malloc(sizeof(layer*) * layerAmount);
     if (!net->layers) {
@@ -187,56 +189,6 @@ Tensor* forwardPropagation(network* net, Tensor* data)
     return current_output;
 }
 
-double squared_error(Tensor* y_hat, Tensor* y_real)
-{
-    if (!y_hat || !y_real) {
-        fprintf(stderr, "Error: NULL matrices in squared_error\n");
-        return 0.0;
-    }
-
-    //if (y_hat->rows != y_real->rows || y_hat->cols != y_real->cols) {
-      //  fprintf(stderr, "Error: Size mismatch in squared_error - prediction: (%d,%d), target: (%d,%d)\n",
-        //    y_hat->rows, y_hat->cols, y_real->rows, y_real->cols);
-    //    return 0.0;
-    //}
-
-    double error = 0.0;
-    for (int i = 0; i < y_hat->count; i++) {
-        double diff = y_real->data[i] - y_hat->data[i]; //instead i cen do tensor_subtrect
-        error += diff * diff; // tensor_mltiply
-    }
-
-    return error / y_hat->count; // tensor_mean
-}
-
-Tensor* derivative_squared_error(Tensor* y_hat, Tensor* y_real)
-{
-    if (!y_hat || !y_real) {
-        fprintf(stderr, "Error: NULL matrices in derivative_squared_error\n");
-        return NULL;
-    }
-
-    //if (y_hat->rows != y_real->rows || y_hat->cols != y_real->cols) {
-     //   fprintf(stderr, "Error: Size mismatch in derivative_squared_error - prediction: (%d,%d), target: (%d,%d)\n",
-      //      y_hat->rows, y_hat->cols, y_real->rows, y_real->cols);
-      //  return NULL;
-    //}
-
-    Tensor* derivative = tensor_create(y_hat->dims, y_hat->shape);
-    if (!derivative) {
-        fprintf(stderr, "Error: Failed to create derivative matrix in derivative_squared_error\n");
-        return NULL;
-    }
-
-    // Derivative is 2*(y_real - y_hat) for MSE
-    // Note: This implements -2*(y_hat - y_real) which is equivalent since we're minimizing
-    for (int i = 0; i < y_hat->count; i++) {
-        derivative->data[i] = 2 * (y_real->data[i] - y_hat->data[i]);
-    }
-
-    return derivative;
-}
-
 int backpropagation(network* net, Tensor* predictions, Tensor* targets)
 {
     if (!net || !predictions || !targets) {
@@ -250,7 +202,7 @@ int backpropagation(network* net, Tensor* predictions, Tensor* targets)
     }
 
     // Calculate error derivatives
-    Tensor* output_gradients = derivative_squared_error_net(net, targets);
+    Tensor* output_gradients = net->LossDerivativePointer(net, targets);
     if (!output_gradients) {
         fprintf(stderr, "Error: Failed to compute error derivatives in backpropagation\n");
         return 0;
@@ -305,7 +257,8 @@ double train(network* net, Tensor* input, Tensor* target)
     }
 
     // Calculate error
-    double error = squared_error_net(net, target);
+    double error = net->LossFuntionPointer(net,predictions);
+    
 
     // Backward pass
     if (!backpropagation(net, predictions, target)) {

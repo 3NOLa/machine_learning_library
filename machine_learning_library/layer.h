@@ -1,7 +1,7 @@
 #pragma once
+#include <stdio.h>
 #include "neuron.h"
 #include "active_functions.h"
-#include <stdio.h>
 
 typedef struct {
 	int neuronAmount;

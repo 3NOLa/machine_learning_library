@@ -1,5 +1,4 @@
 #include "network.h"
-#include "loss_functions.h"
 
 double squared_error_net(network* net, Tensor* y_real)
 {
@@ -46,16 +45,16 @@ Tensor* derivative_squared_error_net(network* net, Tensor* y_real)
 
 double (*LossTypeMap(LossType function))(network*, Tensor*)
 {
-    static double (*map[])(neuron*) = {
+    static double (*map[])(network*, Tensor*) = {
         squared_error_net
     };
 
     return map[function];
 }
 
-double (*LossTypeDerivativeMap(LossType function))(network*, Tensor*)
+Tensor* (*LossTypeDerivativeMap(LossType function))(network*, Tensor*)
 {
-    static double (*map[])(neuron*) = {
+    static double (*map[])(network*, Tensor*) = {
         derivative_squared_error_net
     };
 
