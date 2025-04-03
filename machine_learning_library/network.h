@@ -31,8 +31,12 @@ int backpropagation(network* net, Tensor* predictions, Tensor* targets);
 
 double train(network* net, Tensor* input, Tensor* target);
 
-Tensor* derivative_squared_error_net(network* net, Tensor* y_real);
+// implemented in loss_Functions.c
 double squared_error_net(network* net, Tensor* y_real);
+Tensor* derivative_squared_error_net(network* net, Tensor* y_real);
+
+double absolute_error_net(network* net, Tensor* y_real);
+Tensor* derivative_absolute_error_net(network* net, Tensor* y_real);
 
 double (*LossTypeMap(LossType function))(network*, Tensor*);
 Tensor* (*LossTypeDerivativeMap(LossType function))(network*, Tensor*);

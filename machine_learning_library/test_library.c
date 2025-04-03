@@ -301,7 +301,7 @@ void test_neural_network() {
     int layers[] = { 4, 1 };           // Hidden layer with 4 neurons, output layer with 1 neuron
     ActivationType activations[] = { GELU, LEAKY_RELU };
 
-    network* net = network_create(2, layers, 2, activations, 0.1,MSE);
+    network* net = network_create(2, layers, 2, activations, 0.1,MAE);
     if (!net) {
         fprintf(stderr, "Network creation failed\n");
         return;

@@ -141,7 +141,6 @@
   <ItemGroup>
     <ClInclude Include="active_functions.h" />
     <ClInclude Include="layer.h" />
-    <ClInclude Include="loss_functions.h" />
     <ClInclude Include="tensor.h" />
     <ClInclude Include="network.h" />
     <ClInclude Include="neuron.h" />

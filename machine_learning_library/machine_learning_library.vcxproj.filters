@@ -30,9 +30,6 @@
     <ClInclude Include="network.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="loss_functions.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Tensor_library.c">
