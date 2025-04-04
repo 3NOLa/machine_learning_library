@@ -14,7 +14,7 @@ neuron* neuron_create(int weightslength, ActivationType Activation)
         return NULL;
     }
 
-    set_ActivationType(n, Activation);
+    neuron_set_ActivationType(n, Activation);
     n->input = NULL;  // Initialize to NULL, will be set during activation
 
     // Create a 1D tensor for weights
@@ -34,7 +34,7 @@ neuron* neuron_create(int weightslength, ActivationType Activation)
     return n;
 }
 
-void set_ActivationType(neuron* n, ActivationType Activation)
+void neuron_set_ActivationType(neuron* n, ActivationType Activation)
 {
     n->Activation = Activation;
     n->ActivationFunc = ActivationTypeMap(Activation);

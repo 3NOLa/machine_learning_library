@@ -65,12 +65,12 @@ void layer_set_neuronAmount(layer* l, int neuronAmount)
     else if(l->neuronAmount > neuronAmount)
     {
         for (int i = l->neuronAmount; i > neuronAmount; i--)
-            removeLastNeuron(l);
+            layer_removeLastNeuron(l);
     }
     else
     {
         for (int i = neuronAmount; i < neuronAmount; i++)
-            addNeuron(l);
+            layer_addNeuron(l);
     }
     
 }
