@@ -38,5 +38,11 @@ Tensor* derivative_squared_error_net(network* net, Tensor* y_real);
 double absolute_error_net(network* net, Tensor* y_real);
 Tensor* derivative_absolute_error_net(network* net, Tensor* y_real);
 
+double absolute_error_net(network* net, Tensor* y_real);
+Tensor* derivative_absolute_error_net(network* net, Tensor* y_real);
+
+double Categorical_Cross_Entropy_net(network* net, Tensor* y_real);
+Tensor* derivative_Categorical_Cross_Entropy_net(network* net, Tensor* y_real);
+
 double (*LossTypeMap(LossType function))(network*, Tensor*);
 Tensor* (*LossTypeDerivativeMap(LossType function))(network*, Tensor*);

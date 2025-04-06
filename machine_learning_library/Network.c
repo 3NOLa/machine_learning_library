@@ -1,5 +1,5 @@
-#include "network.h"
-#include <string.h>
+#include "classification.h"
+
 
 network* network_create(int layerAmount, int* layersSize, int input_dim, ActivationType* activations, double learnningRate, LossType lossFunction)
 {

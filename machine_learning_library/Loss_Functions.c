@@ -1,9 +1,10 @@
-#include "network.h"
+#include "classification.h"
+
 
 double squared_error_net(network* net, Tensor* y_real)
 {
     if (!net || !y_real || !net->layers[net->layerAmount - 1]->output) {
-        fprintf(stderr, "Error: NULL matrices in squared_error\n");
+        fprintf(stderr, "Error: NULL tensors in squared_error\n");
         return 0.0;
     }
 
@@ -21,7 +22,7 @@ double squared_error_net(network* net, Tensor* y_real)
 Tensor* derivative_squared_error_net(network* net, Tensor* y_real)
 {
     if (!net || !y_real || !net->layers[net->layerAmount - 1]->output) {
-        fprintf(stderr, "Error: NULL matrices in derivative_squared_error\n");
+        fprintf(stderr, "Error: NULL tensors in derivative_squared_error\n");
         return NULL;
     }
 
@@ -29,7 +30,7 @@ Tensor* derivative_squared_error_net(network* net, Tensor* y_real)
 
     Tensor* derivative = tensor_create(y_hat->dims, y_hat->shape);
     if (!derivative) {
-        fprintf(stderr, "Error: Failed to create derivative matrix in derivative_squared_error\n");
+        fprintf(stderr, "Error: Failed to create derivative tensor in derivative_squared_error\n");
         return NULL;
     }
 
@@ -45,7 +46,7 @@ Tensor* derivative_squared_error_net(network* net, Tensor* y_real)
 double absolute_error_net(network* net, Tensor* y_real)
 {
     if (!net || !y_real || !net->layers[net->layerAmount - 1]->output) {
-        fprintf(stderr, "Error: NULL matrices in squared_error\n");
+        fprintf(stderr, "Error: NULL tensors in squared_error\n");
         return 0.0;
     }
 
@@ -62,7 +63,7 @@ double absolute_error_net(network* net, Tensor* y_real)
 Tensor* derivative_absolute_error_net(network* net, Tensor* y_real)
 {
     if (!net || !y_real || !net->layers[net->layerAmount - 1]->output) {
-        fprintf(stderr, "Error: NULL matrices in derivative_squared_error\n");
+        fprintf(stderr, "Error: NULL tensors in derivative_squared_error\n");
         return NULL;
     }
 
@@ -70,7 +71,7 @@ Tensor* derivative_absolute_error_net(network* net, Tensor* y_real)
     double epsilon = 1e-15;  // Small constant to prevent division by zero
     Tensor* derivative = tensor_create(y_hat->dims, y_hat->shape);
     if (!derivative) {
-        fprintf(stderr, "Error: Failed to create derivative matrix in derivative_squared_error\n");
+        fprintf(stderr, "Error: Failed to create derivative tensor in derivative_squared_error\n");
         return NULL;
     }
 
@@ -85,11 +86,55 @@ Tensor* derivative_absolute_error_net(network* net, Tensor* y_real)
     return derivative;
 }
 
+double Categorical_Cross_Entropy_net(network* net, Tensor* y_real)
+{
+    int real_class = get_predicted_class(y_real);
+
+    Tensor* y_hat = net->layers[net->layerAmount - 1]->output;
+    int pred_class = get_predicted_class(y_hat);
+
+    double loss = -log(y_hat->data[real_class]);
+
+    return loss;
+}
+
+Tensor* derivative_Categorical_Cross_Entropy_net(network* net, Tensor* y_real)
+{
+    if (!net || !y_real || !net->layers[net->layerAmount - 1]->output) {
+        fprintf(stderr, "Error: NULL tensors in derivative_Categorical_Cross_Entropy_net\n");
+        return NULL;
+    }
+
+    double epsilon = 1e-15;  // Small constant to prevent division by zero
+    Tensor* y_hat = net->layers[net->layerAmount - 1]->output;
+    Tensor* derivative = tensor_create(y_hat->dims, y_hat->shape);
+    if (!derivative) {
+        fprintf(stderr, "Error: Failed to create derivative tensor in derivative_Categorical_Cross_Entropy_net\n");
+        return NULL;
+    }
+
+    int real_class = get_predicted_class(y_real);
+    for (int i = 0; i < y_hat->count; i++)
+    {
+        if (i == real_class)
+        {
+            double y_hat_val = fmax(y_hat->data[i], epsilon); // prevent log(0)
+            derivative->data[i] = -1.0 / y_hat_val;
+        }
+        else
+            derivative->data[i] = epsilon;
+    }
+
+    return derivative;
+}
+
 double (*LossTypeMap(LossType function))(network*, Tensor*)
 {
     static double (*map[])(network*, Tensor*) = {
         squared_error_net,
-        absolute_error_net
+        absolute_error_net,
+        NULL,
+        Categorical_Cross_Entropy_net
     };
 
     return map[function];
@@ -99,7 +144,9 @@ Tensor* (*LossTypeDerivativeMap(LossType function))(network*, Tensor*)
 {
     static double (*map[])(network*, Tensor*) = {
         derivative_squared_error_net,
-        derivative_absolute_error_net
+        derivative_absolute_error_net,
+        NULL,
+        derivative_Categorical_Cross_Entropy_net
     };
 
     return map[function];
