@@ -1,6 +1,6 @@
 # **NetLearn-C: A From-Scratch Machine Learning Library in C**
 
-**NetLearn-C **is a foundational machine learning and neural network library implemented entirely in C. It emphasizes clarity, modular design, and educational value—ideal for those interested in building AI systems from the ground up, without dependencies or frameworks.
+**NetLearn-C** is a foundational machine learning and neural network library implemented entirely in C. It emphasizes clarity, modular design, and educational value—ideal for those interested in building AI systems from the ground up, without dependencies or frameworks.
 
 This library mirrors the structure found in professional ML libraries like TensorFlow or PyTorch, but is handcrafted for deep understanding and maximum control.
 
@@ -59,6 +59,7 @@ Mathematics for Machine Learning
 By Marc Peter Deisenroth, A. Aldo Faisal, and Cheng Soon Ong
 
 It serves as the theoretical backbone of the implementation. Each algorithm in this library was carefully aligned with the concepts covered in that book.
+
 https://mml-book.github.io/book/mml-book.pdf
 
 ⸻⸻⸻⸻⸻⸻⸻
