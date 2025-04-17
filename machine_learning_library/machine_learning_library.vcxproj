@@ -152,6 +152,7 @@
     <ClCompile Include="Classification.c" />
     <ClCompile Include="Layer.c" />
     <ClCompile Include="Loss_Functions.c" />
+    <ClCompile Include="reinforcement_network.c" />
     <ClCompile Include="Tensor_library.c" />
     <ClCompile Include="Network.c" />
     <ClCompile Include="Neuron.c" />

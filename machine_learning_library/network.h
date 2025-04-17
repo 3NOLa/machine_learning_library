@@ -19,9 +19,11 @@ typedef struct {
 	LossType lossFunction;
 	double (*LossFuntionPointer)(struct network*, Tensor*);
 	Tensor* (*LossDerivativePointer)(struct network*, Tensor*);
+	int input_dims;
+	int* input_shape;
 }network;
 
-network* network_create(int layerAmount, int* layersSize, int input_dim, ActivationType* activations, double learnningRate,LossType lossFunction);
+network* network_create(int layerAmount, int* layersSize, int input_dims, int* input_shape, ActivationType* activations, double learnningRate, LossType lossFunction);
 network* network_create_empty();
 int add_layer(network* net, int layerSize, ActivationType Activationfunc, int input_dim);// add input layer if first layer otherwise put 0
 void network_free(network* net);

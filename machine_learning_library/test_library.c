@@ -299,9 +299,10 @@ void test_neural_network() {
 
     // Create a simple XOR network
     int layers[] = { 4, 1 };           // Hidden layer with 4 neurons, output layer with 1 neuron
+    int input_shape[] = { 1,2 };
     ActivationType activations[] = { GELU, LEAKY_RELU };
 
-    network* net = network_create(2, layers, 2, activations, 0.1,MAE);
+    network* net = network_create(2, layers, 2, input_shape, activations, 0.1,MAE);
     if (!net) {
         fprintf(stderr, "Network creation failed\n");
         return;
@@ -396,6 +397,60 @@ void test_neural_network() {
     network_free(net);
 }
 
+void test_2d_input() {
+    // Create a simple 2D pattern
+    int input_shape[2] = { 3, 3 };
+    Tensor* input = tensor_create(2, input_shape);
+
+    // Set values for a simple pattern (e.g., a diagonal line)
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            int indices[2] = { i, j };
+            if (i == j) {
+                tensor_set(input, indices, 1.0);
+            }
+            else {
+                tensor_set(input, indices, 0.0);
+            }
+        }
+    }
+
+    // Create a simple network
+    int layerSizes[2] = { 4, 1 };  // Hidden layer with 4 neurons, output layer with 1 neuron
+    ActivationType activations[2] = { SIGMOID, SIGMOID };
+
+    // Initialize network with the input dimensions
+    network* net = network_create(2, layerSizes, 2, input_shape, activations, 0.1, MSE);
+
+    // Create a simple target (e.g., 1 for diagonal line pattern)
+    int target_shape[2] = { 1, 1 };
+    Tensor* target = tensor_create(2, target_shape);
+    int target_idx[2] = { 0, 0 };
+    tensor_set(target, target_idx, 1.0);
+
+    // Forward pass and check output
+    Tensor* output = forwardPropagation(net, input);
+    printf("Output for diagonal pattern: %.4f\n", tensor_get_element_by_index(output, 0));
+
+    // Train for a few iterations
+    for (int i = 0; i < 1000; i++) {
+        double error = train(net, input, target);
+        if (i % 100 == 0) {
+            printf("Iteration %d, Error: %.4f\n", i, error);
+        }
+    }
+
+    // Test again after training
+    output = forwardPropagation(net, input);
+    printf("Output after training: %.4f\n", tensor_get_element_by_index(output, 0));
+
+    // Clean up
+    tensor_free(input);
+    tensor_free(target);
+    tensor_free(output);
+    network_free(net);
+}
+
 // Function to test creating a network through the empty constructor
 void test_network_empty_constructor() {
     printf("\n===== Testing Network Empty Constructor =====\n");
@@ -459,6 +514,8 @@ int main() {
 
     // Test full neural network
     test_neural_network();
+
+    test_2d_input();
 
     printf("\n===== Tests Completed =====\n");
     return 0;

@@ -1,9 +1,9 @@
 #include "classification.h"
 
 
-network* network_create(int layerAmount, int* layersSize, int input_dim, ActivationType* activations, double learnningRate, LossType lossFunction)
+network* network_create(int layerAmount, int* layersSize, int input_dims, int* input_shape, ActivationType* activations, double learnningRate, LossType lossFunction)
 {
-    if (layerAmount <= 0 || !layersSize || !activations || input_dim <= 0) {
+    if (layerAmount <= 0 || !layersSize || !activations || input_dims <= 0 || !input_shape) {
         fprintf(stderr, "Error: Invalid parameters in network_create\n");
         return NULL;
     }
@@ -19,6 +19,23 @@ network* network_create(int layerAmount, int* layersSize, int input_dim, Activat
     net->lossFunction = lossFunction;
     net->LossFuntionPointer = LossTypeMap(lossFunction);
     net->LossDerivativePointer = LossTypeDerivativeMap(lossFunction);
+    net->input_dims = input_dims;
+
+    net->input_shape = (int*)malloc(sizeof(int) * input_dims);
+    if (!net->input_shape) {
+        fprintf(stderr, "Error: Memory allocation failed for input shape\n");
+        free(net);
+        return NULL;
+    }
+
+    for (int i = 0; i < input_dims; i++) 
+        net->input_shape[i] = input_shape[i];
+    
+
+    int total_input_size = 1;
+    for (int i = 0; i < input_dims; i++) {
+        total_input_size *= input_shape[i];
+    }
 
     net->layers = (layer**)malloc(sizeof(layer*) * layerAmount);
     if (!net->layers) {
@@ -35,19 +52,19 @@ network* network_create(int layerAmount, int* layersSize, int input_dim, Activat
         return NULL;
     }
 
-    int lastLayerSize = input_dim;
+    int lastLayerSize = total_input_size;
     for (int i = 0; i < layerAmount; i++) {
         net->layers[i] = layer_create(layersSize[i], lastLayerSize, activations[i]);
         if (!net->layers[i]) {
             fprintf(stderr, "Error: Failed to create layer %d\n", i);
 
-            // Free previously created layers
             for (int j = 0; j < i; j++) {
                 layer_free(net->layers[j]);
             }
 
             free(net->layersSize);
             free(net->layers);
+            free(net->input_shape);
             free(net);
             return NULL;
         }
@@ -69,6 +86,8 @@ network* network_create_empty()
 
     net->learnningRate = 0.0;
     net->layerAmount = 0;
+    net->input_dims = 0;
+    net->input_shape = NULL;
     net->layers = NULL;
     net->layersSize = NULL;
 
@@ -94,6 +113,13 @@ int add_layer(network* net, int layerSize, ActivationType Activationfunc, int in
     }
     else if (net->layerAmount > 0) {
         actual_input_dim = net->layersSize[net->layerAmount - 1];
+    }
+    else if (net->input_dims > 0) {
+        // For the first layer, use the total size of the input tensor
+        actual_input_dim = 1;
+        for (int i = 0; i < net->input_dims; i++) {
+            actual_input_dim *= net->input_shape[i];
+        }
     }
     else {
         fprintf(stderr, "Error: Cannot determine input dimension for first layer\n");
@@ -142,9 +168,11 @@ void network_free(network* net)
             free(net->layers);
         }
 
-        if (net->layersSize) {
+        if (net->layersSize) 
             free(net->layersSize);
-        }
+
+        if (net->input_shape) 
+            free(net->input_shape);
 
         free(net);
     }
@@ -164,6 +192,17 @@ Tensor* forwardPropagation(network* net, Tensor* data)
 
     Tensor* current_output = NULL;
     Tensor* current_input = data;
+    
+    // If input is not 1D, we need to flatten it first
+    Tensor* flattened_input = NULL;
+    if (data->dims > 1) {
+        flattened_input = tensor_flatten(data);
+        if (!flattened_input) {
+            fprintf(stderr, "Error: Failed to flatten input tensor\n");
+            return NULL;
+        }
+        current_input = flattened_input;
+    }
 
     for (int i = 0; i < net->layerAmount; i++) {
         current_output = layer_forward(net->layers[i], current_input);
@@ -179,12 +218,14 @@ Tensor* forwardPropagation(network* net, Tensor* data)
         }
 
         // Free previous intermediate output (but not the original input)
-        if (i > 0 && current_input != data) {
+        if (i > 0 && current_input != data) 
             tensor_free(current_input);
-        }
 
         current_input = current_output;
     }
+
+    if (flattened_input) 
+        tensor_free(flattened_input);
 
     return current_output;
 }

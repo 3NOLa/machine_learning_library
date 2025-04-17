@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\reanforcment_learning_project">
+      <UniqueIdentifier>{5fc815ae-7c51-4bf2-a76d-216b1bf4259b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="tensor.h">
@@ -28,6 +31,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="network.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="classification.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -55,6 +61,12 @@
     </ClCompile>
     <ClCompile Include="Loss_Functions.c">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Classification.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="reinforcement_network.c">
+      <Filter>Source Files\reanforcment_learning_project</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
