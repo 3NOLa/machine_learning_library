@@ -231,6 +231,38 @@ Tensor* tensor_flatten(Tensor* t) {
     return tensor_reshape(t, 1, shape);
 }
 
+Tensor* tensor_slice_range(Tensor* t, int start, int end)
+{
+    if (!t || start < 0 || end > t->shape[0] || start >= end) {
+        fprintf(stderr, "Error: Invalid parameters in tensor_slice_range\n");
+        return NULL;
+    }
+
+    int outer_dim = end - start;
+    int inner_count = t->count / t->shape[0];
+
+    // Create shape for the sliced tensor
+    int* new_shape = (int*)malloc(sizeof(int) * t->dims);
+    if (!new_shape) {
+        fprintf(stderr, "Error: Memory allocation failed in tensor_slice_range\n");
+        return NULL;
+    }
+    new_shape[0] = outer_dim;
+    for (int i = 1; i < t->dims; i++) {
+        new_shape[i] = t->shape[i];
+    }
+
+    Tensor* result = tensor_create(t->dims, new_shape);
+    free(new_shape);
+    if (!result) return NULL;
+
+    // Copy the slice
+    int offset = start * inner_count;
+    memcpy(result->data, t->data + offset, sizeof(double) * inner_count * outer_dim);
+
+    return result;
+}
+
 Tensor* tensor_get_row(Tensor* t, int row) {
     if (!t || t->dims < 2 || row < 0 || row >= t->shape[0]) {
         fprintf(stderr, "Error: Invalid parameters in tensor_get_row\n");

@@ -28,7 +28,7 @@ void tensor_set_by_index(Tensor* t, int index, double value);
 // Dimension manipulation
 Tensor* tensor_reshape(Tensor* t, int dims, int* shape);
 Tensor* tensor_flatten(Tensor* t); // Convert to 1D tensor
-Tensor* tensor_slice(Tensor* t, int dim, int start, int end);
+Tensor* tensor_slice_range(Tensor* t, int start, int end);
 Tensor* tensor_get_row(Tensor* t, int row);
 Tensor* tensor_get_col(Tensor* t, int col);
 

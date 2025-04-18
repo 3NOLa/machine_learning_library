@@ -313,3 +313,19 @@ double train(network* net, Tensor* input, Tensor* target)
 
     return error;
 }
+
+void network_training(network* net, Tensor* input, Tensor* target, int epcho, int batch_size)
+{
+    for (int i = 0; i < epcho; i+= batch_size) {
+        int current_batch = (batch_size > epcho - i) ? batch_size : epcho - i;
+
+        Tensor* input_batch = tensor_slice_range(input, i, current_batch);
+        Tensor* output_batch = tensor_slice_range(target, i, current_batch);
+
+        double error = train(net, input_batch, output_batch);
+
+        if (i % (epcho/10) == 0) {
+            printf("Iteration %d, Error: %.4f\n", i, error);
+        }
+    }
+}
