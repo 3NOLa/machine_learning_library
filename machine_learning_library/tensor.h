@@ -13,7 +13,8 @@ typedef struct {
 Tensor* tensor_create(int dims, int* shape);
 Tensor* tensor_zero_create(int dims, int* shape);
 Tensor* tensor_random_create(int dims, int* shape);
-Tensor* tensor_identity_create(int row); // didnt implemented yet
+Tensor* tensor_identity_create(int row); 
+int tensor_add_row(Tensor* t);
 
 void tensor_free(Tensor* t);
 int tensor_copy(Tensor* dest, Tensor* src);

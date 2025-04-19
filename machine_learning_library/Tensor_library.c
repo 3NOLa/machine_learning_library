@@ -85,6 +85,32 @@ Tensor* tensor_identity_create(int size) {
     return t;
 }
 
+int tensor_add_row(Tensor* t)
+{
+    int row_size = 1;
+    for (int i = 1; i < t->dims; i++)
+        row_size *= t->shape[i];
+
+    int new_size = t->count + row_size;
+    int* new_data = (int*)realloc(t->data, sizeof(int)* new_size);
+    if(!new_data) {
+        fprintf(stderr, "Error: Memory allocation failed for tensor data in tensor_add_row\n");
+        return;
+    }
+
+    t->data = new_data;
+
+    for (int i = t->count; i < new_size; i++) {
+        t->data[i] = 0.0;
+    }
+
+    t->shape[0] += 1;
+
+    t->count = new_size;
+
+    return 1;
+}
+
 void tensor_free(Tensor* t) {
     if (t) {
         if (t->data) free(t->data);

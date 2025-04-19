@@ -141,6 +141,7 @@
   <ItemGroup>
     <ClInclude Include="active_functions.h" />
     <ClInclude Include="classification.h" />
+    <ClInclude Include="csv_parser.h" />
     <ClInclude Include="layer.h" />
     <ClInclude Include="tensor.h" />
     <ClInclude Include="network.h" />
@@ -150,6 +151,7 @@
     <ClCompile Include="Activation_Functions.c" />
     <ClCompile Include="check.c" />
     <ClCompile Include="Classification.c" />
+    <ClCompile Include="csv_parser.c" />
     <ClCompile Include="Layer.c" />
     <ClCompile Include="Loss_Functions.c" />
     <ClCompile Include="reinforcement_network.c" />

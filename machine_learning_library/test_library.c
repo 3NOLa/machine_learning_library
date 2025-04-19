@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "network.h"
+#include "csv_parser.h"
 
 
 void print_network_weights(network* net) {
@@ -494,6 +495,13 @@ void test_network_empty_constructor() {
     network_free(net);
 }
 
+void test_csv_parser(char* filename)
+{
+    csv_handler* h = csv_handler_create(filename);
+    read_file_to_tensor(h);
+    print_csv_file_hand(h);
+}
+
 int main() {
     printf("===== Neural Network Library Test Program =====\n");
 
@@ -516,6 +524,8 @@ int main() {
     test_neural_network();
 
     test_2d_input();
+
+    test_csv_parser("C:\\Users\\keyna\\Downloads\\annual-enterprise-survey-2023-financial-year-provisional.csv");
 
     printf("\n===== Tests Completed =====\n");
     return 0;
