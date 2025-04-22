@@ -18,8 +18,7 @@ neuron* neuron_create(int weightslength, ActivationType Activation)
     n->input = NULL;  // Initialize to NULL, will be set during activation
 
     // Create a 1D tensor for weights
-    int weightShape[2] = { 1,weightslength };
-    n->weights = tensor_random_create(2, weightShape);
+    n->weights = tensor_random_create(2, (int[]) { 1, weightslength });
     if (!n->weights) {
         fprintf(stderr, "Error: Failed to create weights for neuron\n");
         free(n);

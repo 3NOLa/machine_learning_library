@@ -96,8 +96,7 @@ Tensor* layer_forward(layer* l, Tensor* input)
     }
 
     // Create a 1D tensor for output
-    int outShape[2] = {1, l->neuronAmount };
-    Tensor* output = tensor_create(2, outShape);
+    Tensor* output = tensor_create(2, (int[]){ 1, l->neuronAmount });
     if (!output) {
         fprintf(stderr, "Error: Failed to create output tensor in layer_forward\n");
         return NULL;
@@ -108,8 +107,7 @@ Tensor* layer_forward(layer* l, Tensor* input)
         double activation = neuron_activation(input, l->neurons[i]);
 
         // Using the proper tensor_set function
-        int indices[2] = {0, i };
-        tensor_set(output, indices, activation);
+        tensor_set(output, (int[]) { 0, i }, activation);
     }
 
     if (l->output)

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
+#include "hashmap.h"
 
 #define LINE_SIZE 1000
 
@@ -24,6 +25,7 @@ typedef struct {
 	ValueType* cols_type;
 	Tensor* data;
 	FILE* csv;
+	HashMap** strings_map;
 }csv_handler;
 
 int int_check(char* str);

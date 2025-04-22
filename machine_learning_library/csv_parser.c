@@ -241,6 +241,12 @@ csv_handler* csv_handler_create(char* filename)
 
 	read_header(h);
 
+    h->strings_map = (HashMap**)calloc(h->cols,sizeof(HashMap*));
+    if (!h) {
+        fprintf(stderr, "ERORR: Memory allocation for strings_map failed in csv_handler_create\n");
+        return NULL;
+    }
+
 	h->data = tensor_create(2, (int[]) {h->rows, h->cols});
 	if (!h->data) {
 		fprintf(stderr, "ERROR: Failed to create tensor in csv_handler_create\n");
@@ -365,6 +371,7 @@ void read_file_to_tensor(csv_handler* hand)
             }
             else {
                 hand->cols_type[col_idx] = STRING;
+                hand->strings_map[col_idx] = hashmap_create(1000);
             }
             col_idx++;
             token = strtok_s(NULL, ",", &context);
@@ -395,6 +402,7 @@ void read_file_to_tensor(csv_handler* hand)
     // Rewind again to read all data
     rewind(hand->csv);
     read_next_row(hand); // Skip header
+    int* next_indices = (int*)calloc(hand->cols, sizeof(int)); 
 
     // Process all rows of data
     int row_idx = 0;
@@ -424,9 +432,17 @@ void read_file_to_tensor(csv_handler* hand)
             else if (hand->cols_type[col_idx] == DOUBLE) {
                 value = char_to_double(token);
             }
+            else if (hand->cols_type[col_idx] == STRING) {
+                int found = hashmap_get(hand->strings_map[col_idx], token);
+                if (found == -1) {
+                    value = next_indices[col_idx]++;
+                    hashmap_put(hand->strings_map[col_idx], token, value);
+                }
+                else {
+                    value = hashmap_get(hand->strings_map[col_idx], token);
+                }
+            }
             else {
-                // For STRING columns, we would need a mapping to numeric values
-                // Here we just set to 0, but you might want to implement proper string handling
                 value = 0.0;
             }
 
@@ -452,14 +468,14 @@ void print_csv_file_hand(csv_handler* hand)
     fprintf(stderr, "Printing csv file:\n");
     fprintf(stderr, "cols: %d, rows: %d\n",hand->cols,hand->rows);
 
-    fprintf(stderr,"Header:  ");
+    fprintf(stderr,"Header:\t\t");
     for (int i = 0; i < hand->cols; i++)
     {
-        fprintf(stderr, "%s     ", hand->header[i]);
+        fprintf(stderr, "%s\t", hand->header[i]);
     }
     fprintf(stderr, "\n");
 
-    fprintf(stderr, "Types:   ");
+    fprintf(stderr, "Types:\t\t");
     for (int i = 0; i < hand->cols; i++)
     {
         const char* type_str;
@@ -476,7 +492,7 @@ void print_csv_file_hand(csv_handler* hand)
         default:
             type_str = "UNKNOWN";
         }
-        fprintf(stderr, "%s     ", type_str);
+        fprintf(stderr, "%s\t", type_str);
     }
     fprintf(stderr, "\n");
 
@@ -486,7 +502,7 @@ void print_csv_file_hand(csv_handler* hand)
 
     for (int r = 0; r < rows_preview; r++)
     {
-        fprintf(stderr, "Row %d:  ", r);
+        fprintf(stderr, "Row %d:\t\t", r);
         for (int c = 0; c < hand->cols; c++)
         {
             if (hand->data && r < hand->data->shape[0] && c < hand->data->shape[1]) {
@@ -494,18 +510,18 @@ void print_csv_file_hand(csv_handler* hand)
 
                 switch (hand->cols_type[c]) {
                 case INT:
-                    fprintf(stderr, "%d     ", (int)value);
+                    fprintf(stderr, "%d\t\t", (int)value);
                     break;
                 case DOUBLE:
-                    fprintf(stderr, "%.3f     ", value);
+                    fprintf(stderr, "%.3f\t\t", value);
                     break;
                 case STRING:
-                    fprintf(stderr, "%.0f     ", value);
+                    fprintf(stderr, "%.0f\t\t", value);
                     break;
                 }
             }
             else {
-                fprintf(stderr, "N/A     ");
+                fprintf(stderr, "N/A\t\t\t");
             }
         }
         fprintf(stderr, "\n");

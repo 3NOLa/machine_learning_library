@@ -39,6 +39,12 @@
     <ClInclude Include="csv_parser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="hashmap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="reinforcement.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Tensor_library.c">
@@ -72,6 +78,9 @@
       <Filter>Source Files\reanforcment_learning_project</Filter>
     </ClCompile>
     <ClCompile Include="csv_parser.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hashmap.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

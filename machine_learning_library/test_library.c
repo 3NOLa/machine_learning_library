@@ -525,7 +525,7 @@ int main() {
 
     test_2d_input();
 
-    test_csv_parser("C:\\Users\\keyna\\Downloads\\annual-enterprise-survey-2023-financial-year-provisional.csv");
+    test_csv_parser("C:\\Users\\keyna\\Downloads\\month.csv");
 
     printf("\n===== Tests Completed =====\n");
     return 0;
