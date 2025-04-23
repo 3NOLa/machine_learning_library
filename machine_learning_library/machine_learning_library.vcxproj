@@ -148,6 +148,7 @@
     <ClInclude Include="tensor.h" />
     <ClInclude Include="network.h" />
     <ClInclude Include="neuron.h" />
+    <ClInclude Include="tokenizer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Activation_Functions.c" />
@@ -162,6 +163,7 @@
     <ClCompile Include="Network.c" />
     <ClCompile Include="Neuron.c" />
     <ClCompile Include="test_library.c" />
+    <ClCompile Include="tokenizer.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
