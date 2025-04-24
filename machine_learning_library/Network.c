@@ -1,7 +1,7 @@
 #include "classification.h"
 
 
-network* network_create(int layerAmount, int* layersSize, int input_dims, int* input_shape, ActivationType* activations, double learnningRate, LossType lossFunction)
+network* network_create(int layerAmount, int* layersSize, int input_dims, int* input_shape, ActivationType* activations, double learnningRate, LossType lossFunction,LayerType type)
 {
     if (layerAmount <= 0 || !layersSize || !activations || input_dims <= 0 || !input_shape) {
         fprintf(stderr, "Error: Invalid parameters in network_create\n");
@@ -20,6 +20,7 @@ network* network_create(int layerAmount, int* layersSize, int input_dims, int* i
     net->LossFuntionPointer = LossTypeMap(lossFunction);
     net->LossDerivativePointer = LossTypeDerivativeMap(lossFunction);
     net->input_dims = input_dims;
+    net->type = type;
 
     net->input_shape = (int*)malloc(sizeof(int) * input_dims);
     if (!net->input_shape) {
@@ -37,7 +38,7 @@ network* network_create(int layerAmount, int* layersSize, int input_dims, int* i
         total_input_size *= input_shape[i];
     }
 
-    net->layers = (dense_layer**)malloc(sizeof(dense_layer*) * layerAmount);
+    net->layers = (layer**)malloc(sizeof(layer*) * layerAmount);
     if (!net->layers) {
         fprintf(stderr, "Error: Memory allocation failed for layers array\n");
         free(net);
@@ -54,12 +55,12 @@ network* network_create(int layerAmount, int* layersSize, int input_dims, int* i
 
     int lastLayerSize = total_input_size;
     for (int i = 0; i < layerAmount; i++) {
-        net->layers[i] = layer_create(layersSize[i], lastLayerSize, activations[i]);
+        net->layers[i] = general_layer_Initialize(type,layersSize[i], lastLayerSize, activations[i]);
         if (!net->layers[i]) {
             fprintf(stderr, "Error: Failed to create dense_layer %d\n", i);
 
             for (int j = 0; j < i; j++) {
-                layer_free(net->layers[j]);
+                general_layer_free(net->layers[j]);
             }
 
             free(net->layersSize);
@@ -135,7 +136,7 @@ int add_layer(network* net, int layerSize, ActivationType Activationfunc, int in
     net->layersSize = new_layersSize;
 
     // Resize the layers array
-    dense_layer** new_layers = (dense_layer**)realloc(net->layers, sizeof(dense_layer*) * (net->layerAmount + 1));
+    layer** new_layers = (layer**)realloc(net->layers, sizeof(layer*) * (net->layerAmount + 1));
     if (!new_layers) {
         fprintf(stderr, "Error: Memory reallocation failed for layers in add_layer\n");
         return 0;
@@ -143,7 +144,7 @@ int add_layer(network* net, int layerSize, ActivationType Activationfunc, int in
     net->layers = new_layers;
 
     // Create the new layer
-    net->layers[net->layerAmount] = layer_create(layerSize, actual_input_dim, Activationfunc);
+    net->layers[net->layerAmount] = general_layer_Initialize(net->type,layerSize, actual_input_dim, Activationfunc);
     if (!net->layers[net->layerAmount]) {
         fprintf(stderr, "Error: Failed to create dense_layer in add_layer\n");
         return 0;
@@ -162,7 +163,7 @@ void network_free(network* net)
         if (net->layers) {
             for (int i = 0; i < net->layerAmount; i++) {
                 if (net->layers[i]) {
-                    layer_free(net->layers[i]);
+                    general_layer_free(net->layers[i]);
                 }
             }
             free(net->layers);
@@ -205,7 +206,7 @@ Tensor* forwardPropagation(network* net, Tensor* data)
     }
 
     for (int i = 0; i < net->layerAmount; i++) {
-        current_output = layer_forward(net->layers[i], current_input);
+        current_output = net->layers[i]->forward(net->layers[i], current_input);
         if (!current_output) {
             fprintf(stderr, "Error: Layer %d forward propagation failed\n", i);
 
@@ -255,7 +256,7 @@ int backpropagation(network* net, Tensor* predictions, Tensor* targets)
 
     // Backpropagate through each layer in reverse order
     for (int i = net->layerAmount - 1; i >= 0; i--) {
-        new_gradients = layer_backward(net->layers[i], current_gradients, net->learnningRate);
+        new_gradients = net->layers[i]->backward(net->layers[i], current_gradients, net->learnningRate);
         if (!new_gradients) {
             fprintf(stderr, "Error: Layer %d backpropagation failed\n", i);
 

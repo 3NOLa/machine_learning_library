@@ -15,7 +15,7 @@ ClassificationNetwork* ClassificationNetwork_create(int layerAmount, int* layers
 
     Cnet->num_classes = num_classes;
     Cnet->one_hot_encode = one_hot_encode(num_classes); 
-    Cnet->net = network_create(layerAmount,layersSize,input_dim, input_shape,activations,learnningRate, lossFunction); //cant free the network
+    Cnet->net = network_create(layerAmount,layersSize,input_dim, input_shape,activations,learnningRate, lossFunction,LAYER_DENSE); //cant free the network
     if(!Cnet->net){
         fprintf(stderr, "Error: Memory allocation failed for network in ClassificationNetwork_create_net\n");
         return NULL;

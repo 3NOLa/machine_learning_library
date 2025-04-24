@@ -3,12 +3,12 @@
 
 double squared_error_net(network* net, Tensor* y_real)
 {
-    if (!net || !y_real || !net->layers[net->layerAmount - 1]->output) {
+    if (!net || !y_real || !get_layer_output(net->layers[net->layerAmount - 1])) {
         fprintf(stderr, "Error: NULL tensors in squared_error\n");
         return 0.0;
     }
 
-    Tensor* y_hat = net->layers[net->layerAmount - 1]->output;
+    Tensor* y_hat = get_layer_output(net->layers[net->layerAmount - 1]);
 
     double error = 0.0;
     for (int i = 0; i < y_hat->count; i++) {
@@ -21,12 +21,12 @@ double squared_error_net(network* net, Tensor* y_real)
 
 Tensor* derivative_squared_error_net(network* net, Tensor* y_real)
 {
-    if (!net || !y_real || !net->layers[net->layerAmount - 1]->output) {
+    if (!net || !y_real || !get_layer_output(net->layers[net->layerAmount - 1])) {
         fprintf(stderr, "Error: NULL tensors in derivative_squared_error\n");
         return NULL;
     }
 
-    Tensor* y_hat = net->layers[net->layerAmount - 1]->output;
+    Tensor* y_hat = get_layer_output(net->layers[net->layerAmount - 1]);
 
     Tensor* derivative = tensor_create(y_hat->dims, y_hat->shape);
     if (!derivative) {
@@ -45,12 +45,12 @@ Tensor* derivative_squared_error_net(network* net, Tensor* y_real)
 
 double absolute_error_net(network* net, Tensor* y_real)
 {
-    if (!net || !y_real || !net->layers[net->layerAmount - 1]->output) {
+    if (!net || !y_real || !get_layer_output(net->layers[net->layerAmount - 1])) {
         fprintf(stderr, "Error: NULL tensors in squared_error\n");
         return 0.0;
     }
 
-    Tensor* y_hat = net->layers[net->layerAmount - 1]->output;
+    Tensor* y_hat = get_layer_output(net->layers[net->layerAmount - 1]);
 
     double error = 0.0;
     for (int i = 0; i < y_hat->count; i++) {
@@ -62,12 +62,12 @@ double absolute_error_net(network* net, Tensor* y_real)
 
 Tensor* derivative_absolute_error_net(network* net, Tensor* y_real)
 {
-    if (!net || !y_real || !net->layers[net->layerAmount - 1]->output) {
+    if (!net || !y_real || !get_layer_output(net->layers[net->layerAmount - 1])) {
         fprintf(stderr, "Error: NULL tensors in derivative_squared_error\n");
         return NULL;
     }
 
-    Tensor* y_hat = net->layers[net->layerAmount - 1]->output;
+    Tensor* y_hat = get_layer_output(net->layers[net->layerAmount - 1]);
     double epsilon = 1e-15;  // Small constant to prevent division by zero
     Tensor* derivative = tensor_create(y_hat->dims, y_hat->shape);
     if (!derivative) {
@@ -90,7 +90,7 @@ double Categorical_Cross_Entropy_net(network* net, Tensor* y_real)
 {
     int real_class = get_predicted_class(y_real);
 
-    Tensor* y_hat = net->layers[net->layerAmount - 1]->output;
+    Tensor* y_hat = get_layer_output(net->layers[net->layerAmount - 1]);
     int pred_class = get_predicted_class(y_hat);
 
     double loss = -log(y_hat->data[real_class]);
@@ -100,13 +100,13 @@ double Categorical_Cross_Entropy_net(network* net, Tensor* y_real)
 
 Tensor* derivative_Categorical_Cross_Entropy_net(network* net, Tensor* y_real)
 {
-    if (!net || !y_real || !net->layers[net->layerAmount - 1]->output) {
+    if (!net || !y_real || !get_layer_output(net->layers[net->layerAmount - 1])) {
         fprintf(stderr, "Error: NULL tensors in derivative_Categorical_Cross_Entropy_net\n");
         return NULL;
     }
 
     double epsilon = 1e-15;  // Small constant to prevent division by zero
-    Tensor* y_hat = net->layers[net->layerAmount - 1]->output;
+    Tensor* y_hat = get_layer_output(net->layers[net->layerAmount - 1]);
     Tensor* derivative = tensor_create(y_hat->dims, y_hat->shape);
     if (!derivative) {
         fprintf(stderr, "Error: Failed to create derivative tensor in derivative_Categorical_Cross_Entropy_net\n");

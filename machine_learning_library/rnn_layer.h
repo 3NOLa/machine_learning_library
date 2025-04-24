@@ -8,10 +8,10 @@ typedef struct {
     Tensor* output;
     rnn_neuron** neurons;
     ActivationType Activationenum;
-	int sequence_length;
+	int sequence_length; // =t = timestamp
 }rnn_layer;
 
 rnn_layer* rnn_layer_create(int neuronAmount, int neuronDim, ActivationType Activationfunc);
-Tensor* rnn_layer_forward(rnn_layer* rl, Tensor* input, int t);
+Tensor* rnn_layer_forward(rnn_layer* rl, Tensor* input);
 Tensor* rnn_layer_backward(rnn_layer* rl, Tensor* input_gradients, double learning_rate);
 void rnn_layer_free(rnn_layer* rl);

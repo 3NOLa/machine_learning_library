@@ -158,6 +158,7 @@
     <ClCompile Include="check.c" />
     <ClCompile Include="Classification.c" />
     <ClCompile Include="csv_parser.c" />
+    <ClCompile Include="genral_layer.c" />
     <ClCompile Include="hashmap.c" />
     <ClCompile Include="dense_Layer.c" />
     <ClCompile Include="Loss_Functions.c" />

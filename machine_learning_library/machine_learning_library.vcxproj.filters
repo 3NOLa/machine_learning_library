@@ -104,5 +104,8 @@
     <ClCompile Include="rnn_layer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="genral_layer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

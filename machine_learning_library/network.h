@@ -1,6 +1,6 @@
 #pragma once
 #include <stdio.h>
-#include "dense_layer.h"
+#include "general_layer.h"
 
 typedef enum {
 	MSE,
@@ -13,7 +13,7 @@ typedef enum {
 
 typedef struct {
 	int layerAmount;
-	dense_layer** layers;
+	layer** layers;
 	int* layersSize;
 	double learnningRate;
 	LossType lossFunction;
@@ -21,9 +21,10 @@ typedef struct {
 	Tensor* (*LossDerivativePointer)(struct network*, Tensor*);
 	int input_dims;
 	int* input_shape;
+	LayerType type;
 }network;
 
-network* network_create(int layerAmount, int* layersSize, int input_dims, int* input_shape, ActivationType* activations, double learnningRate, LossType lossFunction);
+network* network_create(int layerAmount, int* layersSize, int input_dims, int* input_shape, ActivationType* activations, double learnningRate, LossType lossFunction, LayerType type);
 network* network_create_empty();
 int add_layer(network* net, int layerSize, ActivationType Activationfunc, int input_dim);// add input layer if first layer otherwise put 0
 void network_free(network* net);

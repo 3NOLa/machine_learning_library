@@ -10,7 +10,8 @@ void print_network_weights(network* net) {
     for (int l = 0; l < net->layerAmount; l++) {
         printf("Layer %d:\n", l);
         for (int n = 0; n < net->layersSize[l]; n++) {
-            neuron* neuron = net->layers[l]->neurons[n];
+            dense_layer* dl = (dense_layer*)(net->layers[l]->params);
+            neuron* neuron = dl->neurons[n];
             printf("  Neuron %d: bias=%.4f weights=[", n, neuron->bias);
             tensor_print(neuron->weights);
             printf("]\n");
@@ -303,7 +304,7 @@ void test_neural_network() {
     int input_shape[] = { 1,2 };
     ActivationType activations[] = { GELU, LEAKY_RELU };
 
-    network* net = network_create(2, layers, 2, input_shape, activations, 0.1,MAE);
+    network* net = network_create(2, layers, 2, input_shape, activations, 0.1,MAE,LAYER_DENSE);
     if (!net) {
         fprintf(stderr, "Network creation failed\n");
         return;
@@ -421,7 +422,7 @@ void test_2d_input() {
     ActivationType activations[2] = { SIGMOID, SIGMOID };
 
     // Initialize network with the input dimensions
-    network* net = network_create(2, layerSizes, 2, input_shape, activations, 0.1, MSE);
+    network* net = network_create(2, layerSizes, 2, input_shape, activations, 0.1, MSE, LAYER_DENSE);
 
     // Create a simple target (e.g., 1 for diagonal line pattern)
     int target_shape[2] = { 1, 1 };

@@ -2,6 +2,10 @@
 #include "dense_layer.h"
 #include "rnn_layer.h"
 
+#define AS_DENSE(l) ((dense_layer*)((l)->params))
+#define AS_RNN(l)   ((rnn_layer*)((l)->params))
+
+
 typedef enum {
     LAYER_DENSE,
     LAYER_RNN,
@@ -16,7 +20,11 @@ typedef struct Layer {
     void (*free)(struct Layer* layer);
 }layer;
 
+layer* general_layer_Initialize(LayerType type, int neuronAmount, int neuronDim, ActivationType Activationfunc);
+void general_layer_free(layer* base_layer);
+Tensor* get_layer_output(layer* base_layer);
 
-Tensor* forward(Layer* base_layer, Tensor* input);
-Tensor* backward(Layer* base_layer, Tensor* grad, double learning_rate);
-void free(Layer* base_layer);
+Tensor* wrapper_rnn_forward(layer* base_layer, Tensor* input);
+Tensor* wrapper_rnn_backward(layer* base_layer, Tensor* grad, double learning_rate);
+Tensor* wrapper_dense_forward(layer* base_layer, Tensor* input);
+Tensor* wrapper_dense_backward(layer* base_layer, Tensor* grad, double learning_rate);

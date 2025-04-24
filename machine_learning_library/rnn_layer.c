@@ -50,7 +50,7 @@ rnn_layer* rnn_layer_create(int neuronAmount, int neuronDim, ActivationType Acti
     return rl;
 }
 
-Tensor* rnn_layer_forward(rnn_layer* rl, Tensor* input,int t)
+Tensor* rnn_layer_forward(rnn_layer* rl, Tensor* input)
 {
     if (!rl || !input) {
         fprintf(stderr, "Error: NULL dense_layer or input in layer_forward\n");
@@ -67,7 +67,9 @@ Tensor* rnn_layer_forward(rnn_layer* rl, Tensor* input,int t)
     for (int i = 0; i < rl->neuronAmount; i++) {
         //giving the neuron hidden state the output of the layer that is the t-1 output
         rl->neurons[i]->hidden_state = tensor_get_element(rl->output, (int[]) {0,i});
-        double activation = rnn_neuron_activation(input, rl->neurons[i],t);
+        //set neuron to the right timestamp
+        rl->neurons[i]->timestamp = rl->sequence_length;
+        double activation = rnn_neuron_activation(input, rl->neurons[i]);
 
         tensor_set(output, (int[]) { 0, i }, activation);
     }
@@ -104,11 +106,13 @@ Tensor* rnn_layer_backward(rnn_layer* rl, Tensor* output_gradients, double learn
         Tensor* timestep_input_gradients = NULL;
 
         for (int i = 0; i < rl->neuronAmount; i++) {
+            //set neuron timestamp to the correct one
+            rl->neurons[i]->timestamp = t;
             // Get the gradient for this neuron's output
             double output_gradient = tensor_get_element(output_gradients, (int[]) { 0, i });
 
             // Backpropagate through this neuron
-            Tensor* neuron_input_gradients = rnn_neuron_backward(output_gradient, rl->neurons[i], learning_rate, t);
+            Tensor* neuron_input_gradients = rnn_neuron_backward(output_gradient, rl->neurons[i], learning_rate);
 
             if (!neuron_input_gradients) {
                 fprintf(stderr, "Error: Failed to get input gradients from neuron %d\n", i);

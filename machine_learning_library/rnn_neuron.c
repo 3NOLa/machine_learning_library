@@ -23,6 +23,7 @@ rnn_neuron* rnn_neuron_create(int weightslength, ActivationType func, int layer_
     
     rn->recurrent_weights = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
     rn->hidden_state = 0.0;
+    rn->timestamp = 0;
 
     for (int i = 0; i < MAX_TIMESTEPS; i++) {
         rn->input_history[i] = NULL;
@@ -37,7 +38,7 @@ void rnn_neuron_set_ActivationType(rnn_neuron* rn, ActivationType Activation)
     neuron_set_ActivationType(rn->n, Activation);
 }
 
-double rnn_neuron_activation(Tensor* input, rnn_neuron* rn, int timestamp)
+double rnn_neuron_activation(Tensor* input, rnn_neuron* rn)
 {
     if (!input || !rn) {
         fprintf(stderr, "Error: NULL input or neuron in neuron_activation\n");
@@ -55,13 +56,13 @@ double rnn_neuron_activation(Tensor* input, rnn_neuron* rn, int timestamp)
     }
     // Create a new tensor with the same dimensions and shape as input
     rn->n->input = tensor_create(input->dims, input->shape);
-    rn->input_history[timestamp] = tensor_create(input->dims, input->shape);
-    if (!rn->n->input || !rn->input_history[timestamp]) {
+    rn->input_history[rn->timestamp] = tensor_create(input->dims, input->shape);
+    if (!rn->n->input || !rn->input_history[rn->timestamp]) {
         fprintf(stderr, "Error: Failed to create input copy in rnn_neuron_activation\n");
         return 0.0;
     }
 
-    if (!tensor_copy(rn->n->input, input) || !tensor_copy(rn->input_history[timestamp],input)) {
+    if (!tensor_copy(rn->n->input, input) || !tensor_copy(rn->input_history[rn->timestamp],input)) {
         fprintf(stderr, "Error: Failed to copy input in rnn_neuron_activation\n");
         return 0.0;
     }
@@ -82,20 +83,20 @@ double rnn_neuron_activation(Tensor* input, rnn_neuron* rn, int timestamp)
     rn->n->output = rn->n->ActivationFunc(sum);
     
     rn->hidden_state = rn->n->output;
-    rn->hidden_state_history[timestamp] = rn->hidden_state;
+    rn->hidden_state_history[rn->timestamp] = rn->hidden_state;
 
     return rn->hidden_state;
 }
 
-Tensor* rnn_neuron_backward(double output_gradient, rnn_neuron* rn, double learning_rate, int timestamp)
+Tensor* rnn_neuron_backward(double output_gradient, rnn_neuron* rn, double learning_rate)
 {
-    if (!rn || !rn->input_history[timestamp]) {
+    if (!rn || !rn->input_history[rn->timestamp]) {
         fprintf(stderr, "Error: NULL neuron or input history in rnn_neuron_backward\n");
         return NULL;
     }
 
     // Derivative of activation function w.r.t. its input
-    rn->n->output = rn->hidden_state_history[timestamp];
+    rn->n->output = rn->hidden_state_history[rn->timestamp];
     double activation_derivative = rn->n->ActivationderivativeFunc(rn->n);
 
     // Chain rule - gradient flows through activation function
@@ -117,7 +118,7 @@ Tensor* rnn_neuron_backward(double output_gradient, rnn_neuron* rn, double learn
         double original_weight = tensor_get_element_by_index(rn->n->weights, i);
 
         // Get input value using tensor access (from history at this timestamp)
-        double input_val = tensor_get_element_by_index(rn->input_history[timestamp], i);
+        double input_val = tensor_get_element_by_index(rn->input_history[rn->timestamp], i);
 
         // Calculate weight gradient
         double weight_gradient = pre_activation_gradient * input_val;
@@ -130,7 +131,7 @@ Tensor* rnn_neuron_backward(double output_gradient, rnn_neuron* rn, double learn
     }
 
     // Update recurrent weight
-    double recurrent_gradient = pre_activation_gradient * rn->hidden_state_history[timestamp];
+    double recurrent_gradient = pre_activation_gradient * rn->hidden_state_history[rn->timestamp];
     rn->recurrent_weights += recurrent_gradient * learning_rate;
 
     // Update bias
