@@ -142,9 +142,12 @@
     <ClInclude Include="active_functions.h" />
     <ClInclude Include="classification.h" />
     <ClInclude Include="csv_parser.h" />
+    <ClInclude Include="general_layer.h" />
     <ClInclude Include="hashmap.h" />
-    <ClInclude Include="layer.h" />
+    <ClInclude Include="dense_layer.h" />
     <ClInclude Include="reinforcement.h" />
+    <ClInclude Include="rnn_layer.h" />
+    <ClInclude Include="rnn_neuron.h" />
     <ClInclude Include="tensor.h" />
     <ClInclude Include="network.h" />
     <ClInclude Include="neuron.h" />
@@ -156,9 +159,11 @@
     <ClCompile Include="Classification.c" />
     <ClCompile Include="csv_parser.c" />
     <ClCompile Include="hashmap.c" />
-    <ClCompile Include="Layer.c" />
+    <ClCompile Include="dense_Layer.c" />
     <ClCompile Include="Loss_Functions.c" />
     <ClCompile Include="reinforcement_network.c" />
+    <ClCompile Include="rnn_layer.c" />
+    <ClCompile Include="rnn_neuron.c" />
     <ClCompile Include="Tensor_library.c" />
     <ClCompile Include="Network.c" />
     <ClCompile Include="Neuron.c" />

@@ -231,7 +231,7 @@ void test_single_layer() {
     printf("\n===== Testing Single Layer =====\n");
 
     // Create a layer with 3 neurons, each with 2 inputs
-    layer* l = layer_create(3, 2, SIGMOID);
+    dense_layer* l = layer_create(3, 2, SIGMOID);
     if (!l) {
         fprintf(stderr, "Layer creation failed\n");
         return;
@@ -466,19 +466,19 @@ void test_network_empty_constructor() {
 
     // Add layers manually
     if (add_layer(net, 4, SIGMOID, 2)) {
-        printf("Added first layer: 2 inputs -> 4 neurons (SIGMOID)\n");
+        printf("Added first dense_layer: 2 inputs -> 4 neurons (SIGMOID)\n");
     }
     else {
-        fprintf(stderr, "Failed to add first layer\n");
+        fprintf(stderr, "Failed to add first dense_layer\n");
         network_free(net);
         return;
     }
 
     if (add_layer(net, 1, SIGMOID, 0)) {
-        printf("Added second layer: 4 inputs -> 1 neuron (SIGMOID)\n");
+        printf("Added second dense_layer: 4 inputs -> 1 neuron (SIGMOID)\n");
     }
     else {
-        fprintf(stderr, "Failed to add second layer\n");
+        fprintf(stderr, "Failed to add second dense_layer\n");
         network_free(net);
         return;
     }

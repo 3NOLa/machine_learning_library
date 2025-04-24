@@ -37,7 +37,7 @@ network* network_create(int layerAmount, int* layersSize, int input_dims, int* i
         total_input_size *= input_shape[i];
     }
 
-    net->layers = (layer**)malloc(sizeof(layer*) * layerAmount);
+    net->layers = (dense_layer**)malloc(sizeof(dense_layer*) * layerAmount);
     if (!net->layers) {
         fprintf(stderr, "Error: Memory allocation failed for layers array\n");
         free(net);
@@ -56,7 +56,7 @@ network* network_create(int layerAmount, int* layersSize, int input_dims, int* i
     for (int i = 0; i < layerAmount; i++) {
         net->layers[i] = layer_create(layersSize[i], lastLayerSize, activations[i]);
         if (!net->layers[i]) {
-            fprintf(stderr, "Error: Failed to create layer %d\n", i);
+            fprintf(stderr, "Error: Failed to create dense_layer %d\n", i);
 
             for (int j = 0; j < i; j++) {
                 layer_free(net->layers[j]);
@@ -102,7 +102,7 @@ int add_layer(network* net, int layerSize, ActivationType Activationfunc, int in
     }
 
     if (layerSize <= 0) {
-        fprintf(stderr, "Error: Invalid layer size %d in add_layer\n", layerSize);
+        fprintf(stderr, "Error: Invalid dense_layer size %d in add_layer\n", layerSize);
         return 0;
     }
 
@@ -122,7 +122,7 @@ int add_layer(network* net, int layerSize, ActivationType Activationfunc, int in
         }
     }
     else {
-        fprintf(stderr, "Error: Cannot determine input dimension for first layer\n");
+        fprintf(stderr, "Error: Cannot determine input dimension for first dense_layer\n");
         return 0;
     }
 
@@ -135,7 +135,7 @@ int add_layer(network* net, int layerSize, ActivationType Activationfunc, int in
     net->layersSize = new_layersSize;
 
     // Resize the layers array
-    layer** new_layers = (layer**)realloc(net->layers, sizeof(layer*) * (net->layerAmount + 1));
+    dense_layer** new_layers = (dense_layer**)realloc(net->layers, sizeof(dense_layer*) * (net->layerAmount + 1));
     if (!new_layers) {
         fprintf(stderr, "Error: Memory reallocation failed for layers in add_layer\n");
         return 0;
@@ -145,7 +145,7 @@ int add_layer(network* net, int layerSize, ActivationType Activationfunc, int in
     // Create the new layer
     net->layers[net->layerAmount] = layer_create(layerSize, actual_input_dim, Activationfunc);
     if (!net->layers[net->layerAmount]) {
-        fprintf(stderr, "Error: Failed to create layer in add_layer\n");
+        fprintf(stderr, "Error: Failed to create dense_layer in add_layer\n");
         return 0;
     }
 

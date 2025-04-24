@@ -27,7 +27,7 @@
     <ClInclude Include="neuron.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="layer.h">
+    <ClInclude Include="dense_layer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="network.h">
@@ -48,6 +48,15 @@
     <ClInclude Include="tokenizer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="rnn_neuron.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="rnn_layer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="general_layer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Tensor_library.c">
@@ -62,7 +71,7 @@
     <ClCompile Include="Neuron.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Layer.c">
+    <ClCompile Include="dense_Layer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Network.c">
@@ -87,6 +96,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="tokenizer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rnn_neuron.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rnn_layer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

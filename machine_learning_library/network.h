@@ -1,6 +1,6 @@
 #pragma once
 #include <stdio.h>
-#include "layer.h"
+#include "dense_layer.h"
 
 typedef enum {
 	MSE,
@@ -13,7 +13,7 @@ typedef enum {
 
 typedef struct {
 	int layerAmount;
-	layer** layers;
+	dense_layer** layers;
 	int* layersSize;
 	double learnningRate;
 	LossType lossFunction;

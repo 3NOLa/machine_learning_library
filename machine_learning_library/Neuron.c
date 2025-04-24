@@ -1,5 +1,5 @@
 #include "neuron.h"
-#include "layer.h"
+#include "dense_layer.h"
 #include <stdio.h>
 
 neuron* neuron_create(int weightslength, ActivationType Activation)

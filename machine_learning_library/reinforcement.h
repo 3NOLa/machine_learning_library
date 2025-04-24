@@ -24,5 +24,5 @@ typedef struct {
 
 
 typedef struct {
-
+	int k;
 }agent;

@@ -1,6 +1,6 @@
-#include "layer.h"
+#include "dense_layer.h"
 
-layer* layer_create(int neuronAmount, int neuronDim, ActivationType Activationfunc)
+dense_layer* layer_create(int neuronAmount, int neuronDim, ActivationType Activationfunc)
 {
     if (neuronAmount <= 0 || neuronDim <= 0) {
         fprintf(stderr, "Error: Invalid dimensions in layer_create - neurons: %d, dimension: %d\n",
@@ -8,9 +8,9 @@ layer* layer_create(int neuronAmount, int neuronDim, ActivationType Activationfu
         return NULL;
     }
 
-    layer* L = (layer*)malloc(sizeof(layer));
+    dense_layer* L = (dense_layer*)malloc(sizeof(dense_layer));
     if (!L) {
-        fprintf(stderr, "Error: Memory allocation failed for layer\n");
+        fprintf(stderr, "Error: Memory allocation failed for dense_layer\n");
         return NULL;
     }
 
@@ -43,7 +43,7 @@ layer* layer_create(int neuronAmount, int neuronDim, ActivationType Activationfu
     return L;
 }
 
-void layer_removeLastNeuron(layer* l)
+void layer_removeLastNeuron(dense_layer* l)
 {
     neuron* last = l->neurons[l->neuronAmount - 1];
     if (!last)return;
@@ -52,14 +52,14 @@ void layer_removeLastNeuron(layer* l)
     l->neurons = (neuron**)realloc(l->neurons, sizeof(neuron*) * (--l->neuronAmount));
 }
 
-void layer_addNeuron(layer* l)
+void layer_addNeuron(dense_layer* l)
 {
     neuron* newn = neuron_create(l->neurons[0]->weights->shape[1],l->Activationenum);
     l->neurons = (neuron**)realloc(l->neurons, sizeof(neuron*) * (l->neuronAmount+1));
     l->neurons[l->neuronAmount++] = newn;
 }
 
-void layer_set_neuronAmount(layer* l, int neuronAmount)
+void layer_set_neuronAmount(dense_layer* l, int neuronAmount)
 {
     if (l->neuronAmount == neuronAmount) return;
     else if(l->neuronAmount > neuronAmount)
@@ -75,10 +75,10 @@ void layer_set_neuronAmount(layer* l, int neuronAmount)
     
 }
 
-void layer_set_activtion(layer* l, ActivationType Activationfunc)
+void layer_set_activtion(dense_layer* l, ActivationType Activationfunc)
 {
     if(!l) {
-        fprintf(stderr, "Error: NULL layer in set_layer_activtion\n");
+        fprintf(stderr, "Error: NULL dense_layer in set_layer_activtion\n");
         return NULL;
     }
 
@@ -88,10 +88,10 @@ void layer_set_activtion(layer* l, ActivationType Activationfunc)
     }
 }
 
-Tensor* layer_forward(layer* l, Tensor* input)
+Tensor* layer_forward(dense_layer* l, Tensor* input)
 {
     if (!l || !input) {
-        fprintf(stderr, "Error: NULL layer or input in layer_forward\n");
+        fprintf(stderr, "Error: NULL dense_layer or input in layer_forward\n");
         return NULL;
     }
 
@@ -103,10 +103,8 @@ Tensor* layer_forward(layer* l, Tensor* input)
     }
 
     for (int i = 0; i < l->neuronAmount; i++) {
-        // Remove the third parameter from neuron_activation call
         double activation = neuron_activation(input, l->neurons[i]);
 
-        // Using the proper tensor_set function
         tensor_set(output, (int[]) { 0, i }, activation);
     }
 
@@ -118,10 +116,10 @@ Tensor* layer_forward(layer* l, Tensor* input)
     return output;
 }
 
-Tensor* layer_backward(layer* l, Tensor* input_gradients, double learning_rate)
+Tensor* layer_backward(dense_layer* l, Tensor* input_gradients, double learning_rate)
 {
     if (!l || !input_gradients) {
-        fprintf(stderr, "Error: NULL layer or gradients in layer_backward\n");
+        fprintf(stderr, "Error: NULL dense_layer or gradients in layer_backward\n");
         return NULL;
     }
 
@@ -177,7 +175,7 @@ Tensor* layer_backward(layer* l, Tensor* input_gradients, double learning_rate)
     return output_gradients;
 }
 
-void layer_free(layer* l)
+void layer_free(dense_layer* l)
 {
     if (l) {
         if (l->neurons) {
