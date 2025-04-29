@@ -34,6 +34,7 @@ int backpropagation(network* net, Tensor* predictions, Tensor* targets);
 
 double train(network* net, Tensor* input, Tensor* target);
 void network_training(network* net, Tensor* input, Tensor* target, int epcho,int batch_size);
+double rnn_train(network* net, Tensor* input, Tensor* target, int timestamps);
 
 // implemented in loss_Functions.c
 double squared_error_net(network* net, Tensor* y_real);

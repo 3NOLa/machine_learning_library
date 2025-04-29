@@ -299,8 +299,39 @@ double train(network* net, Tensor* input, Tensor* target)
     }
 
     // Calculate error
-    double error = net->LossFuntionPointer(net,predictions);
-    
+    double error = net->LossFuntionPointer(net, target);
+
+    // Backward pass
+    if (!backpropagation(net, predictions, target)) {
+        fprintf(stderr, "Error: Backpropagation failed in train\n");
+        tensor_free(predictions);
+        return -1.0;
+    }
+
+    // Free resources
+    tensor_free(predictions);
+
+    return error;
+}
+
+double rnn_train(network* net, Tensor* input, Tensor* target, int timestamps)
+{
+    if (!net || !input || !target) {
+        fprintf(stderr, "Error: NULL parameters in train\n");
+        return -1.0;  // Return negative error to indicate failure
+    }
+
+    Tensor* predictions = NULL;
+    for (int i = 0; i < timestamps-1; i++)
+    {
+        Tensor* input_t = tensor_slice_range(input, i,i+1);
+        predictions = forwardPropagation(net, input_t);
+        tensor_free(input_t);
+
+    }
+    // Calculate error
+    double error = net->LossFuntionPointer(net, target);
+
 
     // Backward pass
     if (!backpropagation(net, predictions, target)) {
