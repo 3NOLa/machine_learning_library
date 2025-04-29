@@ -13,12 +13,14 @@ layer* general_layer_Initialize(LayerType type, int neuronAmount, int neuronDim,
 		l->forward = wrapper_dense_forward;
 		l->backward = wrapper_dense_backward;
 		l->free = layer_free;
+		l->reset_state = NULL;
 		break;
 	case LAYER_RNN:
 		l->params = rnn_layer_create(neuronAmount, neuronDim, Activationfunc);
 		l->forward = wrapper_rnn_forward;
 		l->backward = wrapper_rnn_backward;
 		l->free = rnn_layer_free;
+		l->reset_state = wrapper_rnn_reset_state;
 		break;
 	default:
 		fprintf(stderr, "Erorr: not a valid in layer_Initialize\n");
@@ -63,6 +65,11 @@ void general_layer_free(layer* base_layer)
 		break;
 	}
 	free(base_layer);
+}
+
+void wrapper_rnn_reset_state(layer* base_layer) {
+	rnn_layer* rl = (rnn_layer*)base_layer->params;
+	rnn_layer_reset_state(rl);
 }
 
 Tensor* get_layer_output(layer* base_layer)

@@ -18,6 +18,8 @@ typedef struct Layer {
     Tensor* (*forward)(struct Layer* layer, Tensor* input);
     Tensor* (*backward)(struct Layer* layer, Tensor* grad, double learning_rate);
     void (*free)(struct Layer* layer);
+    //rnn only
+    void (*reset_state)(struct layer* base_layer);
 }layer;
 
 layer* general_layer_Initialize(LayerType type, int neuronAmount, int neuronDim, ActivationType Activationfunc);
@@ -26,5 +28,6 @@ Tensor* get_layer_output(layer* base_layer);
 
 Tensor* wrapper_rnn_forward(layer* base_layer, Tensor* input);
 Tensor* wrapper_rnn_backward(layer* base_layer, Tensor* grad, double learning_rate);
+void wrapper_rnn_reset_state(layer* base_layer);
 Tensor* wrapper_dense_forward(layer* base_layer, Tensor* input);
 Tensor* wrapper_dense_backward(layer* base_layer, Tensor* grad, double learning_rate);

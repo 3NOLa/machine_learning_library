@@ -321,13 +321,19 @@ double rnn_train(network* net, Tensor* input, Tensor* target, int timestamps)
         return -1.0;  // Return negative error to indicate failure
     }
 
+    for (int i = 0; i < net->layerAmount; i++) {
+        if (net->layers[i]->reset_state)
+            net->layers[i]->reset_state(net->layers[i]);
+    }
+
     Tensor* predictions = NULL;
     for (int i = 0; i < timestamps-1; i++)
     {
         Tensor* input_t = tensor_slice_range(input, i,i+1);
-        predictions = forwardPropagation(net, input_t);
+        Tensor* pred = forwardPropagation(net, input_t);
         tensor_free(input_t);
-
+        if (predictions) tensor_free(predictions);  // free previous
+        predictions = pred;
     }
     // Calculate error
     double error = net->LossFuntionPointer(net, target);

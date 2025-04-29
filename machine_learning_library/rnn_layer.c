@@ -157,9 +157,11 @@ Tensor* rnn_layer_backward(rnn_layer* rl, Tensor* output_gradients, double learn
 
 void rnn_layer_reset_state(rnn_layer* rl)
 {
+    if (!rl || !rl->neurons) return;
     for (int i = 0; i < rl->neuronAmount; i++) {
-        //tensor_zero(rl->neurons[i]->hidden_state);
-        //rl->neurons[i]->timestep_count = 0;
+        if (rl->neurons[i]->hidden_state)
+            rl->neurons[i]->hidden_state = 0.0;
+        rl->neurons[i]->timestamp = 0;
     }
     rl->sequence_length = 0;
 }

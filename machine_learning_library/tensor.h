@@ -18,6 +18,7 @@ int tensor_add_row(Tensor* t);
 
 void tensor_free(Tensor* t);
 int tensor_copy(Tensor* dest, Tensor* src);
+void tensor_zero(Tensor* t);
 
 // Access functions
 int tensor_get_index(Tensor* t, int* indices);

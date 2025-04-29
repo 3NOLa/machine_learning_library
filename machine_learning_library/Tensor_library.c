@@ -60,6 +60,19 @@ Tensor* tensor_zero_create(int dims, int* shape) {
     return t;
 }
 
+void tensor_zero(Tensor* t) {
+    if (!t || !t->data) return;
+
+    int total = 1;
+    for (int i = 0; i < t->dims; i++) {
+        total *= t->shape[i];
+    }
+
+    for (int i = 0; i < total; i++) {
+        t->data[i] = 0.0f;
+    }
+}
+
 Tensor* tensor_random_create(int dims, int* shape) {
     Tensor* t = tensor_create(dims, shape);
     if (!t) return NULL;

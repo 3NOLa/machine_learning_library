@@ -542,12 +542,17 @@ void test_rnn()
     }
 
     // Train and output error
-    double error = rnn_train(net, input_seq, target_seq, timestamps);
-    printf("Predictions:\n");
+    double err = 0.0;
+    for (int i = 0; i < 1000; i++) {
+        err = rnn_train(net, input_seq, target_seq, timestamps);
+        if((i % 100) == 0)
+           printf("Epoch %d - Error: %.6f\n", i + 1, err);
+    }
+
     
     //Tensor* output = forwardPropagation(net, input_seq);
     //printf("Output after training: %.4f\n", tensor_get_element_by_index(output, 0));
-    printf("Final error after 1 pass: %.6f\n", error);
+    printf("Final error after 1 pass: %.6f\n", err);
 
     // Cleanup
     tensor_free(input_seq);
