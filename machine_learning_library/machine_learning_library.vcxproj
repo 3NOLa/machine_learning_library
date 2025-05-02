@@ -145,6 +145,7 @@
     <ClInclude Include="general_layer.h" />
     <ClInclude Include="hashmap.h" />
     <ClInclude Include="dense_layer.h" />
+    <ClInclude Include="lstm_neuron.h" />
     <ClInclude Include="reinforcement.h" />
     <ClInclude Include="rnn_layer.h" />
     <ClInclude Include="rnn_neuron.h" />
@@ -162,6 +163,7 @@
     <ClCompile Include="hashmap.c" />
     <ClCompile Include="dense_Layer.c" />
     <ClCompile Include="Loss_Functions.c" />
+    <ClCompile Include="lstm_neuron.c" />
     <ClCompile Include="reinforcement_network.c" />
     <ClCompile Include="rnn_layer.c" />
     <ClCompile Include="rnn_neuron.c" />

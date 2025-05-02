@@ -3,6 +3,7 @@
 #include <math.h>
 #include "network.h"
 #include "csv_parser.h"
+#include "tokenizer.h"
 
 
 void print_network_weights(network* net) {
@@ -560,6 +561,19 @@ void test_rnn()
     network_free(net);
 }
 
+test_tokenize()
+{
+    int amount = 0;
+    char* text = "hi hello My NAme --koko ++ipo text is *_#bla";
+    char** tokens = tokeknize(text,&amount);
+
+    printf("amount of tokens: %d\n",amount);
+    for (int i = 0; i < amount; i++)
+    {
+        printf("token %d: %s\n", i, tokens[i]);
+    }
+}
+
 int main() {
     printf("===== Neural Network Library Test Program =====\n");
 
@@ -586,6 +600,8 @@ int main() {
     test_csv_parser("C:\\Users\\keyna\\Downloads\\month.csv");
 
     test_rnn();
+
+    test_tokenize();
 
     printf("\n===== Tests Completed =====\n");
     return 0;

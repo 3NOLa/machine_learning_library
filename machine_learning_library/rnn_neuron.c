@@ -95,8 +95,7 @@ Tensor* rnn_neuron_backward(double output_gradient, rnn_neuron* rn, double learn
         return NULL;
     }
 
-    // Derivative of activation function w.r.t. its input
-    rn->n->output = rn->hidden_state_history[rn->timestamp];
+    rn->n->output = rn->hidden_state_history[rn->timestamp]; // its the output in this timestamp
     double activation_derivative = rn->n->ActivationderivativeFunc(rn->n);
 
     // Chain rule - gradient flows through activation function

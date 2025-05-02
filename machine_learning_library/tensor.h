@@ -46,6 +46,7 @@ double tensor_mean(Tensor* t);
 
 // In-place operations (to minimize memory allocations)
 void tensor_add_inplace(Tensor* target, Tensor* other);
+void tensor_add_more_inplace(Tensor* target, Tensor* others[], int amount);
 void tensor_subtract_inplace(Tensor* target, Tensor* other);
 void tensor_multiply_inplace(Tensor* target, Tensor* other);
 void tensor_add_scalar_inplace(Tensor* target, double scalar);

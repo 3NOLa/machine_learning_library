@@ -74,6 +74,8 @@ network* network_create(int layerAmount, int* layersSize, int input_dims, int* i
         lastLayerSize = layersSize[i];
     }
 
+    network_train_type(net);
+
     return net;
 }
 
@@ -176,6 +178,19 @@ void network_free(network* net)
             free(net->input_shape);
 
         free(net);
+    }
+}
+
+void network_train_type(network* net)
+{
+    switch (net->type)
+    {
+    case LAYER_DENSE:
+        net->train = train;
+    case LAYER_RNN:
+        net->train = rnn_train;
+    default:
+        break;
     }
 }
 

@@ -454,6 +454,34 @@ void tensor_add_inplace(Tensor* target, Tensor* other) {
     }
 }
 
+void tensor_add_more_inplace(Tensor* target, Tensor* others[],int amount) {
+
+    for (int i = 0; i < amount; i++)
+    {
+        if (!target || !others[i]) return;
+
+        // Check if dimensions match
+        if (target->dims != others[i]->dims) {
+            fprintf(stderr, "Error: Tensor dimensions don't match for in-place addition\n");
+            return;
+        }
+
+        // Check if shapes match
+        for (int i = 0; i < target->dims; i++) {
+            if (target->shape[i] != others[i]->shape[i]) {
+                fprintf(stderr, "Error: Tensor shapes don't match for in-place addition\n");
+                return;
+            }
+        }
+    }
+
+    // Add elements
+    for (int i = 0; i < target->count; i++) {
+        for(int j=0;j<amount;j++)
+            target->data[i] += others[j]->data[i];
+    }
+}
+
 Tensor* tensor_subtract(Tensor* a, Tensor* b) {
     if (!a || !b) return NULL;
 

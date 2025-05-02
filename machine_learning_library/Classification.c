@@ -1,6 +1,6 @@
 #include "classification.h"
 
-ClassificationNetwork* ClassificationNetwork_create(int layerAmount, int* layersSize, int* input_shape, int input_dim, ActivationType* activations, double learnningRate, LossType lossFunction, char** class_names, int num_classes, Tensor* classes)
+ClassificationNetwork* ClassificationNetwork_create(int layerAmount, int* layersSize, int* input_shape, int input_dim, ActivationType* activations, double learnningRate, LossType lossFunction, char** class_names, int num_classes, Tensor* classes, LayerType type)
 {
     if (layerAmount <= 0 || !layersSize || !activations || input_dim <= 0 || !classes || !class_names || num_classes <= 0) {
         fprintf(stderr, "Error: Invalid parameters in ClassificationNetwork_create\n");
@@ -15,7 +15,7 @@ ClassificationNetwork* ClassificationNetwork_create(int layerAmount, int* layers
 
     Cnet->num_classes = num_classes;
     Cnet->one_hot_encode = one_hot_encode(num_classes); 
-    Cnet->net = network_create(layerAmount,layersSize,input_dim, input_shape,activations,learnningRate, lossFunction,LAYER_DENSE); //cant free the network
+    Cnet->net = network_create(layerAmount,layersSize,input_dim, input_shape,activations,learnningRate, lossFunction,type); //cant free the network
     if(!Cnet->net){
         fprintf(stderr, "Error: Memory allocation failed for network in ClassificationNetwork_create_net\n");
         return NULL;
@@ -132,4 +132,9 @@ int get_predicted_class(Tensor* network_output)
     }
 
     return max_idx;
+}
+
+void classification_network_training(ClassificationNetwork* Cnet)
+{
+
 }
