@@ -1,14 +1,16 @@
 #pragma once
 #include "dense_layer.h"
 #include "rnn_layer.h"
+#include "lstm_layer.h"
 
 #define AS_DENSE(l) ((dense_layer*)((l)->params))
 #define AS_RNN(l)   ((rnn_layer*)((l)->params))
-
+#define AS_LSTM(l)   ((lstm_layer*)((l)->params))
 
 typedef enum {
     LAYER_DENSE,
     LAYER_RNN,
+    LAYER_LSTM,
     // LAYER_CONV
 } LayerType;
 
@@ -29,5 +31,10 @@ Tensor* get_layer_output(layer* base_layer);
 Tensor* wrapper_rnn_forward(layer* base_layer, Tensor* input);
 Tensor* wrapper_rnn_backward(layer* base_layer, Tensor* grad, double learning_rate);
 void wrapper_rnn_reset_state(layer* base_layer);
+
 Tensor* wrapper_dense_forward(layer* base_layer, Tensor* input);
 Tensor* wrapper_dense_backward(layer* base_layer, Tensor* grad, double learning_rate);
+
+Tensor* wrapper_lstm_forward(layer* base_layer, Tensor* input);
+Tensor* wrapper_lstm_backward(layer* base_layer, Tensor* grad, double learning_rate);
+void wrapper_lstm_reset_state(layer* base_layer);

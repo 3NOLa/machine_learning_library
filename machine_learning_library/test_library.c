@@ -561,7 +561,7 @@ void test_rnn()
     network_free(net);
 }
 
-test_tokenize()
+void test_tokenize()
 {
     int amount = 0;
     char* text = "hi hello My NAme --koko ++ipo text is *_#bla";
@@ -572,6 +572,63 @@ test_tokenize()
     {
         printf("token %d: %s\n", i, tokens[i]);
     }
+}
+
+void test_lstm()
+{
+    int input_dims = 2;
+    int input_shape[] = { 1, 2 };  // 1 sample, 2 features
+    int layer_sizes[] = { 2 };     // RNN hidden/output size = 2
+    ActivationType activations[] = { SIGMOID };
+    LossType loss_type = MSE;
+    int timestamps = 3;
+
+    // Create network with 1 RNN layer
+    network* net = network_create(1, layer_sizes, input_dims, input_shape, activations, 0.01, loss_type, LAYER_LSTM);
+    if (!net) {
+        fprintf(stderr, "Failed to create RNN network.\n");
+        return 1;
+    }
+
+    // Input: [3 timestamps x 2 features]
+    Tensor* input_seq = tensor_create(2, (int[]) { timestamps, 2 });
+    double input_data[] = {
+        0.1f, 0.2f,
+        0.3f, 0.4f,
+        0.5f, 0.6f
+    };
+    for (int i = 0; i < 6; i++) {
+        input_seq->data[i] = input_data[i];
+    }
+
+    // Target: [3 timestamps x 2 outputs]
+    Tensor* target_seq = tensor_create(2, (int[]) { timestamps, 2 });
+    double target_data[] = {
+        0.5f, 0.0f,
+        0.0f, 0.5f,
+        0.2f, 0.2f
+    };
+    for (int i = 0; i < 6; i++) {
+        target_seq->data[i] = target_data[i];
+    }
+
+    // Train and output error
+    double err = 0.0;
+    for (int i = 0; i < 1000; i++) {
+        err = rnn_train(net, input_seq, target_seq, timestamps);
+        if ((i % 100) == 0)
+            printf("Epoch %d - Error: %.6f\n", i + 1, err);
+    }
+
+
+    //Tensor* output = forwardPropagation(net, input_seq);
+    //printf("Output after training: %.4f\n", tensor_get_element_by_index(output, 0));
+    printf("Final error after 1 pass: %.6f\n", err);
+
+    // Cleanup
+    tensor_free(input_seq);
+    tensor_free(target_seq);
+    network_free(net);
 }
 
 int main() {
@@ -602,6 +659,8 @@ int main() {
     test_rnn();
 
     test_tokenize();
+
+    test_lstm();
 
     printf("\n===== Tests Completed =====\n");
     return 0;

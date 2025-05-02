@@ -189,6 +189,8 @@ void network_train_type(network* net)
         net->train = train;
     case LAYER_RNN:
         net->train = rnn_train;
+    case LAYER_LSTM:
+        net->train = rnn_train;
     default:
         break;
     }

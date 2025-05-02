@@ -22,6 +22,13 @@ layer* general_layer_Initialize(LayerType type, int neuronAmount, int neuronDim,
 		l->free = rnn_layer_free;
 		l->reset_state = wrapper_rnn_reset_state;
 		break;
+	case LAYER_LSTM:
+		l->params = lstm_layer_create(neuronAmount, neuronDim, Activationfunc);
+		l->forward = wrapper_lstm_forward;
+		l->backward = wrapper_lstm_backward;
+		l->free = lstm_layer_free;
+		l->reset_state = wrapper_rnn_reset_state;
+		break;
 	default:
 		fprintf(stderr, "Erorr: not a valid in layer_Initialize\n");
 		return NULL;
@@ -39,6 +46,11 @@ Tensor* wrapper_rnn_backward(layer* base_layer,Tensor* grad, double learning_rat
 	return rnn_layer_backward(rl, grad, learning_rate);
 }
 
+void wrapper_rnn_reset_state(layer* base_layer) {
+	rnn_layer* rl = (rnn_layer*)base_layer->params;
+	rnn_layer_reset_state(rl);
+}
+
 Tensor* wrapper_dense_forward(layer* base_layer, Tensor* input) {
 	dense_layer* dl = (dense_layer*)base_layer->params;
 	return layer_forward(dl, input);
@@ -47,6 +59,24 @@ Tensor* wrapper_dense_forward(layer* base_layer, Tensor* input) {
 Tensor* wrapper_dense_backward(layer* base_layer, Tensor* grad, double learning_rate) {
 	dense_layer* dl = (dense_layer*)base_layer->params;
 	return layer_backward(dl, grad, learning_rate);
+}
+
+Tensor* wrapper_lstm_forward(layer* base_layer, Tensor* input)
+{
+	lstm_layer* ll = (lstm_layer*)base_layer->params;
+	return lstm_layer_forward(ll, input);
+}
+
+Tensor* wrapper_lstm_backward(layer* base_layer, Tensor* grad, double learning_rate)
+{
+	lstm_layer* ll = (lstm_layer*)base_layer->params;
+	return lstm_layer_backward(ll, grad, learning_rate);
+}
+
+void wrapper_lstm_reset_state(layer* base_layer)
+{
+	lstm_layer* ll = (lstm_layer*)base_layer->params;
+	lstm_layer_reset_state(ll);
 }
 
 void general_layer_free(layer* base_layer)
@@ -59,17 +89,15 @@ void general_layer_free(layer* base_layer)
 	case LAYER_RNN:
 		base_layer->free((rnn_layer*)base_layer->params);
 		break;
+	case LAYER_LSTM:
+		base_layer->free((lstm_layer*)base_layer->params);
+		break;
 	default:
 		fprintf(stderr, "Erorr: not a valid in layer_Initialize\n");
 		return NULL;
 		break;
 	}
 	free(base_layer);
-}
-
-void wrapper_rnn_reset_state(layer* base_layer) {
-	rnn_layer* rl = (rnn_layer*)base_layer->params;
-	rnn_layer_reset_state(rl);
 }
 
 Tensor* get_layer_output(layer* base_layer)
@@ -89,6 +117,12 @@ Tensor* get_layer_output(layer* base_layer)
 		output = rl->output;
 		break;
 	}
+	case LAYER_LSTM:
+	{
+		lstm_layer* ll = AS_LSTM(base_layer);
+		output = ll->output;
+		break;
+	}
 	default:
 		fprintf(stderr, "Erorr: not a valid in layer_Initialize\n");
 		return NULL;
@@ -97,3 +131,4 @@ Tensor* get_layer_output(layer* base_layer)
 
 	return output;
 }
+

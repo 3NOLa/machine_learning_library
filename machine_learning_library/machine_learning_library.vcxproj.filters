@@ -60,6 +60,9 @@
     <ClInclude Include="lstm_neuron.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="lstm_layer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Tensor_library.c">
@@ -111,6 +114,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="lstm_neuron.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lstm_layer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
