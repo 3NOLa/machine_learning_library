@@ -18,7 +18,7 @@ typedef struct Layer {
     LayerType type;
     void* params;  
     Tensor* (*forward)(struct Layer* layer, Tensor* input);
-    Tensor* (*backward)(struct Layer* layer, Tensor* grad, double learning_rate);
+    Tensor* (*backward)(struct Layer* layer, Tensor* grad, float  learning_rate);
     void (*free)(struct Layer* layer);
     //rnn only
     void (*reset_state)(struct layer* base_layer);
@@ -29,12 +29,12 @@ void general_layer_free(layer* base_layer);
 Tensor* get_layer_output(layer* base_layer);
 
 Tensor* wrapper_rnn_forward(layer* base_layer, Tensor* input);
-Tensor* wrapper_rnn_backward(layer* base_layer, Tensor* grad, double learning_rate);
+Tensor* wrapper_rnn_backward(layer* base_layer, Tensor* grad, float  learning_rate);
 void wrapper_rnn_reset_state(layer* base_layer);
 
 Tensor* wrapper_dense_forward(layer* base_layer, Tensor* input);
-Tensor* wrapper_dense_backward(layer* base_layer, Tensor* grad, double learning_rate);
+Tensor* wrapper_dense_backward(layer* base_layer, Tensor* grad, float  learning_rate);
 
 Tensor* wrapper_lstm_forward(layer* base_layer, Tensor* input);
-Tensor* wrapper_lstm_backward(layer* base_layer, Tensor* grad, double learning_rate);
+Tensor* wrapper_lstm_backward(layer* base_layer, Tensor* grad, float  learning_rate);
 void wrapper_lstm_reset_state(layer* base_layer);

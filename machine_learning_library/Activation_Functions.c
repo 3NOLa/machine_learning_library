@@ -2,47 +2,47 @@
 #include "neuron.h"
 #include <math.h>
 
-double RELu_function(double value)
+float  RELu_function(float  value)
 {
 	return (value > 0) ? value : 0;
 }
 
-double leaky_RELu_function(double value)
+float  leaky_RELu_function(float  value)
 {
 	return (value > 0) ? value : 0.01 * value;
 }
 
-double Sigmoid_function(double value)
+float  Sigmoid_function(float  value)
 {
 	return 1 / (1 + exp(-value)); //s(x) = 1 / (1 + e^-(x))
 }
 
-double Tanh_function(double value)
+float  Tanh_function(float  value)
 {
-	double x = exp(value);
-	double y = exp(-value);
+	float  x = exp(value);
+	float  y = exp(-value);
 	return (x - y) / (x + y);
 }
 
-double linear_function(double value)
+float  linear_function(float  value)
 {
 	return value;
 }
 
-double gelu_function(double value)
+float  gelu_function(float  value)
 {
-	double s = sqrt(2 / M_PI) * (value + 0.044715 * value * value * value);
+	float  s = sqrt(2 / M_PI) * (value + 0.044715 * value * value * value);
 	return 0.5 * value * (1 + Tanh_function(s));
 }
 
-double swish_function(double value)
+float  swish_function(float  value)
 {
 	return value * Sigmoid_function(value);
 }
 
-double (*ActivationTypeMap(ActivationType function))(double)
+float  (*ActivationTypeMap(ActivationType function))(float )
 {
-	static void (*map[])(double) = { 
+	static void (*map[])(float ) = { 
 		RELu_function, 
 		leaky_RELu_function, 
 		Sigmoid_function, 
@@ -53,45 +53,45 @@ double (*ActivationTypeMap(ActivationType function))(double)
 	return map[function];
 }
 
-double RELu_derivative_function(neuron* n)
+float  RELu_derivative_function(neuron* n)
 {
 	return (n->output > 0) ? 1 : 0;
 }
 
-double leaky_RELu_derivative_function(neuron* n)
+float  leaky_RELu_derivative_function(neuron* n)
 {
 	return (n->output > 0) ? 1 : 0.01;
 }
 
-double Sigmoid_derivative_function(neuron* n)
+float  Sigmoid_derivative_function(neuron* n)
 {
 	return n->output * (1 - n->output); 
 }
 
-double Tanh_derivative_function(neuron* n)
+float  Tanh_derivative_function(neuron* n)
 {
 	return 1 - n->output * n->output; // 1 - tanh^2
 }
 
-double linear_derivative_function(neuron* n)
+float  linear_derivative_function(neuron* n)
 {
 	return 1;
 }
 	
-double gelu_derivative_function(neuron* n)
+float  gelu_derivative_function(neuron* n)
 {
-	double tanh = (2 * n->output) / n->pre_activation - 1;
+	float  tanh = (2 * n->output) / n->pre_activation - 1;
 	return 0.5 * (1 + tanh) + 0.5 * n->pre_activation * (1 - tanh * tanh) * sqrt(2 / M_PI) * (1 + 3 * 0.044715 * n->pre_activation * n->pre_activation);
 }
 
-double swish_derivative_function(neuron* n)
+float  swish_derivative_function(neuron* n)
 {
 	return Sigmoid_function(n->pre_activation) + Sigmoid_derivative_function(n) * n->pre_activation;
 }
 
-double (*ActivationTypeDerivativeMap(ActivationType function))(neuron*)
+float  (*ActivationTypeDerivativeMap(ActivationType function))(neuron*)
 {
-	static double (*map[])(neuron*) = {
+	static float  (*map[])(neuron*) = {
 		RELu_derivative_function,
 		leaky_RELu_derivative_function,
 		Sigmoid_derivative_function,

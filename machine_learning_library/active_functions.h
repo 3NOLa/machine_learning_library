@@ -19,26 +19,26 @@ typedef enum {
 	SWISH
 }ActivationType;
 
-double RELu_function(double value);
-double RELu_derivative_function(neuron* n);
+float  RELu_function(float  value);
+float  RELu_derivative_function(neuron* n);
 
-double leaky_RELu_function(double value);
-double leaky_RELu_derivative_function(neuron* n);
+float  leaky_RELu_function(float  value);
+float  leaky_RELu_derivative_function(neuron* n);
 
-double Sigmoid_function(double value);
-double Sigmoid_derivative_function(neuron* n);
+float  Sigmoid_function(float  value);
+float  Sigmoid_derivative_function(neuron* n);
 
-double Tanh_function(double value);
-double Tanh_derivative_function(neuron* n);
+float  Tanh_function(float  value);
+float  Tanh_derivative_function(neuron* n);
 
-double linear_function(double value);
-double linear_derivative_function(neuron* n);
+float  linear_function(float  value);
+float  linear_derivative_function(neuron* n);
 
-double gelu_function(double value);
-double gelu_derivative_function(neuron* n);
+float  gelu_function(float  value);
+float  gelu_derivative_function(neuron* n);
 
-double swish_function(double value);
-double swish_derivative_function(neuron* n);
+float  swish_function(float  value);
+float  swish_derivative_function(neuron* n);
 
-double (*ActivationTypeMap(ActivationType function))(double); 
-double (*ActivationTypeDerivativeMap(ActivationType function))(neuron*);
+float  (*ActivationTypeMap(ActivationType function))(float ); 
+float  (*ActivationTypeDerivativeMap(ActivationType function))(neuron*);

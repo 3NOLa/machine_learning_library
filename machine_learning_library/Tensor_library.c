@@ -37,7 +37,7 @@ Tensor* tensor_create(int dims, int* shape) {
         t->strides[i] = t->strides[i + 1] * t->shape[i + 1];
     }
 
-    t->data = (double*)malloc(sizeof(double) * t->count);
+    t->data = (float *)malloc(sizeof(float ) * t->count);
     if (!t->data) {
         fprintf(stderr, "Error: Memory allocation failed for tensor data\n");
         free(t->shape);
@@ -78,7 +78,7 @@ Tensor* tensor_random_create(int dims, int* shape) {
     if (!t) return NULL;
 
     for (int i = 0; i < t->count; i++) {
-        t->data[i] = ((double)rand() / RAND_MAX) * 2.0 - 1.0; // Range [-1, 1]
+        t->data[i] = ((float )rand() / RAND_MAX) * 2.0 - 1.0; // Range [-1, 1]
     }
 
     return t;
@@ -133,7 +133,7 @@ void tensor_free(Tensor* t) {
     }
 }
 
-void tensor_set_by_index(Tensor* t, int index, double value) {
+void tensor_set_by_index(Tensor* t, int index, float  value) {
     if (!t || index < 0 || index >= t->count) {
         fprintf(stderr, "Error: Index out of bounds in tensor_set_by_index\n");
         return;
@@ -200,19 +200,19 @@ int tensor_get_index(Tensor* t, int* indices) {
 }
 
 
-double tensor_get_element_by_index(Tensor* t, int index)
+float  tensor_get_element_by_index(Tensor* t, int index)
 {
     return t->data[index];
 }
 
-double tensor_get_element(Tensor* t, int* indices) {
+float  tensor_get_element(Tensor* t, int* indices) {
     int index = tensor_get_index(t, indices);
     if (index == -1) return 0.0; // Error case
 
     return tensor_get_element_by_index(t, index);
 }
 
-void tensor_set(Tensor* t, int* indices, double value) {
+void tensor_set(Tensor* t, int* indices, float  value) {
     if (!t) {
         fprintf(stderr, "Error: NULL matrix in tensor_set\n");
         return;
@@ -220,7 +220,7 @@ void tensor_set(Tensor* t, int* indices, double value) {
     t->data[tensor_get_index(t,indices)] = value;
 }
 
-void tensor_set_bt_index(Tensor* t, int index, double value) {
+void tensor_set_bt_index(Tensor* t, int index, float  value) {
     if (!t) {
         fprintf(stderr, "Error: NULL matrix in tensor_set\n");
         return;
@@ -234,7 +234,7 @@ int tensor_copy(Tensor* dest,Tensor* src) {
     //Tensor* t = tensor_create(src->dims, src->shape);
     //if (!t) return NULL;
 
-    memcpy(dest->data, src->data, sizeof(double) * src->count);
+    memcpy(dest->data, src->data, sizeof(float ) * src->count);
     return 1;
     //return t;
 }
@@ -258,7 +258,7 @@ Tensor* tensor_reshape(Tensor* t, int dims, int* shape) {
     if (!result) return NULL;
 
     // Copy data
-    memcpy(result->data, t->data, sizeof(double) * t->count);
+    memcpy(result->data, t->data, sizeof(float ) * t->count);
 
     return result;
 }
@@ -297,7 +297,7 @@ Tensor* tensor_slice_range(Tensor* t, int start, int end)
 
     // Copy the slice
     int offset = start * inner_count;
-    memcpy(result->data, t->data + offset, sizeof(double) * inner_count * outer_dim);
+    memcpy(result->data, t->data + offset, sizeof(float ) * inner_count * outer_dim);
 
     return result;
 }
@@ -344,7 +344,7 @@ Tensor* tensor_get_row(Tensor* t, int row) {
         }
 
         // Get value and set in row tensor
-        double value = tensor_get_element(t, indices);
+        float  value = tensor_get_element(t, indices);
         tensor_set_by_index(row_tensor, i, value);
     }
 
@@ -395,7 +395,7 @@ Tensor* tensor_get_row(Tensor* t, int row) {
         }
 
         // Get value and set in column tensor
-        double value = tensor_get_element(t, indices);
+        float  value = tensor_get_element(t, indices);
         tensor_set_by_index(col_tensor, i, value);
     }
 
@@ -563,7 +563,7 @@ Tensor* tensor_dot(Tensor* a, Tensor* b) {
     // Perform matrix multiplication
     for (int i = 0; i < a->shape[0]; i++) {
         for (int j = 0; j < b->shape[1]; j++) {
-            double sum = 0.0;
+            float  sum = 0.0;
             for (int k = 0; k < a->shape[1]; k++) {
                 int a_indices[2] = { i, k };
                 int b_indices[2] = { k, j };
@@ -577,7 +577,7 @@ Tensor* tensor_dot(Tensor* a, Tensor* b) {
     return result;
 }
 
-Tensor* tensor_add_scalar(Tensor* t, double scalar) {
+Tensor* tensor_add_scalar(Tensor* t, float  scalar) {
     if (!t) return NULL;
 
     Tensor* result = tensor_create(t->dims, t->shape);
@@ -590,7 +590,7 @@ Tensor* tensor_add_scalar(Tensor* t, double scalar) {
     return result;
 }
 
-Tensor* tensor_multiply_scalar(Tensor* t, double scalar) {
+Tensor* tensor_multiply_scalar(Tensor* t, float  scalar) {
     if (!t) return NULL;
 
     Tensor* result = tensor_create(t->dims, t->shape);
@@ -603,10 +603,10 @@ Tensor* tensor_multiply_scalar(Tensor* t, double scalar) {
     return result;
 }
 
-double tensor_sum(Tensor* t) {
+float  tensor_sum(Tensor* t) {
     if (!t) return 0.0;
 
-    double sum = 0.0;
+    float  sum = 0.0;
     for (int i = 0; i < t->count; i++) {
         sum += t->data[i];
     }
@@ -614,7 +614,7 @@ double tensor_sum(Tensor* t) {
     return sum;
 }
 
-double tensor_mean(Tensor* t) {
+float  tensor_mean(Tensor* t) {
     if (!t || t->count == 0) return 0.0;
 
     return tensor_sum(t) / t->count;

@@ -70,12 +70,12 @@ int char_to_int(char* str)
 	return number * sign;
 }
 
-double char_to_double(char* str)
+float  char_to_double(char* str)
 {
 	if (!str) return 0.0;
 
-	double sign = 1.0;
-	double number = 0.0;
+	float  sign = 1.0;
+	float  number = 0.0;
 
 	if (*str == '-') {
 		sign = -1.0;
@@ -93,7 +93,7 @@ double char_to_double(char* str)
 
 	if (*str == '.') {
 		str++;
-		double fraction = 0.1;
+		float  fraction = 0.1;
 		while (*str && isdigit(*str))
 		{
 			number += (*str - '0') * fraction;
@@ -424,10 +424,10 @@ void read_file_to_tensor(csv_handler* hand)
         int col_idx = 0;
 
         while (token && col_idx < hand->cols) {
-            double value = 0.0;
+            float  value = 0.0;
 
             if (hand->cols_type[col_idx] == INT) {
-                value = (double)char_to_int(token);
+                value = (float )char_to_int(token);
             }
             else if (hand->cols_type[col_idx] == DOUBLE) {
                 value = char_to_double(token);
@@ -506,7 +506,7 @@ void print_csv_file_hand(csv_handler* hand)
         for (int c = 0; c < hand->cols; c++)
         {
             if (hand->data && r < hand->data->shape[0] && c < hand->data->shape[1]) {
-                double value = tensor_get_element(hand->data, (int[]) { r, c });
+                float  value = tensor_get_element(hand->data, (int[]) { r, c });
 
                 switch (hand->cols_type[c]) {
                 case INT:

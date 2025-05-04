@@ -1,7 +1,7 @@
 #include "classification.h"
 
 
-network* network_create(int layerAmount, int* layersSize, int input_dims, int* input_shape, ActivationType* activations, double learnningRate, LossType lossFunction,LayerType type)
+network* network_create(int layerAmount, int* layersSize, int input_dims, int* input_shape, ActivationType* activations, float  learnningRate, LossType lossFunction,LayerType type)
 {
     if (layerAmount <= 0 || !layersSize || !activations || input_dims <= 0 || !input_shape) {
         fprintf(stderr, "Error: Invalid parameters in network_create\n");
@@ -301,7 +301,7 @@ int backpropagation(network* net, Tensor* predictions, Tensor* targets)
     return 1;
 }
 
-double train(network* net, Tensor* input, Tensor* target)
+float  train(network* net, Tensor* input, Tensor* target)
 {
     if (!net || !input || !target) {
         fprintf(stderr, "Error: NULL parameters in train\n");
@@ -316,7 +316,7 @@ double train(network* net, Tensor* input, Tensor* target)
     }
 
     // Calculate error
-    double error = net->LossFuntionPointer(net, target);
+    float  error = net->LossFuntionPointer(net, target);
 
     // Backward pass
     if (!backpropagation(net, predictions, target)) {
@@ -331,7 +331,7 @@ double train(network* net, Tensor* input, Tensor* target)
     return error;
 }
 
-double rnn_train(network* net, Tensor* input, Tensor* target, int timestamps)
+float  rnn_train(network* net, Tensor* input, Tensor* target, int timestamps)
 {
     if (!net || !input || !target) {
         fprintf(stderr, "Error: NULL parameters in train\n");
@@ -353,7 +353,7 @@ double rnn_train(network* net, Tensor* input, Tensor* target, int timestamps)
         predictions = pred;
     }
     // Calculate error
-    double error = net->LossFuntionPointer(net, target);
+    float  error = net->LossFuntionPointer(net, target);
 
 
     // Backward pass
@@ -377,7 +377,7 @@ void network_training(network* net, Tensor* input, Tensor* target, int epcho, in
         Tensor* input_batch = tensor_slice_range(input, i, current_batch);
         Tensor* output_batch = tensor_slice_range(target, i, current_batch);
 
-        double error = train(net, input_batch, output_batch);
+        float  error = train(net, input_batch, output_batch);
 
         if (i % (epcho/10) == 0) {
             printf("Iteration %d, Error: %.4f\n", i, error);

@@ -31,7 +31,7 @@ typedef struct {
 int int_check(char* str);
 int double_check(char* str);
 int char_to_int(char* str);
-double char_to_double(char* str);
+float  char_to_double(char* str);
 int* stringCol_to_numeric(char** col, int size);
 char* stringCol_to_uniq_map(char** col, int size, int* out_size);//returns an array that have any string in the col as a number(every index is the numeric value)
 int* stringColAndMap_to_numeric(char** col, char** map, int map_size, int col_size);

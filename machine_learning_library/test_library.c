@@ -127,18 +127,18 @@ void test_activation_functions() {
     printf("\n===== Testing Activation Functions =====\n");
 
     // Test values
-    double test_values[] = { -2.0, -1.0, -0.5, 0.0, 0.5, 1.0, 2.0 };
+    float  test_values[] = { -2.0, -1.0, -0.5, 0.0, 0.5, 1.0, 2.0 };
     int num_values = sizeof(test_values) / sizeof(test_values[0]);
 
     printf("Input\tReLU\tSigmoid\tTanh\tlinear\tGelu\tleaky_relu\n");
     for (int i = 0; i < num_values; i++) {
-        double x = test_values[i];
-        double relu = RELu_function(x);
-        double sigmoid = Sigmoid_function(x);
-        double tanh_val = Tanh_function(x);
-        double linear = linear_function(x);
-        double gelu = gelu_function(x);
-        double leaky_relu = leaky_RELu_function(x);
+        float  x = test_values[i];
+        float  relu = RELu_function(x);
+        float  sigmoid = Sigmoid_function(x);
+        float  tanh_val = Tanh_function(x);
+        float  linear = linear_function(x);
+        float  gelu = gelu_function(x);
+        float  leaky_relu = leaky_RELu_function(x);
 
         printf("%.1f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\n", x, relu, sigmoid, tanh_val,linear,gelu,leaky_relu);
     }
@@ -150,31 +150,31 @@ void test_activation_functions() {
         n->pre_activation = test_values[i];
 
         n->output = RELu_function(n->pre_activation);
-        double relu_derivative = RELu_derivative_function(n);
+        float  relu_derivative = RELu_derivative_function(n);
 
         n->output = Sigmoid_function(n->pre_activation);
-        double sigmoid_derivative = Sigmoid_derivative_function(n);
+        float  sigmoid_derivative = Sigmoid_derivative_function(n);
 
         n->output = Tanh_function(n->pre_activation);
-        double tanh_derivative = Tanh_derivative_function(n);
+        float  tanh_derivative = Tanh_derivative_function(n);
 
         n->output = linear_function(n->pre_activation);
-        double linear_derivative = linear_derivative_function(n);
+        float  linear_derivative = linear_derivative_function(n);
 
         n->output = gelu_function(n->pre_activation);
-        double gelu_derivative = gelu_derivative_function(n);
+        float  gelu_derivative = gelu_derivative_function(n);
 
-        double leaky_relu = leaky_RELu_function(n->pre_activation);
-        double leaky_relu_derivative = leaky_RELu_derivative_function(n);
+        float  leaky_relu = leaky_RELu_function(n->pre_activation);
+        float  leaky_relu_derivative = leaky_RELu_derivative_function(n);
 
         printf("%.1f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\n", test_values[i], relu_derivative, sigmoid_derivative, tanh_derivative, linear_derivative, gelu_derivative, leaky_relu_derivative);
     }
     neuron_free(n);
 
     // In test_activation_functions, add this test
-    double x = 0.5;
-    double sigmoid_val = Sigmoid_function(x);
-    double sigmoid_deriv = sigmoid_val * (1 - sigmoid_val);
+    float  x = 0.5;
+    float  sigmoid_val = Sigmoid_function(x);
+    float  sigmoid_deriv = sigmoid_val * (1 - sigmoid_val);
     printf("Manual check: sigmoid(%.1f)=%.4f, sigmoid'(%.1f)=%.4f\n",
         x, sigmoid_val, x, sigmoid_deriv);
 }
@@ -208,7 +208,7 @@ void test_single_neuron() {
     tensor_set(input, index1, 0.5);
     tensor_set(input, index2, -0.5);
 
-    double output = neuron_activation(input, n);
+    float  output = neuron_activation(input, n);
     printf("Input: [0.5, -0.5]\nOutput: %.4f\n", output);
 
     // Test backward pass
@@ -329,7 +329,7 @@ void test_neural_network() {
     int epochs = 1000;
     print_network_weights(net);
     for (int epoch = 0; epoch < epochs; epoch++) {
-        double total_error = 0.0;
+        float  total_error = 0.0;
 
         for (int i = 0; i < 4; i++) {
             // Get a single training example using tensor_slice instead of tensor_get_row
@@ -344,7 +344,7 @@ void test_neural_network() {
             }
 
             // Train on this example
-            double error = train(net, single_input, single_output);
+            float  error = train(net, single_input, single_output);
             total_error += error;
 
             // Free the sliced tensors
@@ -437,7 +437,7 @@ void test_2d_input() {
 
     // Train for a few iterations
     for (int i = 0; i < 1000; i++) {
-        double error = train(net, input, target);
+        float  error = train(net, input, target);
         if (i % 100 == 0) {
             printf("Iteration %d, Error: %.4f\n", i, error);
         }
@@ -522,7 +522,7 @@ void test_rnn()
 
     // Input: [3 timestamps x 2 features]
     Tensor* input_seq = tensor_create(2, (int[]) { timestamps, 2 });
-    double input_data[] = {
+    float  input_data[] = {
         0.1f, 0.2f,
         0.3f, 0.4f,
         0.5f, 0.6f
@@ -533,7 +533,7 @@ void test_rnn()
 
     // Target: [3 timestamps x 2 outputs]
     Tensor* target_seq = tensor_create(2, (int[]) { timestamps, 2 });
-    double target_data[] = {
+    float  target_data[] = {
         0.5f, 0.0f,
         0.0f, 0.5f,
         0.2f, 0.2f
@@ -543,7 +543,7 @@ void test_rnn()
     }
 
     // Train and output error
-    double err = 0.0;
+    float  err = 0.0;
     for (int i = 0; i < 1000; i++) {
         err = rnn_train(net, input_seq, target_seq, timestamps);
         if((i % 100) == 0)
@@ -592,7 +592,7 @@ void test_lstm()
 
     // Input: [3 timestamps x 2 features]
     Tensor* input_seq = tensor_create(2, (int[]) { timestamps, 2 });
-    double input_data[] = {
+    float  input_data[] = {
         0.1f, 0.2f,
         0.3f, 0.4f,
         0.5f, 0.6f
@@ -603,7 +603,7 @@ void test_lstm()
 
     // Target: [3 timestamps x 2 outputs]
     Tensor* target_seq = tensor_create(2, (int[]) { timestamps, 2 });
-    double target_data[] = {
+    float  target_data[] = {
         0.5f, 0.0f,
         0.0f, 0.5f,
         0.2f, 0.2f
@@ -613,7 +613,7 @@ void test_lstm()
     }
 
     // Train and output error
-    double err = 0.0;
+    float  err = 0.0;
     for (int i = 0; i < 1000; i++) {
         err = rnn_train(net, input_seq, target_seq, timestamps);
         if ((i % 100) == 0)

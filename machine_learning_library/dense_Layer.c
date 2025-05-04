@@ -103,7 +103,7 @@ Tensor* layer_forward(dense_layer* l, Tensor* input)
     }
 
     for (int i = 0; i < l->neuronAmount; i++) {
-        double activation = neuron_activation(input, l->neurons[i]);
+        float  activation = neuron_activation(input, l->neurons[i]);
 
         tensor_set(output, (int[]) { 0, i }, activation);
     }
@@ -116,7 +116,7 @@ Tensor* layer_forward(dense_layer* l, Tensor* input)
     return output;
 }
 
-Tensor* layer_backward(dense_layer* l, Tensor* input_gradients, double learning_rate)
+Tensor* layer_backward(dense_layer* l, Tensor* input_gradients, float  learning_rate)
 {
     if (!l || !input_gradients) {
         fprintf(stderr, "Error: NULL dense_layer or gradients in layer_backward\n");
@@ -146,7 +146,7 @@ Tensor* layer_backward(dense_layer* l, Tensor* input_gradients, double learning_
     for (int i = 0; i < l->neuronAmount; i++) {
         // Get this neuron's portion of the gradient using proper tensor access
         int grad_indices[2] = {0, i };
-        double neuron_gradient = tensor_get_element(input_gradients, grad_indices);
+        float  neuron_gradient = tensor_get_element(input_gradients, grad_indices);
 
         // Compute gradients for this neuron's weights and bias
         // Also get gradients with respect to inputs
@@ -162,8 +162,8 @@ Tensor* layer_backward(dense_layer* l, Tensor* input_gradients, double learning_
             int out_indices[2] = {0, j };
             int in_indices[2] = {0, j };
 
-            double current = tensor_get_element(output_gradients, out_indices);
-            double to_add = tensor_get_element(neuron_input_gradients, in_indices);
+            float  current = tensor_get_element(output_gradients, out_indices);
+            float  to_add = tensor_get_element(neuron_input_gradients, in_indices);
 
             tensor_set(output_gradients, out_indices, current + to_add);
         }

@@ -1,6 +1,6 @@
 #include "classification.h"
 
-ClassificationNetwork* ClassificationNetwork_create(int layerAmount, int* layersSize, int* input_shape, int input_dim, ActivationType* activations, double learnningRate, LossType lossFunction, char** class_names, int num_classes, Tensor* classes, LayerType type)
+ClassificationNetwork* ClassificationNetwork_create(int layerAmount, int* layersSize, int* input_shape, int input_dim, ActivationType* activations, float  learnningRate, LossType lossFunction, char** class_names, int num_classes, Tensor* classes, LayerType type)
 {
     if (layerAmount <= 0 || !layersSize || !activations || input_dim <= 0 || !classes || !class_names || num_classes <= 0) {
         fprintf(stderr, "Error: Invalid parameters in ClassificationNetwork_create\n");
@@ -121,7 +121,7 @@ int get_predicted_class(Tensor* network_output)
     }
 
     // Find the index of the maximum value in the output
-    double max_val = network_output->data[0];
+    float  max_val = network_output->data[0];
     int max_idx = 0;
 
     for (int i = 1; i < network_output->count; i++) {

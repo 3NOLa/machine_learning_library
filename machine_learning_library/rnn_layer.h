@@ -13,6 +13,6 @@ typedef struct {
 
 rnn_layer* rnn_layer_create(int neuronAmount, int neuronDim, ActivationType Activationfunc);
 Tensor* rnn_layer_forward(rnn_layer* rl, Tensor* input);
-Tensor* rnn_layer_backward(rnn_layer* rl, Tensor* output_gradients, double learning_rate);
+Tensor* rnn_layer_backward(rnn_layer* rl, Tensor* output_gradients, float  learning_rate);
 void rnn_layer_reset_state(rnn_layer* rl);
 void rnn_layer_free(rnn_layer* rl);

@@ -41,7 +41,7 @@ lstm_neuron* lstm_neuron_create(int weightslength, ActivationType func, int laye
     return ln;
 }
 
-double lstm_neuron_activation(Tensor* input, lstm_neuron* ln)
+float  lstm_neuron_activation(Tensor* input, lstm_neuron* ln)
 {
     if (!input || !ln) {
         fprintf(stderr, "Error: NULL input or neuron in neuron_activation\n");
@@ -62,33 +62,33 @@ double lstm_neuron_activation(Tensor* input, lstm_neuron* ln)
     //forget gate
     ln->f_g->timestamp = ln->timestamp;
     ln->f_g->hidden_state = ln->short_memory;
-    double f_g_sum = rnn_neuron_activation(input,ln->f_g);
+    float  f_g_sum = rnn_neuron_activation(input,ln->f_g);
 
     ln->long_memory *= f_g_sum;
     
     //input gate
     ln->i_g_r->timestamp = ln->timestamp;
     ln->i_g_r->hidden_state = ln->short_memory;
-    double i_g_r_sum = rnn_neuron_activation(input, ln->i_g_r);
+    float  i_g_r_sum = rnn_neuron_activation(input, ln->i_g_r);
 
     ln->i_g_p->timestamp = ln->timestamp;
     ln->i_g_p->hidden_state = ln->short_memory;
-    double i_g_p_sum = rnn_neuron_activation(input, ln->i_g_p);
+    float  i_g_p_sum = rnn_neuron_activation(input, ln->i_g_p);
 
     ln->long_memory += i_g_r_sum * i_g_p_sum;
 
     //output gate
     ln->o_g_r->timestamp = ln->timestamp;
     ln->o_g_r->hidden_state = ln->short_memory;
-    double o_g_r_sum = rnn_neuron_activation(input, ln->o_g_r);
+    float  o_g_r_sum = rnn_neuron_activation(input, ln->o_g_r);
 
-    double o_g_p_sum = Tanh_function(ln->long_memory);
+    float  o_g_p_sum = Tanh_function(ln->long_memory);
     ln->long_memory_history[ln->timestamp] = ln->short_memory = o_g_r_sum * o_g_p_sum;
 
     return ln->short_memory_history[ln->timestamp] = ln->short_memory;
 }
 
-Tensor* lstm_neuron_backward(double derivative, lstm_neuron* ln, double learning_rate)
+Tensor* lstm_neuron_backward(float  derivative, lstm_neuron* ln, float  learning_rate)
 {
     if (!ln) {
         fprintf(stderr, "Error: NULL neuron or input history in lstm_neuron_backward\n");
@@ -101,26 +101,26 @@ Tensor* lstm_neuron_backward(double derivative, lstm_neuron* ln, double learning
         return NULL;
     }
 
-    double activation_derivative = Tanh_function(ln->long_memory_history[ln->timestamp]);
-    double pre_activation_gradient = derivative * activation_derivative;
+    float  activation_derivative = Tanh_function(ln->long_memory_history[ln->timestamp]);
+    float  pre_activation_gradient = derivative * activation_derivative;
     ln->o_g_r->timestamp = ln->timestamp;
     Tensor* o_g_r_tensor = rnn_neuron_backward(pre_activation_gradient, ln->o_g_r, learning_rate);
     
     neuron n_value;
     neuron* n = &n_value;
     n->output = ln->long_memory_history[ln->timestamp];
-    double long_term_derviatve = Tanh_derivative_function(n) * derivative * ln->o_g_r->hidden_state_history[ln->o_g_r->timestamp];//DIDNT ADD L / ct+1 * ft +1
+    float  long_term_derviatve = Tanh_derivative_function(n) * derivative * ln->o_g_r->hidden_state_history[ln->o_g_r->timestamp];//DIDNT ADD L / ct+1 * ft +1
 
     ln->f_g->timestamp = ln->timestamp;
-    double f_g_derivative = long_term_derviatve * ln->long_memory_history[ln->timestamp - 1];
+    float  f_g_derivative = long_term_derviatve * ln->long_memory_history[ln->timestamp - 1];
     Tensor* f_g_tensor = rnn_neuron_backward(f_g_derivative, ln->f_g, learning_rate);
 
     ln->i_g_r->timestamp = ln->timestamp;
-    double i_g_r_derivative = long_term_derviatve * ln->i_g_p->hidden_state_history[ln->timestamp];
+    float  i_g_r_derivative = long_term_derviatve * ln->i_g_p->hidden_state_history[ln->timestamp];
     Tensor* i_g_r_tensor = rnn_neuron_backward(derivative, ln->i_g_r, learning_rate);
 
     ln->i_g_p->timestamp = ln->timestamp;
-    double i_g_p_derivative = long_term_derviatve * ln->i_g_r->hidden_state_history[ln->timestamp];
+    float  i_g_p_derivative = long_term_derviatve * ln->i_g_r->hidden_state_history[ln->timestamp];
     Tensor* i_g_p_tensor = rnn_neuron_backward(i_g_p_derivative, ln->i_g_p, learning_rate);
 
     tensor_add_more_inplace(o_g_r_tensor, (Tensor* []) { f_g_tensor , i_g_r_tensor, i_g_p_tensor}, 3);

@@ -1,7 +1,7 @@
 #include "classification.h"
 
 
-double squared_error_net(network* net, Tensor* y_real)
+float  squared_error_net(network* net, Tensor* y_real)
 {
     if (!net || !y_real || !get_layer_output(net->layers[net->layerAmount - 1])) {
         fprintf(stderr, "Error: NULL tensors in squared_error\n");
@@ -10,9 +10,9 @@ double squared_error_net(network* net, Tensor* y_real)
 
     Tensor* y_hat = get_layer_output(net->layers[net->layerAmount - 1]);
 
-    double error = 0.0;
+    float  error = 0.0;
     for (int i = 0; i < y_hat->count; i++) {
-        double diff = y_real->data[i] - y_hat->data[i];
+        float  diff = y_real->data[i] - y_hat->data[i];
         error += diff * diff;
     }
 
@@ -43,7 +43,7 @@ Tensor* derivative_squared_error_net(network* net, Tensor* y_real)
     return derivative;
 }
 
-double absolute_error_net(network* net, Tensor* y_real)
+float  absolute_error_net(network* net, Tensor* y_real)
 {
     if (!net || !y_real || !get_layer_output(net->layers[net->layerAmount - 1])) {
         fprintf(stderr, "Error: NULL tensors in squared_error\n");
@@ -52,7 +52,7 @@ double absolute_error_net(network* net, Tensor* y_real)
 
     Tensor* y_hat = get_layer_output(net->layers[net->layerAmount - 1]);
 
-    double error = 0.0;
+    float  error = 0.0;
     for (int i = 0; i < y_hat->count; i++) {
         error += (y_real->data[i] - y_hat->data[i] > 0)? y_real->data[i] - y_hat->data[i] : (y_real->data[i] - y_hat->data[i]) * (-1);
     }
@@ -68,7 +68,7 @@ Tensor* derivative_absolute_error_net(network* net, Tensor* y_real)
     }
 
     Tensor* y_hat = get_layer_output(net->layers[net->layerAmount - 1]);
-    double epsilon = 1e-15;  // Small constant to prevent division by zero
+    float  epsilon = 1e-15;  // Small constant to prevent division by zero
     Tensor* derivative = tensor_create(y_hat->dims, y_hat->shape);
     if (!derivative) {
         fprintf(stderr, "Error: Failed to create derivative tensor in derivative_squared_error\n");
@@ -86,14 +86,14 @@ Tensor* derivative_absolute_error_net(network* net, Tensor* y_real)
     return derivative;
 }
 
-double Categorical_Cross_Entropy_net(network* net, Tensor* y_real)
+float  Categorical_Cross_Entropy_net(network* net, Tensor* y_real)
 {
     int real_class = get_predicted_class(y_real);
 
     Tensor* y_hat = get_layer_output(net->layers[net->layerAmount - 1]);
     int pred_class = get_predicted_class(y_hat);
 
-    double loss = -log(y_hat->data[real_class]);
+    float  loss = -log(y_hat->data[real_class]);
 
     return loss;
 }
@@ -105,7 +105,7 @@ Tensor* derivative_Categorical_Cross_Entropy_net(network* net, Tensor* y_real)
         return NULL;
     }
 
-    double epsilon = 1e-15;  // Small constant to prevent division by zero
+    float  epsilon = 1e-15;  // Small constant to prevent division by zero
     Tensor* y_hat = get_layer_output(net->layers[net->layerAmount - 1]);
     Tensor* derivative = tensor_create(y_hat->dims, y_hat->shape);
     if (!derivative) {
@@ -118,7 +118,7 @@ Tensor* derivative_Categorical_Cross_Entropy_net(network* net, Tensor* y_real)
     {
         if (i == real_class)
         {
-            double y_hat_val = fmax(y_hat->data[i], epsilon); // prevent log(0)
+            float  y_hat_val = fmax(y_hat->data[i], epsilon); // prevent log(0)
             derivative->data[i] = -1.0 / y_hat_val;
         }
         else
@@ -128,9 +128,9 @@ Tensor* derivative_Categorical_Cross_Entropy_net(network* net, Tensor* y_real)
     return derivative;
 }
 
-double (*LossTypeMap(LossType function))(network*, Tensor*)
+float  (*LossTypeMap(LossType function))(network*, Tensor*)
 {
-    static double (*map[])(network*, Tensor*) = {
+    static float  (*map[])(network*, Tensor*) = {
         squared_error_net,
         absolute_error_net,
         NULL,
@@ -142,7 +142,7 @@ double (*LossTypeMap(LossType function))(network*, Tensor*)
 
 Tensor* (*LossTypeDerivativeMap(LossType function))(network*, Tensor*)
 {
-    static double (*map[])(network*, Tensor*) = {
+    static float  (*map[])(network*, Tensor*) = {
         derivative_squared_error_net,
         derivative_absolute_error_net,
         NULL,

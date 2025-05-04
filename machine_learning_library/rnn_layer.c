@@ -69,7 +69,7 @@ Tensor* rnn_layer_forward(rnn_layer* rl, Tensor* input)
         rl->neurons[i]->hidden_state = tensor_get_element(rl->output, (int[]) {0,i});
         //set neuron to the right timestamp
         rl->neurons[i]->timestamp = rl->sequence_length;
-        double activation = rnn_neuron_activation(input, rl->neurons[i]);
+        float  activation = rnn_neuron_activation(input, rl->neurons[i]);
 
         tensor_set(output, (int[]) { 0, i }, activation);
     }
@@ -84,7 +84,7 @@ Tensor* rnn_layer_forward(rnn_layer* rl, Tensor* input)
     return output;
 }
  
-Tensor* rnn_layer_backward(rnn_layer* rl, Tensor* output_gradients, double learning_rate)
+Tensor* rnn_layer_backward(rnn_layer* rl, Tensor* output_gradients, float  learning_rate)
 {
     if (!rl || !output_gradients) {
         fprintf(stderr, "Error: NULL dense_layer or gradients in rnn_layer_backward\n");
@@ -109,7 +109,7 @@ Tensor* rnn_layer_backward(rnn_layer* rl, Tensor* output_gradients, double learn
             //set neuron timestamp to the correct one
             rl->neurons[i]->timestamp = t;
             // Get the gradient for this neuron's output
-            double output_gradient = tensor_get_element(output_gradients, (int[]) { 0, i });
+            float  output_gradient = tensor_get_element(output_gradients, (int[]) { 0, i });
 
             // Backpropagate through this neuron
             Tensor* neuron_input_gradients = rnn_neuron_backward(output_gradient, rl->neurons[i], learning_rate);
@@ -127,8 +127,8 @@ Tensor* rnn_layer_backward(rnn_layer* rl, Tensor* output_gradients, double learn
             else {
                 // Add this neuron's gradients to the accumulated gradients
                 for (int j = 0; j < neuron_input_gradients->count; j++) {
-                    double current = tensor_get_element_by_index(timestep_input_gradients, j);
-                    double to_add = tensor_get_element_by_index(neuron_input_gradients, j);
+                    float  current = tensor_get_element_by_index(timestep_input_gradients, j);
+                    float  to_add = tensor_get_element_by_index(neuron_input_gradients, j);
                     tensor_set_by_index(timestep_input_gradients, j, current + to_add);
                 }
             }
@@ -143,8 +143,8 @@ Tensor* rnn_layer_backward(rnn_layer* rl, Tensor* output_gradients, double learn
         else {
             // Add this timestep's gradients to the accumulated gradients
             for (int j = 0; j < timestep_input_gradients->count; j++) {
-                double current = tensor_get_element_by_index(accumulated_input_gradients, j);
-                double to_add = tensor_get_element_by_index(timestep_input_gradients, j);
+                float  current = tensor_get_element_by_index(accumulated_input_gradients, j);
+                float  to_add = tensor_get_element_by_index(timestep_input_gradients, j);
                 tensor_set_by_index(accumulated_input_gradients, j, current + to_add);
             }
             tensor_free(timestep_input_gradients);

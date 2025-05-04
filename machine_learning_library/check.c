@@ -66,7 +66,7 @@ void test_trainnig_neural_net()
     
     for (int i = 0; i < 30; i++)
     {
-        double error = train(net, data, y_real);
+        float  error = train(net, data, y_real);
         printf("loop %d error [%lf]\n", i, error);
     }
 

@@ -15,17 +15,17 @@ typedef struct {
 	int layerAmount;
 	layer** layers;
 	int* layersSize;
-	double learnningRate;
+	float  learnningRate;
 	LossType lossFunction;
-	double (*LossFuntionPointer)(struct network*, Tensor*);
+	float  (*LossFuntionPointer)(struct network*, Tensor*);
 	Tensor* (*LossDerivativePointer)(struct network*, Tensor*);
-	double (*train)(struct network*, Tensor*, Tensor*);
+	float  (*train)(struct network*, Tensor*, Tensor*);
 	int input_dims;
 	int* input_shape;
 	LayerType type;
 }network;
 
-network* network_create(int layerAmount, int* layersSize, int input_dims, int* input_shape, ActivationType* activations, double learnningRate, LossType lossFunction, LayerType type);
+network* network_create(int layerAmount, int* layersSize, int input_dims, int* input_shape, ActivationType* activations, float  learnningRate, LossType lossFunction, LayerType type);
 network* network_create_empty();
 int add_layer(network* net, int layerSize, ActivationType Activationfunc, int input_dim);// add input layer if first layer otherwise put 0
 void network_free(network* net);
@@ -34,22 +34,22 @@ void network_train_type(network* net);
 Tensor* forwardPropagation(network* net, Tensor* data);
 int backpropagation(network* net, Tensor* predictions, Tensor* targets);
 
-double train(network* net, Tensor* input, Tensor* target);
+float  train(network* net, Tensor* input, Tensor* target);
 void network_training(network* net, Tensor* input, Tensor* target, int epcho,int batch_size);
-double rnn_train(network* net, Tensor* input, Tensor* target, int timestamps);
+float  rnn_train(network* net, Tensor* input, Tensor* target, int timestamps);
 
 // implemented in loss_Functions.c
-double squared_error_net(network* net, Tensor* y_real);
+float  squared_error_net(network* net, Tensor* y_real);
 Tensor* derivative_squared_error_net(network* net, Tensor* y_real);
 
-double absolute_error_net(network* net, Tensor* y_real);
+float  absolute_error_net(network* net, Tensor* y_real);
 Tensor* derivative_absolute_error_net(network* net, Tensor* y_real);
 
-double absolute_error_net(network* net, Tensor* y_real);
+float  absolute_error_net(network* net, Tensor* y_real);
 Tensor* derivative_absolute_error_net(network* net, Tensor* y_real);
 
-double Categorical_Cross_Entropy_net(network* net, Tensor* y_real);
+float  Categorical_Cross_Entropy_net(network* net, Tensor* y_real);
 Tensor* derivative_Categorical_Cross_Entropy_net(network* net, Tensor* y_real);
 
-double (*LossTypeMap(LossType function))(network*, Tensor*);
+float  (*LossTypeMap(LossType function))(network*, Tensor*);
 Tensor* (*LossTypeDerivativeMap(LossType function))(network*, Tensor*);

@@ -27,7 +27,7 @@ neuron* neuron_create(int weightslength, ActivationType Activation)
     }
 
     // Initialize bias to a random value between -1 and 1
-    n->bias = ((double)rand() / RAND_MAX) * 2 - 1;
+    n->bias = ((float )rand() / RAND_MAX) * 2 - 1;
     n->output = 0.0;  // Initialize output to 0
     n->pre_activation = 0.0;
 
@@ -41,7 +41,7 @@ void neuron_set_ActivationType(neuron* n, ActivationType Activation)
     n->ActivationderivativeFunc = ActivationTypeDerivativeMap(Activation);
 }
 
-double neuron_activation(Tensor* input, neuron* n)
+float  neuron_activation(Tensor* input, neuron* n)
 {
     if (!input || !n) {
         fprintf(stderr, "Error: NULL input or neuron in neuron_activation\n");
@@ -71,11 +71,11 @@ double neuron_activation(Tensor* input, neuron* n)
     }
 
     // Calculate weighted sum using tensor operations
-    double sum = 0.0;
+    float  sum = 0.0;
     for (int i = 0; i < input->count; i++) {
         // Use proper tensor element access functions
-        double input_val = tensor_get_element_by_index(input, i);
-        double weight_val = tensor_get_element_by_index(n->weights, i);
+        float  input_val = tensor_get_element_by_index(input, i);
+        float  weight_val = tensor_get_element_by_index(n->weights, i);
         sum += input_val * weight_val;
     }
 
@@ -89,17 +89,17 @@ double neuron_activation(Tensor* input, neuron* n)
     return n->output;
 }
 
-Tensor* neuron_backward(double output_gradient, neuron* n, double learning_rate)
+Tensor* neuron_backward(float  output_gradient, neuron* n, float  learning_rate)
 {
     if (!n || !n->input) {
         fprintf(stderr, "Error: NULL neuron or input in neuron_backward\n");
         return NULL;
     }
     // Derivative of activation function w.r.t. its input
-    double activation_derivative = n->ActivationderivativeFunc(n);
+    float  activation_derivative = n->ActivationderivativeFunc(n);
 
     // Chain rule - gradient flows through activation function
-    double pre_activation_gradient = output_gradient * activation_derivative;
+    float  pre_activation_gradient = output_gradient * activation_derivative;
 
     // Create gradients for inputs with the same shape as weights
     Tensor* input_gradients = tensor_create(2, n->weights->shape);
@@ -113,13 +113,13 @@ Tensor* neuron_backward(double output_gradient, neuron* n, double learning_rate)
         int indices[2] = {0, i };
 
         // Get original weight using tensor access
-        double original_weight = tensor_get_element(n->weights, indices);
+        float  original_weight = tensor_get_element(n->weights, indices);
 
         // Get input value using tensor access
-        double input_val = tensor_get_element(n->input, indices);
+        float  input_val = tensor_get_element(n->input, indices);
 
         // Calculate weight gradient
-        double weight_gradient = pre_activation_gradient * input_val;
+        float  weight_gradient = pre_activation_gradient * input_val;
 
         // Store input gradient using original weight
         tensor_set(input_gradients, indices, pre_activation_gradient * original_weight);

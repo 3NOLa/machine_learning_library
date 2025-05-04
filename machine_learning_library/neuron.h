@@ -4,17 +4,17 @@
 
 typedef struct neuron {
     Tensor* weights;
-    double bias;
+    float  bias;
     Tensor* input;
-    double pre_activation;
-    double output;
+    float  pre_activation;
+    float  output;
     ActivationType Activation;          
-    double (*ActivationFunc)(double value); 
-    double (*ActivationderivativeFunc)(neuron* );
+    float  (*ActivationFunc)(float  value); 
+    float  (*ActivationderivativeFunc)(neuron* );
 } neuron;
 
 neuron* neuron_create(int weightslength, ActivationType func);
 void neuron_set_ActivationType(neuron* n,ActivationType Activation);
-double neuron_activation(Tensor* input, neuron* n);
-Tensor* neuron_backward(double derivative, neuron* n, double learning_rate);
+float  neuron_activation(Tensor* input, neuron* n);
+Tensor* neuron_backward(float  derivative, neuron* n, float  learning_rate);
 void neuron_free(neuron* n);

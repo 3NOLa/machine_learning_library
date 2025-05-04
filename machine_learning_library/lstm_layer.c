@@ -66,7 +66,7 @@ Tensor* lstm_layer_forward(lstm_layer* ll, Tensor* input)
 
     for (int i = 0; i < ll->neuronAmount; i++) {
         ll->neurons[i]->timestamp = ll->sequence_length;
-        double activation = lstm_neuron_activation(input, ll->neurons[i]);
+        float  activation = lstm_neuron_activation(input, ll->neurons[i]);
 
         tensor_set(output, (int[]) { 0, i }, activation);
     }
@@ -81,7 +81,7 @@ Tensor* lstm_layer_forward(lstm_layer* ll, Tensor* input)
     return output;
 }
 
-Tensor* lstm_layer_backward(lstm_layer* ll, Tensor* output_gradients, double learning_rate)
+Tensor* lstm_layer_backward(lstm_layer* ll, Tensor* output_gradients, float  learning_rate)
 {
     if (!ll || !output_gradients) {
         fprintf(stderr, "Error: NULL dense_layer or gradients in lstm_layer_backward\n");
@@ -101,7 +101,7 @@ Tensor* lstm_layer_backward(lstm_layer* ll, Tensor* output_gradients, double lea
         for (int i = 0; i < ll->neuronAmount; i++) {
             ll->neurons[i]->timestamp = t;
 
-            double output_gradient = tensor_get_element(output_gradients, (int[]) { 0, i });
+            float  output_gradient = tensor_get_element(output_gradients, (int[]) { 0, i });
 
             Tensor* neuron_input_gradients = lstm_neuron_backward(output_gradient, ll->neurons[i], learning_rate);
 
@@ -116,8 +116,8 @@ Tensor* lstm_layer_backward(lstm_layer* ll, Tensor* output_gradients, double lea
             }
             else {
                 for (int j = 0; j < neuron_input_gradients->count; j++) {
-                    double current = tensor_get_element_by_index(timestep_input_gradients, j);
-                    double to_add = tensor_get_element_by_index(neuron_input_gradients, j);
+                    float  current = tensor_get_element_by_index(timestep_input_gradients, j);
+                    float  to_add = tensor_get_element_by_index(neuron_input_gradients, j);
                     tensor_set_by_index(timestep_input_gradients, j, current + to_add);
                 }
             }
@@ -132,8 +132,8 @@ Tensor* lstm_layer_backward(lstm_layer* ll, Tensor* output_gradients, double lea
         else {
             // Add this timestep's gradients to the accumulated gradients
             for (int j = 0; j < timestep_input_gradients->count; j++) {
-                double current = tensor_get_element_by_index(accumulated_input_gradients, j);
-                double to_add = tensor_get_element_by_index(timestep_input_gradients, j);
+                float  current = tensor_get_element_by_index(accumulated_input_gradients, j);
+                float  to_add = tensor_get_element_by_index(timestep_input_gradients, j);
                 tensor_set_by_index(accumulated_input_gradients, j, current + to_add);
             }
             tensor_free(timestep_input_gradients);

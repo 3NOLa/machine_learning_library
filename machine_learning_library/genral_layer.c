@@ -41,7 +41,7 @@ Tensor* wrapper_rnn_forward(layer* base_layer, Tensor* input) {
 	return rnn_layer_forward(rl, input);
 }
 
-Tensor* wrapper_rnn_backward(layer* base_layer,Tensor* grad, double learning_rate) {
+Tensor* wrapper_rnn_backward(layer* base_layer,Tensor* grad, float  learning_rate) {
 	rnn_layer* rl = (rnn_layer*)base_layer->params;
 	return rnn_layer_backward(rl, grad, learning_rate);
 }
@@ -56,7 +56,7 @@ Tensor* wrapper_dense_forward(layer* base_layer, Tensor* input) {
 	return layer_forward(dl, input);
 }
 
-Tensor* wrapper_dense_backward(layer* base_layer, Tensor* grad, double learning_rate) {
+Tensor* wrapper_dense_backward(layer* base_layer, Tensor* grad, float  learning_rate) {
 	dense_layer* dl = (dense_layer*)base_layer->params;
 	return layer_backward(dl, grad, learning_rate);
 }
@@ -67,7 +67,7 @@ Tensor* wrapper_lstm_forward(layer* base_layer, Tensor* input)
 	return lstm_layer_forward(ll, input);
 }
 
-Tensor* wrapper_lstm_backward(layer* base_layer, Tensor* grad, double learning_rate)
+Tensor* wrapper_lstm_backward(layer* base_layer, Tensor* grad, float  learning_rate)
 {
 	lstm_layer* ll = (lstm_layer*)base_layer->params;
 	return lstm_layer_backward(ll, grad, learning_rate);

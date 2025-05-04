@@ -16,5 +16,5 @@ void layer_addNeuron(dense_layer* l);
 void layer_set_neuronAmount(dense_layer* l,int neuronAmount);
 void layer_set_activtion(dense_layer* l, ActivationType Activationfunc);
 Tensor* layer_forward(dense_layer* l, Tensor* input);
-Tensor* layer_backward(dense_layer* l, Tensor* input_gradients, double learning_rate);
+Tensor* layer_backward(dense_layer* l, Tensor* input_gradients, float  learning_rate);
 void layer_free(dense_layer* l);
