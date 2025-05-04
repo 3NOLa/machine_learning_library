@@ -1,0 +1,268 @@
+
+typedef struct {
+	int dims;
+	int* shape; //shaoes of the dims
+	int* strides; //amount of bytes i need to get to next dim;
+	int count; //amount of elemnts
+	float* data;
+} Tensor;
+
+Tensor* tensor_create(int dims, int* shape);
+Tensor* tensor_zero_create(int dims, int* shape);
+Tensor* tensor_random_create(int dims, int* shape);
+Tensor* tensor_identity_create(int row);
+int tensor_add_row(Tensor* t);
+
+void tensor_free(Tensor* t);
+int tensor_copy(Tensor* dest, Tensor* src);
+void tensor_zero(Tensor* t);
+
+// Access functions
+int tensor_get_index(Tensor* t, int* indices);
+float  tensor_get_element(Tensor* t, int* indices);
+float  tensor_get_element_by_index(Tensor* t, int index);
+void tensor_set(Tensor* t, int* indices, float  value);
+void tensor_set_by_index(Tensor* t, int index, float  value);
+
+// Dimension manipulation
+Tensor* tensor_reshape(Tensor* t, int dims, int* shape);
+Tensor* tensor_flatten(Tensor* t); // Convert to 1D tensor
+Tensor* tensor_slice_range(Tensor* t, int start, int end);
+Tensor* tensor_get_row(Tensor* t, int row);
+Tensor* tensor_get_col(Tensor* t, int col);
+
+// Math operations
+Tensor* tensor_add(Tensor* a, Tensor* b);
+Tensor* tensor_subtract(Tensor* a, Tensor* b);
+Tensor* tensor_multiply(Tensor* a, Tensor* b); // Element-wise multiplication
+Tensor* tensor_dot(Tensor* a, Tensor* b);      // Matrix multiplication when applicable
+Tensor* tensor_add_scalar(Tensor* t, float  scalar);
+Tensor* tensor_multiply_scalar(Tensor* t, float  scalar);
+float  tensor_sum(Tensor* t);
+float  tensor_mean(Tensor* t);
+
+// In-place operations (to minimize memory allocations)
+void tensor_add_inplace(Tensor* target, Tensor* other);
+void tensor_add_more_inplace(Tensor* target, Tensor* others[], int amount);
+void tensor_subtract_inplace(Tensor* target, Tensor* other);
+void tensor_multiply_inplace(Tensor* target, Tensor* other);
+void tensor_add_scalar_inplace(Tensor* target, float  scalar);
+void tensor_multiply_scalar_inplace(Tensor* target, float  scalar);
+
+// Print tensor
+void tensor_print(Tensor* t);
+
+
+typedef struct neuron {
+	Tensor* weights;
+	float  bias;
+	Tensor* input;
+	float  pre_activation;
+	float  output;
+	ActivationType Activation;
+	float  (*ActivationFunc)(float  value);
+	float  (*ActivationderivativeFunc)(neuron*);
+} neuron;
+
+neuron* neuron_create(int weightslength, ActivationType func);
+void neuron_set_ActivationType(neuron* n, ActivationType Activation);
+float  neuron_activation(Tensor* input, neuron* n);
+Tensor* neuron_backward(float  derivative, neuron* n, float  learning_rate);
+void neuron_free(neuron* n);
+
+typedef enum {
+	RELU,
+	LEAKY_RELU,
+	SIGMOID,
+	TANH,
+	LINEAR,
+	GELU,
+	SWISH
+}ActivationType;
+
+float  RELu_function(float  value);
+float  RELu_derivative_function(neuron* n);
+
+float  leaky_RELu_function(float  value);
+float  leaky_RELu_derivative_function(neuron* n);
+
+float  Sigmoid_function(float  value);
+float  Sigmoid_derivative_function(neuron* n);
+
+float  Tanh_function(float  value);
+float  Tanh_derivative_function(neuron* n);
+
+float  linear_function(float  value);
+float  linear_derivative_function(neuron* n);
+
+float  gelu_function(float  value);
+float  gelu_derivative_function(neuron* n);
+
+float  swish_function(float  value);
+float  swish_derivative_function(neuron* n);
+
+float  (*ActivationTypeMap(ActivationType function))(float);
+float  (*ActivationTypeDerivativeMap(ActivationType function))(neuron*);
+
+
+typedef enum {
+	MSE,
+	MAE,
+	Binary_Cross_Entropy,
+	Categorical_Cross_Entropy,
+	Huber_Loss
+}LossType;
+
+
+typedef struct {
+	int layerAmount;
+	layer** layers;
+	int* layersSize;
+	float  learnningRate;
+	LossType lossFunction;
+	float  (*LossFuntionPointer)(struct network*, Tensor*);
+	Tensor* (*LossDerivativePointer)(struct network*, Tensor*);
+	float  (*train)(struct network*, Tensor*, Tensor*);
+	int input_dims;
+	int* input_shape;
+	LayerType type;
+}network;
+
+network* network_create(int layerAmount, int* layersSize, int input_dims, int* input_shape, ActivationType* activations, float  learnningRate, LossType lossFunction, LayerType type);
+network* network_create_empty();
+int add_layer(network* net, int layerSize, ActivationType Activationfunc, int input_dim);// add input layer if first layer otherwise put 0
+void network_free(network* net);
+void network_train_type(network* net);
+
+Tensor* forwardPropagation(network* net, Tensor* data);
+int backpropagation(network* net, Tensor* predictions, Tensor* targets);
+
+float  train(network* net, Tensor* input, Tensor* target);
+void network_training(network* net, Tensor* input, Tensor* target, int epcho, int batch_size);
+float  rnn_train(network* net, Tensor* input, Tensor* target, int timestamps);
+
+// implemented in loss_Functions.c
+float  squared_error_net(network* net, Tensor* y_real);
+Tensor* derivative_squared_error_net(network* net, Tensor* y_real);
+
+float  absolute_error_net(network* net, Tensor* y_real);
+Tensor* derivative_absolute_error_net(network* net, Tensor* y_real);
+
+float  absolute_error_net(network* net, Tensor* y_real);
+Tensor* derivative_absolute_error_net(network* net, Tensor* y_real);
+
+float  Categorical_Cross_Entropy_net(network* net, Tensor* y_real);
+Tensor* derivative_Categorical_Cross_Entropy_net(network* net, Tensor* y_real);
+
+float  (*LossTypeMap(LossType function))(network*, Tensor*);
+Tensor* (*LossTypeDerivativeMap(LossType function))(network*, Tensor*);
+
+typedef struct {
+	int num_classes;
+	Tensor* one_hot_encode;
+	char** class_names;
+	network* net;
+} ClassificationNetwork;
+
+ClassificationNetwork* ClassificationNetwork_create(int layerAmount, int* layersSize, int* input_shape, int input_dim, ActivationType* activations, float  learnningRate, LossType lossFunction, char** class_names, int num_classes, Tensor* classes, LayerType type);
+ClassificationNetwork* ClassificationNetwork_create_net(network* net, char** class_names, int num_classes, Tensor* classes);
+Tensor* one_hot_encode(int num_classes);
+void classification_info_free(ClassificationNetwork* info);
+
+int get_predicted_class(Tensor* network_output);
+void classification_network_training(ClassificationNetwork* Cnet);
+
+
+typedef struct {
+	int neuronAmount;
+	Tensor* output;
+	neuron** neurons;
+	ActivationType Activationenum;
+}dense_layer;
+
+dense_layer* layer_create(int neuronAmount, int neuronDim, ActivationType Activationfunc);
+void layer_removeLastNeuron(dense_layer* l);
+void layer_addNeuron(dense_layer* l);
+void layer_set_neuronAmount(dense_layer* l, int neuronAmount);
+void layer_set_activtion(dense_layer* l, ActivationType Activationfunc);
+Tensor* layer_forward(dense_layer* l, Tensor* input);
+Tensor* layer_backward(dense_layer* l, Tensor* input_gradients, float  learning_rate);
+void layer_free(dense_layer* l);
+
+
+#define MAX_TIMESTEPS 128
+
+typedef struct neuron;
+typedef struct rnn_neuron;
+typedef struct Tensor;
+typedef enum ActivationType;
+
+typedef struct lstm_neuron {
+	float  short_memory;//cell state
+	float  long_memory;
+	Tensor* input_history[MAX_TIMESTEPS];
+	float  short_memory_history[MAX_TIMESTEPS];
+	float  long_memory_history[MAX_TIMESTEPS];//cell state history
+	int timestamp;
+
+	rnn_neuron* i_g_r; //input_gate_remember
+	rnn_neuron* i_g_p; //input_gate_potinal also known as candidate cell
+	rnn_neuron* o_g_r; //output_gate_remember 
+	rnn_neuron* f_g; //forget_gate
+} lstm_neuron;
+
+lstm_neuron* lstm_neuron_create(int weightslength, ActivationType func, int layer_amount);
+float  lstm_neuron_activation(Tensor* input, lstm_neuron* ln);
+Tensor* lstm_neuron_backward(float  derivative, lstm_neuron* ln, float  learning_rate);
+void lstm_neuron_free(lstm_neuron* ln);
+
+#define AS_DENSE(l) ((dense_layer*)((l)->params))
+#define AS_RNN(l)   ((rnn_layer*)((l)->params))
+#define AS_LSTM(l)   ((lstm_layer*)((l)->params))
+
+typedef enum {
+	LAYER_DENSE,
+	LAYER_RNN,
+	LAYER_LSTM,
+	// LAYER_CONV
+} LayerType;
+
+
+typedef struct Layer {
+	LayerType type;
+	void* params;
+	Tensor* (*forward)(struct Layer* layer, Tensor* input);
+	Tensor* (*backward)(struct Layer* layer, Tensor* grad, float  learning_rate);
+	void (*free)(struct Layer* layer);
+	//rnn only
+	void (*reset_state)(struct layer* base_layer);
+}layer;
+
+layer* general_layer_Initialize(LayerType type, int neuronAmount, int neuronDim, ActivationType Activationfunc);
+void general_layer_free(layer* base_layer);
+Tensor* get_layer_output(layer* base_layer);
+
+Tensor* wrapper_rnn_forward(layer* base_layer, Tensor* input);
+Tensor* wrapper_rnn_backward(layer* base_layer, Tensor* grad, float  learning_rate);
+void wrapper_rnn_reset_state(layer* base_layer);
+
+Tensor* wrapper_dense_forward(layer* base_layer, Tensor* input);
+Tensor* wrapper_dense_backward(layer* base_layer, Tensor* grad, float  learning_rate);
+
+Tensor* wrapper_lstm_forward(layer* base_layer, Tensor* input);
+Tensor* wrapper_lstm_backward(layer* base_layer, Tensor* grad, float  learning_rate);
+void wrapper_lstm_reset_state(layer* base_layer);
+
+typedef struct {
+	int neuronAmount;
+	Tensor* output;
+	lstm_neuron** neurons;
+	ActivationType Activationenum;
+	int sequence_length;
+}lstm_layer;
+
+lstm_layer* lstm_layer_create(int neuronAmount, int neuronDim, ActivationType Activationfunc);
+Tensor* lstm_layer_forward(lstm_layer* ll, Tensor* input);
+Tensor* lstm_layer_backward(lstm_layer* ll, Tensor* output_gradients, float  learning_rate);
+void lstm_layer_reset_state(lstm_layer* ll);
+void lstm_layer_free(lstm_layer* ll);

@@ -1,8 +1,9 @@
 #pragma once
 #include "tensor.h"
 #include "active_functions.h"
+#include "export.h"
 
-typedef struct neuron {
+EXPORT typedef struct neuron {
     Tensor* weights;
     float  bias;
     Tensor* input;
@@ -13,8 +14,8 @@ typedef struct neuron {
     float  (*ActivationderivativeFunc)(neuron* );
 } neuron;
 
-neuron* neuron_create(int weightslength, ActivationType func);
-void neuron_set_ActivationType(neuron* n,ActivationType Activation);
-float  neuron_activation(Tensor* input, neuron* n);
-Tensor* neuron_backward(float  derivative, neuron* n, float  learning_rate);
-void neuron_free(neuron* n);
+EXPORT neuron* neuron_create(int weightslength, ActivationType func);
+EXPORT void neuron_set_ActivationType(neuron* n,ActivationType Activation);
+EXPORT float  neuron_activation(Tensor* input, neuron* n);
+EXPORT Tensor* neuron_backward(float  derivative, neuron* n, float  learning_rate);
+EXPORT void neuron_free(neuron* n);

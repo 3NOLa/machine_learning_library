@@ -40,7 +40,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -142,6 +142,7 @@
     <ClInclude Include="active_functions.h" />
     <ClInclude Include="classification.h" />
     <ClInclude Include="csv_parser.h" />
+    <ClInclude Include="export.h" />
     <ClInclude Include="general_layer.h" />
     <ClInclude Include="hashmap.h" />
     <ClInclude Include="dense_layer.h" />
