@@ -2,10 +2,10 @@
 #include "rnn_neuron.h"
 #include "lstm_neuron.h"
 
-lstm_neuron* lstm_neuron_create(int weightslength, ActivationType func, int layer_amount)
+lstm_neuron* lstm_neuron_create(int weightslength, ActivationType func)
 {
-    if (weightslength <= 0 || layer_amount <= 0) {
-        fprintf(stderr, "Error: Invalid weights length %d or Invalid layer_amount length %d in lstm_neuron_create\n", weightslength, layer_amount);
+    if (weightslength <= 0) {
+        fprintf(stderr, "Error: Invalid weights length %d or Invalid in lstm_neuron_create\n", weightslength);
         return NULL;
     }
 
@@ -15,10 +15,10 @@ lstm_neuron* lstm_neuron_create(int weightslength, ActivationType func, int laye
         return NULL;
     }
 
-    rnn_neuron* f_g = rnn_neuron_create(weightslength, SIGMOID, layer_amount);
-    rnn_neuron* i_g_r = rnn_neuron_create(weightslength, SIGMOID, layer_amount);
-    rnn_neuron* i_g_p = rnn_neuron_create(weightslength, TANH, layer_amount);
-    rnn_neuron* o_g_r = rnn_neuron_create(weightslength, SIGMOID, layer_amount);
+    rnn_neuron* f_g = rnn_neuron_create(weightslength, SIGMOID);
+    rnn_neuron* i_g_r = rnn_neuron_create(weightslength, SIGMOID);
+    rnn_neuron* i_g_p = rnn_neuron_create(weightslength, TANH);
+    rnn_neuron* o_g_r = rnn_neuron_create(weightslength, SIGMOID);
     if (!f_g || !i_g_r || !i_g_p || !o_g_r) {
         fprintf(stderr, "Error: Memory allocation failed for neuron in lstm_neuron_create\n");
         return NULL;

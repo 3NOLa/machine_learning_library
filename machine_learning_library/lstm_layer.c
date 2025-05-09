@@ -36,7 +36,7 @@ lstm_layer* lstm_layer_create(int neuronAmount, int neuronDim, ActivationType Ac
     }
 
     for (int i = 0; i < neuronAmount; i++) {
-        ll->neurons[i] = lstm_neuron_create(neuronDim, Activationfunc, neuronAmount);
+        ll->neurons[i] = lstm_neuron_create(neuronDim, Activationfunc);
         if (!ll->neurons[i]) {
             fprintf(stderr, "Error: Failed to create neuron %d in lstm_layer_create\n", i);
             for (int j = 0; j < i; j++) {

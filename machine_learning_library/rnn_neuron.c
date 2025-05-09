@@ -1,10 +1,10 @@
 #include "neuron.h"
 #include "rnn_neuron.h"
 
-rnn_neuron* rnn_neuron_create(int weightslength, ActivationType func, int layer_amount)
+rnn_neuron* rnn_neuron_create(int weightslength, ActivationType func)
 {
-    if (weightslength <= 0 || layer_amount <= 0) {
-        fprintf(stderr, "Error: Invalid weights length %d or Invalid layer_amount length %d in neuron_create\n", weightslength, layer_amount);
+    if (weightslength <= 0) {
+        fprintf(stderr, "Error: Invalid weights length %d or Invald in neuron_create\n", weightslength);
         return NULL;
     }
 

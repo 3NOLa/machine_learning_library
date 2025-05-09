@@ -234,7 +234,7 @@ typedef struct rnn_neuron {
 	int timestamp;
 } rnn_neuron;
 
-rnn_neuron* rnn_neuron_create(int weightslength, ActivationType func, int layer_amount);
+rnn_neuron* rnn_neuron_create(int weightslength, ActivationType func);
 void rnn_neuron_set_ActivationType(rnn_neuron* rn, ActivationType Activation);
 float  rnn_neuron_activation(Tensor* input, rnn_neuron* rn);
 Tensor* rnn_neuron_backward(float  derivative, rnn_neuron* rn, float  learning_rate);
@@ -254,7 +254,7 @@ typedef struct lstm_neuron {
 	rnn_neuron* f_g; //forget_gate
 } lstm_neuron;
 
-lstm_neuron* lstm_neuron_create(int weightslength, ActivationType func, int layer_amount);
+lstm_neuron* lstm_neuron_create(int weightslength, ActivationType func);
 float  lstm_neuron_activation(Tensor* input, lstm_neuron* ln);
 Tensor* lstm_neuron_backward(float  derivative, lstm_neuron* ln, float  learning_rate);
 void lstm_neuron_free(lstm_neuron* ln);

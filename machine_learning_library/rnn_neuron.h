@@ -18,7 +18,7 @@ EXPORT typedef struct rnn_neuron {
     int timestamp;
 } rnn_neuron;
 
-EXPORT rnn_neuron* rnn_neuron_create(int weightslength, ActivationType func,int layer_amount);
+EXPORT rnn_neuron* rnn_neuron_create(int weightslength, ActivationType func);
 EXPORT void rnn_neuron_set_ActivationType(rnn_neuron* rn, ActivationType Activation);
 EXPORT float  rnn_neuron_activation(Tensor* input, rnn_neuron* rn);
 EXPORT Tensor* rnn_neuron_backward(float  derivative, rnn_neuron* rn, float  learning_rate);

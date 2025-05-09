@@ -35,7 +35,7 @@ rnn_layer* rnn_layer_create(int neuronAmount, int neuronDim, ActivationType Acti
     }
 
     for (int i = 0; i < neuronAmount; i++) {
-        rl->neurons[i] = rnn_neuron_create(neuronDim, Activationfunc,rl->neuronAmount);
+        rl->neurons[i] = rnn_neuron_create(neuronDim, Activationfunc);
         if (!rl->neurons[i]) {
             fprintf(stderr, "Error: Failed to create neuron %d in rnn_layer\n", i);
             for (int j = 0; j < i; j++) {
