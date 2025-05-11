@@ -93,6 +93,10 @@ network* network_create_empty()
     net->input_shape = NULL;
     net->layers = NULL;
     net->layersSize = NULL;
+    net->LossDerivativePointer = NULL;
+    net->lossFunction = MSE;
+    net->train = NULL;
+    net->type = LAYER_DENSE;
 
     return net;
 }
@@ -157,6 +161,47 @@ int add_layer(network* net, int layerSize, ActivationType Activationfunc, int in
     net->layerAmount++;
 
     return 1;
+}
+
+int add_created_layer(network* net, layer* l)
+{
+    if (!net || !l) {
+        fprintf(stderr, "Error: NULL network or NULL layer in add_created_layer\n");
+        return 0;
+    }
+
+    int* new_layersSize = (int*)realloc(net->layersSize, sizeof(int) * (net->layerAmount + 1));
+    if (!new_layersSize) {
+        fprintf(stderr, "Error: Memory reallocation failed for layersSize in add_layer\n");
+        return 0;
+    }
+    net->layersSize = new_layersSize;
+
+    // Resize the layers array
+    layer** new_layers = (layer**)realloc(net->layers, sizeof(layer*) * (net->layerAmount + 1));
+    if (!new_layers) {
+        fprintf(stderr, "Error: Memory reallocation failed for layers in add_layer\n");
+        return 0;
+    }
+    net->layers = new_layers;
+
+    net->layers[net->layerAmount] = l;
+    net->layersSize[net->layerAmount] = l->neuronAmount;
+    net->layerAmount++;
+
+    return 1;
+}
+
+int set_loss_function(network* net, LossType lossFunction)
+{
+    if (!net) {
+        fprintf(stderr, "Error: NULL network in add_layer\n");
+        return 0;
+    }
+
+    net->lossFunction = lossFunction;
+    net->LossFuntionPointer = LossTypeMap(lossFunction);
+    net->LossDerivativePointer = LossTypeDerivativeMap(lossFunction);
 }
 
 void network_free(network* net)

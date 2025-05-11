@@ -1,7 +1,9 @@
 from python_binding.tasks import ffi, lib
 from neuron import *
 from layer import *
+from network import *
 from Tensor import Tensor
+
 
 sigmoid = lib.Sigmoid_function(9)
 
@@ -17,6 +19,7 @@ n = LstmNeuron(10,lib.LINEAR)
 print(n)
 
 input = Tensor(10)
+print(input())
 k = n.activate_neuron(input)
 print(k)
 
@@ -34,3 +37,8 @@ m = rl.layer_forward(input)
 print(m)
 
 print(rl.get_neuron(3))
+
+print("---------------------------")
+check = checkModel()
+output = check.forward(input)
+print(check,output())

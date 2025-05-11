@@ -29,6 +29,8 @@ EXPORT typedef struct {
 EXPORT network* network_create(int layerAmount, int* layersSize, int input_dims, int* input_shape, ActivationType* activations, float  learnningRate, LossType lossFunction, LayerType type);
 EXPORT network* network_create_empty();
 EXPORT int add_layer(network* net, int layerSize, ActivationType Activationfunc, int input_dim);// add input layer if first layer otherwise put 0
+EXPORT int add_created_layer(network* net, layer* l);
+EXPORT int set_loss_function(network* net, LossType lossFunction);
 EXPORT void network_free(network* net);
 EXPORT void network_train_type(network* net);
 

@@ -17,6 +17,7 @@ EXPORT typedef enum {
 
 EXPORT typedef struct Layer {
     LayerType type;
+    int neuronAmount;
     void* params;  
     Tensor* (*forward)(struct Layer* layer, Tensor* input);
     Tensor* (*backward)(struct Layer* layer, Tensor* grad, float  learning_rate);

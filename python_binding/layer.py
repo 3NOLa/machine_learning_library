@@ -4,8 +4,8 @@ import Tensor
 
 
 class Layer:
-    def __init__(self, c_layer, type, neuron_amount : int,input_dim : int, activation_type=None):
-        self.layer_type_ptr = c_layer
+    def __init__(self, type, neuron_amount : int,input_dim : int, activation_type=None):
+        self.layer_type_ptr = None
         self.type = type
         self.input_dim = input_dim
         self.activation_function = lib.LINEAR if activation_type is None else activation_type
@@ -28,8 +28,9 @@ class Layer:
 
 class DenseLayer(Layer):
     def __init__(self, neuron_amount: int, input_dim: int, activation_type=None):
-        layer_ptr = lib.layer_create(neuron_amount,input_dim, activation_type)
-        super().__init__(layer_ptr, lib.LAYER_DENSE, neuron_amount, input_dim, activation_type)
+        super().__init__(lib.LAYER_DENSE, neuron_amount, input_dim, activation_type)
+        self.layer_type_ptr = lib.layer_create(neuron_amount,input_dim, self.activation_function)
+
         self.py_neurons = [
             DenseNeuron(
                 input_size=input_dim,
@@ -48,8 +49,9 @@ class DenseLayer(Layer):
 
 class RnnLayer(Layer):
     def __init__(self, neuron_amount: int, input_dim: int, activation_type=1):
-        layer_ptr = lib.rnn_layer_create(neuron_amount,input_dim, activation_type)
-        super().__init__(layer_ptr, lib.LAYER_RNN, neuron_amount, input_dim, activation_type)
+        super().__init__(lib.LAYER_RNN, neuron_amount, input_dim, activation_type)
+        self.layer_type_ptr = lib.rnn_layer_create(neuron_amount,input_dim, self.activation_function)
+
         self.py_neurons = [
             RnnNeuron(
                 input_size=input_dim,
@@ -68,8 +70,9 @@ class RnnLayer(Layer):
 
 class LstmLayer(Layer):
     def __init__(self, neuron_amount: int, input_dim: int, activation_type=None):
-        layer_ptr = lib.lstm_layer_create(neuron_amount,input_dim, activation_type)
-        super().__init__(layer_ptr, lib.LAYER_LSTM, neuron_amount, input_dim, activation_type)
+        super().__init__(lib.LAYER_LSTM, neuron_amount, input_dim, activation_type)
+        self.layer_type_ptr = lib.lstm_layer_create(neuron_amount,input_dim, self.activation_function)
+
         self.py_neurons = [
             LstmNeuron(
                 input_size=input_dim,

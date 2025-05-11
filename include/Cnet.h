@@ -80,7 +80,7 @@ void neuron_free(neuron* n);
 
 
 float  RELu_function(float  value);
-float  RELu_derivative_function(neuron* n);
+float  RELu_derivative_function(neuron* n); 
 
 float  leaky_RELu_function(float  value);
 float  leaky_RELu_derivative_function(neuron* n);
@@ -112,14 +112,15 @@ typedef enum {
 } LayerType;
 
 
-typedef struct Layer {
-	LayerType type;
-	void* params;
-	Tensor* (*forward)(struct Layer* layer, Tensor* input);
-	Tensor* (*backward)(struct Layer* layer, Tensor* grad, float  learning_rate);
-	void (*free)(struct Layer* layer);
-	//rnn only
-	void (*reset_state)(struct layer* base_layer);
+ typedef struct Layer {
+    LayerType type;
+    int neuronAmount;
+    void* params;  
+    Tensor* (*forward)(struct Layer* layer, Tensor* input);
+    Tensor* (*backward)(struct Layer* layer, Tensor* grad, float  learning_rate);
+    void (*free)(struct Layer* layer);
+    //rnn only
+    void (*reset_state)(struct layer* base_layer);
 }layer;
 
 layer* general_layer_Initialize(LayerType type, int neuronAmount, int neuronDim, ActivationType Activationfunc);
@@ -162,7 +163,9 @@ typedef struct {
 
 network* network_create(int layerAmount, int* layersSize, int input_dims, int* input_shape, ActivationType* activations, float  learnningRate, LossType lossFunction, LayerType type);
 network* network_create_empty();
+int add_created_layer(network* net, layer* l);
 int add_layer(network* net, int layerSize, ActivationType Activationfunc, int input_dim);// add input layer if first layer otherwise put 0
+int set_loss_function(network* net, LossType lossFunction);
 void network_free(network* net);
 void network_train_type(network* net);
 

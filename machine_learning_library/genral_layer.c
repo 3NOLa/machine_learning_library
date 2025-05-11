@@ -5,6 +5,7 @@ layer* general_layer_Initialize(LayerType type, int neuronAmount, int neuronDim,
 {
 	layer* l = (layer*)malloc(sizeof(layer));
 	l->type = type;
+	l->neuronAmount = neuronAmount;
 	
 	switch (type)
 	{
