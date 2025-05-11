@@ -94,7 +94,7 @@ void general_layer_free(layer* base_layer)
 		base_layer->free((lstm_layer*)base_layer->params);
 		break;
 	default:
-		fprintf(stderr, "Erorr: not a valid in layer_Initialize\n");
+		fprintf(stderr, "Erorr: not a valid in general_layer_free\n");
 		return NULL;
 		break;
 	}
@@ -125,11 +125,43 @@ Tensor* get_layer_output(layer* base_layer)
 		break;
 	}
 	default:
-		fprintf(stderr, "Erorr: not a valid in layer_Initialize\n");
+		fprintf(stderr, "Erorr: not a valid in get_layer_output\n");
 		return NULL;
 		break;
 	}
 
 	return output;
 }
+
+
+void set_layer_output(layer* base_layer, Tensor* output)
+{//maybe a problem here
+	;
+	switch (base_layer->type)
+	{
+	case LAYER_DENSE:
+	{
+		dense_layer* dl = AS_DENSE(base_layer);
+		dl->output = output;
+		break;
+	}
+	case LAYER_RNN:
+	{
+		rnn_layer* rl = AS_RNN(base_layer);
+		rl->output = output;
+		break;
+	}
+	case LAYER_LSTM:
+	{
+		lstm_layer* ll = AS_LSTM(base_layer);
+		ll->output = output;
+		break;
+	}
+	default:
+		fprintf(stderr, "Erorr: not a valid in set_layer_output\n");
+		return NULL;
+		break;
+	}
+}
+
 

@@ -7,6 +7,8 @@ class Tensor:
         self.size = size
         if isinstance(data, list) or isinstance(data, np.ndarray):
             self.CTensor = lib.tensor_create(data)
+        elif data is not None and ffi.typeof(data).cname == "Tensor *" :
+            self.CTensor = data
         else:
             shape = ffi.new("int []",[1,size])
             self.CTensor = lib.tensor_random_create(2,shape)

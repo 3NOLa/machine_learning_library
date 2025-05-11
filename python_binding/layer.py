@@ -1,6 +1,6 @@
 from python_binding.tasks import ffi, lib
 from neuron import *
-import Tensor
+from Tensor import Tensor
 
 
 class Layer:
@@ -14,10 +14,10 @@ class Layer:
         self.py_neurons = []
 
     def layer_forward(self, input:Tensor):
-        raise NotImplementedError
+        return lib.layer_ptr.forward(self.layer_ptr,input)
 
     def layer_backward(self, input_gradients:Tensor,lr:float):
-        raise NotImplementedError
+        return lib.layer_ptr.backward(self.layer_ptr,input_gradients,lr)
 
     def get_neuron(self, index: int):
         return self.py_neurons[index]
@@ -41,10 +41,10 @@ class DenseLayer(Layer):
         ]
 
     def layer_forward(self, input:Tensor):
-        return lib.layer_forward(self.layer_type_ptr, input.CTensor)
+        return Tensor(1,lib.layer_forward(self.layer_type_ptr, input.CTensor))
 
     def layer_backward(self, input_gradients:Tensor,lr:float):
-        return lib.layer_backward(self.layer_type_ptr, input_gradients.CTensor, lr)
+        return Tensor(1,lib.layer_backward(self.layer_type_ptr, input_gradients.CTensor, lr))
 
 
 class RnnLayer(Layer):
@@ -61,11 +61,14 @@ class RnnLayer(Layer):
             for i in range(neuron_amount)
         ]
 
-    def layer_forward(self, input:Tensor):
-        return lib.rnn_layer_forward(self.layer_type_ptr, input.CTensor)
+    def layer_forward(self, input:Tensor, timestamps=1):
+        t_outputs = []
+        for i in range(timestamps):
+            t_outputs.append(Tensor(1,lib.rnn_layer_forward(self.layer_type_ptr, input.CTensor)))
+        return t_outputs
 
     def layer_backward(self, input_gradients:Tensor,lr:float):
-        return lib.rnn_layer_backward(self.layer_type_ptr, input_gradients.CTensor, lr)
+        return Tensor(1,lib.rnn_layer_backward(self.layer_type_ptr, input_gradients.CTensor, lr))
 
 
 class LstmLayer(Layer):
@@ -82,9 +85,12 @@ class LstmLayer(Layer):
             for i in range(neuron_amount)
         ]
 
-    def layer_forward(self, input:Tensor):
-        return lib.lstm_layer_forward(self.layer_type_ptr, input.CTensor)
+    def layer_forward(self, input:Tensor, timestamps=1):
+        t_outputs = []
+        for i in range(timestamps):
+            t_outputs.append(Tensor(1,lib.lstm_layer_forward(self.layer_type_ptr, input.CTensor)))
+        return t_outputs
 
     def layer_backward(self, input_gradients:Tensor,lr:float):
-        return lib.lstm_layer_backward(self.layer_type_ptr, input_gradients.CTensor, lr)
+        return Tensor(1,lib.lstm_layer_backward(self.layer_type_ptr, input_gradients.CTensor, lr))
 

@@ -151,3 +151,42 @@ Tensor* (*LossTypeDerivativeMap(LossType function))(network*, Tensor*)
 
     return map[function];
 }
+
+float loss_active_function(LossType function, Tensor* y_pred, Tensor* y_real)
+{
+    float  (*LossFuntionPointer)(struct network*, Tensor*) = LossTypeMap(function);
+
+    network net;
+    layer l;
+    l.type = LAYER_DENSE;
+    dense_layer d;
+    dense_layer* dl = &d;
+    dl->output = y_pred;
+    l.params = dl;
+    layer* layers[1] = { &l };
+
+    net.layers = layers;
+    net.layerAmount = 1;
+
+    return LossFuntionPointer(&net, y_real);
+}
+
+Tensor* loss_derivative_active_function(LossType function, Tensor* y_pred, Tensor* y_real)
+{
+    Tensor* (*LossDerivativePointer)(struct network*, Tensor*) = LossTypeDerivativeMap(function);
+
+    network net;
+    layer l;
+    l.type = LAYER_DENSE;
+    dense_layer d;
+    dense_layer* dl = &d;
+    dl->output = y_pred;
+    l.params = dl;
+    layer* layers[1] = { &l };
+
+    net.layers = layers;
+    net.layerAmount = 1;
+
+    return LossDerivativePointer(&net, y_real);
+}
+

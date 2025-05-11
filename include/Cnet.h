@@ -126,6 +126,7 @@ typedef enum {
 layer* general_layer_Initialize(LayerType type, int neuronAmount, int neuronDim, ActivationType Activationfunc);
 void general_layer_free(layer* base_layer);
 Tensor* get_layer_output(layer* base_layer);
+void set_layer_output(layer* base_layer, Tensor* output);
 
 Tensor* wrapper_rnn_forward(layer* base_layer, Tensor* input);
 Tensor* wrapper_rnn_backward(layer* base_layer, Tensor* grad, float  learning_rate);
@@ -191,6 +192,9 @@ Tensor* derivative_Categorical_Cross_Entropy_net(network* net, Tensor* y_real);
 
 float  (*LossTypeMap(LossType function))(network*, Tensor*);
 Tensor* (*LossTypeDerivativeMap(LossType function))(network*, Tensor*);
+
+float loss_active_function(LossType function, Tensor* y_pred, Tensor* y_real);
+Tensor* loss_derivative_active_function(LossType function, Tensor* y_pred, Tensor* y_real);
 
 typedef struct {
 	int num_classes;

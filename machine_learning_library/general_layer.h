@@ -29,6 +29,7 @@ EXPORT typedef struct Layer {
 EXPORT layer* general_layer_Initialize(LayerType type, int neuronAmount, int neuronDim, ActivationType Activationfunc);
 EXPORT void general_layer_free(layer* base_layer);
 EXPORT Tensor* get_layer_output(layer* base_layer);
+EXPORT void set_layer_output(layer* base_layer, Tensor* output);
 
 EXPORT Tensor* wrapper_rnn_forward(layer* base_layer, Tensor* input);
 EXPORT Tensor* wrapper_rnn_backward(layer* base_layer, Tensor* grad, float  learning_rate);

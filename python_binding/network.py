@@ -1,7 +1,7 @@
 from python_binding.tasks import ffi, lib
 from neuron import *
 from layer import *
-import Tensor
+from Tensor import Tensor
 from typing import *
 
 
@@ -9,18 +9,24 @@ class NetworkModel:
     def __init__(self):
         self.cuda = False
         self.num_layers = 0
-        self.layers = [Layer]
-        self.loss = {
-            "type": lib.MSE,
-            "forward": lib.squared_error_net,
-            "backward": lib.derivative_squared_error_net
-        }
+        self.lr = 0.01
+        self.layers = []
 
     def forward(self, data:Tensor):
         raise NotImplementedError
 
-    def backward(self, predictions:Tensor, targets:Tensor):
-        raise NotImplementedError
+    def backward(self, output_gradients:Tensor):
+        grads = output_gradients
+        for layer in reversed(self.layers):
+            grads = layer.layer_backward(grads,self.lr)
+
+    @staticmethod
+    def loss_function(loss, y_pred: Tensor, y_real:Tensor):
+        return lib.loss_active_function(loss,y_pred.CTensor,y_real.CTensor)
+
+    @staticmethod
+    def loss_derivative(loss, y_pred: Tensor, y_real:Tensor):
+        return Tensor(1,lib.loss_derivative_active_function(loss,y_pred.CTensor,y_real.CTensor))
 
 
 class Network(NetworkModel):
@@ -35,6 +41,12 @@ class Network(NetworkModel):
             lib.add_created_layer(self.c_network,layer.layer_ptr)
             self.layers.append(layer)
             self.num_layers += 1
+
+        self.loss = {
+            "type": lib.MSE,
+            "forward": lib.squared_error_net,
+            "backward": lib.derivative_squared_error_net
+        }
 
     def set_loss(self, loss_type):
         self.c_network.lossFunction = loss_type
@@ -66,6 +78,23 @@ class checkModel(Network):
 
 class check2Model(NetworkModel):
     def __init__(self):
-        super.__init__()
+        super(check2Model, self).__init__()
         self.input_layer = RnnLayer(10,10,lib.SIGMOID)
-        self.hidden_layer = DenseLayer()
+        self.hidden_layer = DenseLayer(3,10)
+        self.output_layer = DenseLayer(1,3,lib.TANH)
+
+        self.layers.extend([self.input_layer,self.hidden_layer,self.output_layer])
+
+    def forward(self, data:Tensor):
+        x = self.input_layer.layer_forward(data,5)
+        print(x)
+        h1 = self.hidden_layer.layer_forward(x[-1])
+        o = self.output_layer.layer_forward(h1)
+
+        return o
+
+    def backward(self, ouptut:Tensor,real_output:Tensor):
+        grad = NetworkModel.loss_derivative(lib.MSE, ouptut, real_output)
+        print("grad" , grad)
+        self.lr = 0.1
+        super().backward(grad)

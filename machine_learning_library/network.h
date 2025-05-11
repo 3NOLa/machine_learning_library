@@ -56,3 +56,7 @@ EXPORT Tensor* derivative_Categorical_Cross_Entropy_net(network* net, Tensor* y_
 
 EXPORT float  (*LossTypeMap(LossType function))(network*, Tensor*);
 EXPORT Tensor* (*LossTypeDerivativeMap(LossType function))(network*, Tensor*);
+
+EXPORT float loss_active_function(LossType function, Tensor* y_pred, Tensor* y_real);
+EXPORT Tensor* loss_derivative_active_function(LossType function, Tensor* y_pred, Tensor* y_real);
+
