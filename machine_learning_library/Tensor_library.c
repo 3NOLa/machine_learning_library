@@ -50,6 +50,42 @@ Tensor* tensor_create(int dims, int* shape) {
     return t;
 }
 
+Tensor* tensor_create_flatten(int dims, int* shape, float* flatten, int count)
+{
+    if (dims <= 0 || !shape || !flatten) {
+        fprintf(stderr, "Error: Invalid tensor dimensions %d in tensor_create_flatten\n", dims);
+        return NULL;
+    }
+
+    Tensor* t = (Tensor*)malloc(sizeof(Tensor));
+    if (!t) {
+        fprintf(stderr, "Error: Memory allocation failed for tensor\n");
+        return NULL;
+    }
+
+    t->count = count;
+    t->dims = dims;
+    t->shape = (int*)malloc(sizeof(int) * dims);
+    t->data = (float*)malloc(sizeof(float) * count);
+    memcpy(t->shape, shape, sizeof(int) * dims);
+    memcpy(t->data, flatten, sizeof(float) * count);
+    t->strides = (int*)malloc(sizeof(int) * dims);
+    if (!t->shape || !t->strides || !t->data) {
+        fprintf(stderr, "Error: Memory allocation failed for tensor shape/strides/data in tensor_create_flatten\n");
+        free(t->shape);
+        free(t->strides);
+        free(t->data);
+        free(t);
+        return NULL;
+    }
+
+    t->strides[dims - 1] = 1;
+    for (int i = dims - 2; i >= 0; i--) {
+        t->strides[i] = t->strides[i + 1] * t->shape[i + 1];
+    }
+
+    return t;
+}
 
 Tensor* tensor_zero_create(int dims, int* shape) {
     Tensor* t = tensor_create(dims, shape);
@@ -77,6 +113,7 @@ Tensor* tensor_random_create(int dims, int* shape) {
     Tensor* t = tensor_create(dims, shape);
     if (!t) return NULL;
 
+    srand(time(NULL));
     for (int i = 0; i < t->count; i++) {
         t->data[i] = ((float )rand() / RAND_MAX) * 2.0 - 1.0; // Range [-1, 1]
     }
@@ -105,7 +142,7 @@ int tensor_add_row(Tensor* t)
         row_size *= t->shape[i];
 
     int new_size = t->count + row_size;
-    int* new_data = (int*)realloc(t->data, sizeof(int)* new_size);
+    float* new_data = (float*)realloc(t->data, sizeof(float)* new_size);
     if(!new_data) {
         fprintf(stderr, "Error: Memory allocation failed for tensor data in tensor_add_row\n");
         return;
@@ -281,7 +318,7 @@ Tensor* tensor_slice_range(Tensor* t, int start, int end)
     int inner_count = t->count / t->shape[0];
 
     // Create shape for the sliced tensor
-    int* new_shape = (int*)malloc(sizeof(int) * t->dims);
+    float* new_shape = (float*)malloc(sizeof(float) * t->dims);
     if (!new_shape) {
         fprintf(stderr, "Error: Memory allocation failed in tensor_slice_range\n");
         return NULL;
@@ -309,7 +346,7 @@ Tensor* tensor_get_row(Tensor* t, int row) {
     }
 
     // Create a tensor for the row
-    int* new_shape = (int*)malloc(sizeof(int) * (t->dims - 1));
+    float* new_shape = (float*)malloc(sizeof(int) * (t->dims - 1));
     if (!new_shape) {
         fprintf(stderr, "Error: Memory allocation failed in tensor_get_row\n");
         return NULL;

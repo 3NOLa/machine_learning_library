@@ -1,5 +1,5 @@
 from python_binding.tasks import ffi, lib
-import Tensor
+from Tensor import Tensor
 
 
 class Neuron:
@@ -24,7 +24,7 @@ class DenseNeuron(Neuron):
         super().__init__(type,neuron,activation_function)
 
     def activate_neuron(self, input : Tensor):
-        return lib.neuron_activation(input.CTensor, self.neuron)
+        return lib.neuron_activation(input.c_tensor, self.neuron)
 
     def backward_neuron(self):
         return lib.neuron_backward()
@@ -42,7 +42,7 @@ class RnnNeuron(Neuron):
         super().__init__(type,neuron,activation_function)
 
     def activate_neuron(self, input : Tensor):
-        return lib.rnn_neuron_activation(input.CTensor, self.neuron)
+        return lib.rnn_neuron_activation(input.c_tensor, self.neuron)
 
     def backward_neuron(self):
         return lib.rnn_neuron_backward()
@@ -60,7 +60,7 @@ class LstmNeuron(Neuron):
         super().__init__(type,neuron,activation_function)
 
     def activate_neuron(self, input : Tensor):
-        return lib.lstm_neuron_activation(input.CTensor, self.neuron)
+        return lib.lstm_neuron_activation(input.c_tensor, self.neuron)
 
     def backward_neuron(self):
         return lib.lstm_neuron_backward()

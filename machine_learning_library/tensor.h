@@ -12,6 +12,7 @@ EXPORT typedef struct {
 } Tensor;
 
 EXPORT Tensor* tensor_create(int dims, int* shape);
+EXPORT Tensor* tensor_create_flatten(int dims, int* shape,float* flatten, int count);
 EXPORT Tensor* tensor_zero_create(int dims, int* shape);
 EXPORT Tensor* tensor_random_create(int dims, int* shape);
 EXPORT Tensor* tensor_identity_create(int row);

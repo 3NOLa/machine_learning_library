@@ -22,11 +22,11 @@ class NetworkModel:
 
     @staticmethod
     def loss_function(loss, y_pred: Tensor, y_real:Tensor):
-        return lib.loss_active_function(loss,y_pred.CTensor,y_real.CTensor)
+        return lib.loss_active_function(loss,y_pred.c_tensor,y_real.c_tensor)
 
     @staticmethod
     def loss_derivative(loss, y_pred: Tensor, y_real:Tensor):
-        return Tensor(1,lib.loss_derivative_active_function(loss,y_pred.CTensor,y_real.CTensor))
+        return Tensor.c_to_tensor(lib.loss_derivative_active_function(loss,y_pred.c_tensor,y_real.c_tensor))
 
 
 class Network(NetworkModel):
@@ -61,10 +61,10 @@ class Network(NetworkModel):
         lib.network_train_type(self.c_network)
 
     def forward(self, data: Tensor):
-        return lib.forwardPropagation(self.c_network, data.CTensor)
+        return lib.forwardPropagation(self.c_network, data.c_tensor)
 
     def backward(self, predictions:Tensor, targets:Tensor):
-        return lib.backpropagation(self.c_network, predictions.CTensor, targets.CTensor)
+        lib.backpropagation(self.c_network, predictions.c_tensor, targets.c_tensor)
 
 
 class checkModel(Network):

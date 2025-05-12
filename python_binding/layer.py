@@ -14,10 +14,10 @@ class Layer:
         self.py_neurons = []
 
     def layer_forward(self, input:Tensor):
-        return lib.layer_ptr.forward(self.layer_ptr,input)
+        return Tensor.c_to_tensor(lib.layer_ptr.forward(self.layer_ptr,input))
 
     def layer_backward(self, input_gradients:Tensor,lr:float):
-        return lib.layer_ptr.backward(self.layer_ptr,input_gradients,lr)
+        return Tensor.c_to_tensor(lib.layer_ptr.backward(self.layer_ptr,input_gradients,lr))
 
     def get_neuron(self, index: int):
         return self.py_neurons[index]
@@ -41,10 +41,10 @@ class DenseLayer(Layer):
         ]
 
     def layer_forward(self, input:Tensor):
-        return Tensor(1,lib.layer_forward(self.layer_type_ptr, input.CTensor))
+        return Tensor.c_to_tensor(lib.layer_forward(self.layer_type_ptr, input.c_tensor))
 
     def layer_backward(self, input_gradients:Tensor,lr:float):
-        return Tensor(1,lib.layer_backward(self.layer_type_ptr, input_gradients.CTensor, lr))
+        return Tensor.c_to_tensor(lib.layer_backward(self.layer_type_ptr, input_gradients.c_tensor, lr))
 
 
 class RnnLayer(Layer):
@@ -63,12 +63,12 @@ class RnnLayer(Layer):
 
     def layer_forward(self, input:Tensor, timestamps=1):
         t_outputs = []
-        for i in range(timestamps):
-            t_outputs.append(Tensor(1,lib.rnn_layer_forward(self.layer_type_ptr, input.CTensor)))
+        for t in range(timestamps): #need tp chamge for eatch timesatmp a slice of the input
+            t_outputs.append(Tensor.c_to_tensor(lib.rnn_layer_forward(self.layer_type_ptr, input.c_tensor)))
         return t_outputs
 
     def layer_backward(self, input_gradients:Tensor,lr:float):
-        return Tensor(1,lib.rnn_layer_backward(self.layer_type_ptr, input_gradients.CTensor, lr))
+        return Tensor.c_to_tensor(lib.rnn_layer_backward(self.layer_type_ptr, input_gradients.c_tensor, lr))
 
 
 class LstmLayer(Layer):
@@ -87,10 +87,10 @@ class LstmLayer(Layer):
 
     def layer_forward(self, input:Tensor, timestamps=1):
         t_outputs = []
-        for i in range(timestamps):
-            t_outputs.append(Tensor(1,lib.lstm_layer_forward(self.layer_type_ptr, input.CTensor)))
+        for i in range(timestamps):#need tp chamge for eatch timesatmp a slice of the input
+            t_outputs.append(Tensor.c_to_tensor(lib.lstm_layer_forward(self.layer_type_ptr, input.c_tensor)))
         return t_outputs
 
     def layer_backward(self, input_gradients:Tensor,lr:float):
-        return Tensor(1,lib.lstm_layer_backward(self.layer_type_ptr, input_gradients.CTensor, lr))
+        return Tensor.c_to_tensor(lib.lstm_layer_backward(self.layer_type_ptr, input_gradients.c_tensor, lr))
 

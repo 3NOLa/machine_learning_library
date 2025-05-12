@@ -7,6 +7,7 @@ typedef struct {
 } Tensor;
 
 Tensor* tensor_create(int dims, int* shape);
+Tensor* tensor_create_flatten(int dims, int* shape,float* flatten, int count);
 Tensor* tensor_zero_create(int dims, int* shape);
 Tensor* tensor_random_create(int dims, int* shape);
 Tensor* tensor_identity_create(int row);
