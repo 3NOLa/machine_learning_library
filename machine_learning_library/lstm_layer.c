@@ -21,7 +21,7 @@ lstm_layer* lstm_layer_create(int neuronAmount, int neuronDim, ActivationType Ac
     ll->neuronAmount = neuronAmount;
     ll->sequence_length = 0;
 
-    ll->output = tensor_zero_create(2, (int[]) { 1, neuronAmount });
+    ll->output = tensor_zero_create(1, (int[]) { neuronAmount });
     if (!ll->output) {
         fprintf(stderr, "Error: Failed to create output for lstm_layer_create\n");
         free(ll);
@@ -58,7 +58,7 @@ Tensor* lstm_layer_forward(lstm_layer* ll, Tensor* input)
         return NULL;
     }
 
-    Tensor* output = tensor_create(2, (int[]) { 1, ll->neuronAmount });
+    Tensor* output = tensor_create(1, (int[]) { ll->neuronAmount });
     if (!output) {
         fprintf(stderr, "Error: Failed to create output tensor in layer_forward\n");
         return NULL;
@@ -68,7 +68,7 @@ Tensor* lstm_layer_forward(lstm_layer* ll, Tensor* input)
         ll->neurons[i]->timestamp = ll->sequence_length;
         float  activation = lstm_neuron_activation(input, ll->neurons[i]);
 
-        tensor_set(output, (int[]) { 0, i }, activation);
+        tensor_set(output, (int[]) { i }, activation);
     }
 
     if (ll->output)

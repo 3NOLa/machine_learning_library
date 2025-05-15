@@ -20,11 +20,25 @@ void print_network_weights(network* net) {
     }
 }
 
+void print_network_weights_rnn(network* net) {
+    printf("Network weights:\n");
+    for (int l = 0; l < net->layerAmount; l++) {
+        printf("Layer %d:\n", l);
+        for (int n = 0; n < net->layersSize[l]; n++) {
+            rnn_layer* dl = (rnn_layer*)(net->layers[l]->params);
+            neuron* neuron = dl->neurons[n]->n;
+            printf("  Neuron %d: bias=%.4f weights=[", n, neuron->bias);
+            tensor_print(neuron->weights);
+            printf("]\n");
+        }
+    }
+}
+
 // Function to create a simple XOR dataset
 void create_xor_dataset(Tensor** inputs, Tensor** outputs, int num_samples) {
     // Create inputs: [0,0], [0,1], [1,0], [1,1]
     int input_shape[2] = { num_samples, 2 };  // num_samples x 2 tensor
-    int output_shape[2] = { num_samples, 1 }; // num_samples x 1 tensor
+    int output_shape[2] = { num_samples, 1}; // num_samples x 1 tensor
 
     *inputs = tensor_create(2, input_shape);
     *outputs = tensor_create(2, output_shape);
@@ -195,16 +209,16 @@ void test_single_neuron() {
     printf("Initial bias: %.4f\n", n->bias);
 
     // Test activation with sample input
-    int shape[2] = {1,2};
-    Tensor* input = tensor_create(2, shape);
+    int shape[1] = {2};
+    Tensor* input = tensor_create(1, shape);
     if (!input) {
         fprintf(stderr, "Failed to create input matrix\n");
         neuron_free(n);
         return;
     }
 
-    int index1[2] = { 0,0 };
-    int index2[2] = { 0,1 };
+    int index1[1] = { 0 };
+    int index2[1] = { 1 };
     tensor_set(input, index1, 0.5);
     tensor_set(input, index2, -0.5);
 
@@ -217,7 +231,7 @@ void test_single_neuron() {
     if (input_gradients) {
         printf("Input gradients: [%.4f, %.4f]\n",
             tensor_get_element_by_index(input_gradients, 0),
-            tensor_get_element_by_index(input_gradients, 1));
+            input_gradients->data[1]);
         printf("Updated weights: [%.4f, %.4f]\n", n->weights->data[0], n->weights->data[1]);
         printf("Updated bias: %.4f\n", n->bias);
         tensor_free(input_gradients);
@@ -241,27 +255,27 @@ void test_single_layer() {
 
     // Print layer structure
     printf("Layer created with %d neurons, each with %d inputs\n",
-        l->neuronAmount, l->neurons[0]->weights->shape[1]);
+        l->neuronAmount, l->neurons[0]->weights->shape[0]);
 
     // Test forward pass
-    int shape[2] = { 1, 2 };
-    Tensor* input = tensor_create(2,shape);
+    int shape[1] = { 2 };
+    Tensor* input = tensor_create(1,shape);
     if (!input) {
         fprintf(stderr, "Failed to create input matrix\n");
         layer_free(l);
         return;
     }
 
-    int index1[2] = { 0,0 };
-    int index2[2] = { 0,1 };
+    int index1[1] = { 0 };
+    int index2[1] = { 1 };
     tensor_set(input, index1, 0.5);
     tensor_set(input, index2, -0.5);
 
     Tensor* output = layer_forward(l, input);
     if (output) {
         printf("Layer output for input [0.5, -0.5]:\n[");
-        for (int i = 0; i < output->shape[1]; i++) {
-            int index3[2] = { 0,i };
+        for (int i = 0; i < output->shape[0]; i++) {
+            int index3[1] = { i };
             printf("%.4lf", tensor_get_element(output, index3));
             if (i < output->shape[1] - 1) printf(", ");
         }
@@ -269,12 +283,12 @@ void test_single_layer() {
 
         // Test backward pass
         printf("\nTesting backward pass...\n");
-        int shape3[2] = { 1, 3 };
-        Tensor* gradients = tensor_create(2,shape3);
+        int shape3[1] = { 3 };
+        Tensor* gradients = tensor_create(1,shape3);
         if (gradients) {
             // Set some gradients for the output
-            for (int i = 0; i < gradients->shape[1]; i++) {
-                int index4[2] = { 0,i };
+            for (int i = 0; i < gradients->shape[0]; i++) {
+                int index4[1] = { i };
                 tensor_set(gradients, index4, 1.0);
             }
 
@@ -302,10 +316,10 @@ void test_neural_network() {
 
     // Create a simple XOR network
     int layers[] = { 4, 1 };           // Hidden layer with 4 neurons, output layer with 1 neuron
-    int input_shape[] = { 1,2 };
-    ActivationType activations[] = { GELU, LEAKY_RELU };
+    int input_shape[] = { 2 };
+    ActivationType activations[] = { TANH, SIGMOID };
 
-    network* net = network_create(2, layers, 2, input_shape, activations, 0.1,MAE,LAYER_DENSE);
+    network* net = network_create(2, layers, 1, input_shape, activations, 0.1,MSE,LAYER_DENSE);
     if (!net) {
         fprintf(stderr, "Network creation failed\n");
         return;
@@ -332,12 +346,8 @@ void test_neural_network() {
         float  total_error = 0.0;
 
         for (int i = 0; i < 4; i++) {
-            // Get a single training example using tensor_slice instead of tensor_get_row
-            int start_indices[2] = { i, 0 };
-            int end_indices[2] = { i + 1, inputs->shape[1] };
             Tensor* single_input = tensor_get_row(inputs,i);
             Tensor* single_output = tensor_get_row(outputs,i);
-
             if (!single_input || !single_output) {
                 fprintf(stderr, "Failed to slice training example %d\n", i);
                 continue;
@@ -376,11 +386,10 @@ void test_neural_network() {
         Tensor* prediction = forwardPropagation(net, single_input);
 
         if (prediction) {
-            // Get the input values using proper tensor indexing
             int input_indices1[2] = { i, 0 };
             int input_indices2[2] = { i, 1 };
             int output_indices[2] = { i, 0 };
-            int pred_indices[2] = { 0,0 }; // Assuming prediction is a 1D tensor
+            int pred_indices[2] = { 0,0 }; 
 
             printf("[%.1f, %.1f]\t%.1f\t%.4f\n",
                 tensor_get_element(inputs, input_indices1),
@@ -506,8 +515,8 @@ void test_csv_parser(char* filename)
 
 void test_rnn()
 {
-    int input_dims = 2;
-    int input_shape[] = { 1, 2 };  // 1 sample, 2 features
+    int input_dims = 1;
+    int input_shape[] = { 2 };  // 1 sample, 2 features
     int layer_sizes[] = { 2 };     // RNN hidden/output size = 2
     ActivationType activations[] = { SIGMOID };
     LossType loss_type = MSE;
@@ -519,6 +528,8 @@ void test_rnn()
         fprintf(stderr, "Failed to create RNN network.\n");
         return 1;
     }
+    print_network_weights_rnn(net);
+
 
     // Input: [3 timestamps x 2 features]
     Tensor* input_seq = tensor_create(2, (int[]) { timestamps, 2 });

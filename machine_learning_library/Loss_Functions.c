@@ -60,7 +60,7 @@ float  absolute_error_net(network* net, Tensor* y_real)
     return error / y_hat->count;
 }
 
-Tensor* derivative_absolute_error_net(network* net, Tensor* y_real)
+Tensor* derivative_absolute_error_net(network* net, Tensor* y_real) // need update
 {
     if (!net || !y_real || !get_layer_output(net->layers[net->layerAmount - 1])) {
         fprintf(stderr, "Error: NULL tensors in derivative_squared_error\n");

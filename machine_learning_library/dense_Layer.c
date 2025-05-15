@@ -96,7 +96,7 @@ Tensor* layer_forward(dense_layer* l, Tensor* input)
     }
 
     // Create a 1D tensor for output
-    Tensor* output = tensor_create(2, (int[]){ 1, l->neuronAmount });
+    Tensor* output = tensor_create(1, (int[]){ l->neuronAmount });
     if (!output) {
         fprintf(stderr, "Error: Failed to create output tensor in layer_forward\n");
         return NULL;
@@ -105,7 +105,7 @@ Tensor* layer_forward(dense_layer* l, Tensor* input)
     for (int i = 0; i < l->neuronAmount; i++) {
         float  activation = neuron_activation(input, l->neurons[i]);
 
-        tensor_set(output, (int[]) { 0, i }, activation);
+        tensor_set(output, (int[]) {  i }, activation);
     }
 
     if (l->output)
@@ -136,7 +136,7 @@ Tensor* layer_backward(dense_layer* l, Tensor* input_gradients, float  learning_
 
     // Output gradients with respect to this layer's inputs
     // Create a tensor with the same shape as neuron weights
-    Tensor* output_gradients = tensor_zero_create(2, l->neurons[0]->weights->shape);
+    Tensor* output_gradients = tensor_zero_create(l->neurons[0]->weights->dims, l->neurons[0]->weights->shape);
     if (!output_gradients) {
         fprintf(stderr, "Error: Failed to create output gradients in layer_backward\n");
         return NULL;
@@ -145,7 +145,7 @@ Tensor* layer_backward(dense_layer* l, Tensor* input_gradients, float  learning_
     // For each neuron in the layer
     for (int i = 0; i < l->neuronAmount; i++) {
         // Get this neuron's portion of the gradient using proper tensor access
-        int grad_indices[2] = {0, i };
+        int grad_indices[1] = { i };
         float  neuron_gradient = tensor_get_element(input_gradients, grad_indices);
 
         // Compute gradients for this neuron's weights and bias
@@ -159,8 +159,8 @@ Tensor* layer_backward(dense_layer* l, Tensor* input_gradients, float  learning_
 
         // Accumulate input gradients from this neuron
         for (int j = 0; j < output_gradients->count; j++) {
-            int out_indices[2] = {0, j };
-            int in_indices[2] = {0, j };
+            int out_indices[1] = { j };
+            int in_indices[1] = { j };
 
             float  current = tensor_get_element(output_gradients, out_indices);
             float  to_add = tensor_get_element(neuron_input_gradients, in_indices);

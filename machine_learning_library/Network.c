@@ -29,7 +29,7 @@ network* network_create(int layerAmount, int* layersSize, int input_dims, int* i
         return NULL;
     }
 
-    for (int i = 0; i < input_dims; i++) 
+    for (int i = 0; i < input_dims; i++)
         net->input_shape[i] = input_shape[i];
     
 
@@ -392,6 +392,7 @@ float  rnn_train(network* net, Tensor* input, Tensor* target, int timestamps)
     for (int i = 0; i < timestamps-1; i++)
     {
         Tensor* input_t = tensor_slice_range(input, i,i+1);
+        input_t = tensor_flatten(input_t);
         Tensor* pred = forwardPropagation(net, input_t);
         tensor_free(input_t);
         if (predictions) tensor_free(predictions);  // free previous
@@ -399,7 +400,6 @@ float  rnn_train(network* net, Tensor* input, Tensor* target, int timestamps)
     }
     // Calculate error
     float  error = net->LossFuntionPointer(net, target);
-
 
     // Backward pass
     if (!backpropagation(net, predictions, target)) {

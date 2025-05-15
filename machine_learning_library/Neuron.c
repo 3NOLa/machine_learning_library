@@ -19,7 +19,7 @@ neuron* neuron_create(int weightslength, ActivationType Activation)
     n->input = NULL;  // Initialize to NULL, will be set during activation
 
     // Create a 1D tensor for weights
-    n->weights = tensor_random_create(2, (int[]) { 1, weightslength });
+    n->weights = tensor_random_create(1, (int[]) { weightslength });
     if (!n->weights) {
         fprintf(stderr, "Error: Failed to create weights for neuron\n");
         free(n);
@@ -102,7 +102,7 @@ Tensor* neuron_backward(float  output_gradient, neuron* n, float  learning_rate)
     float  pre_activation_gradient = output_gradient * activation_derivative;
 
     // Create gradients for inputs with the same shape as weights
-    Tensor* input_gradients = tensor_create(2, n->weights->shape);
+    Tensor* input_gradients = tensor_create(n->weights->dims, n->weights->shape);
     if (!input_gradients) {
         fprintf(stderr, "Error: Failed to create input gradients in neuron_backward\n");
         return NULL;
@@ -110,7 +110,7 @@ Tensor* neuron_backward(float  output_gradient, neuron* n, float  learning_rate)
 
     // Calculate gradients for this neuron's parameters and inputs
     for (int i = 0; i < n->weights->count; i++) {
-        int indices[2] = {0, i };
+        int indices[1] = { i };
 
         // Get original weight using tensor access
         float  original_weight = tensor_get_element(n->weights, indices);

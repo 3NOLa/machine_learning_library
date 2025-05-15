@@ -20,7 +20,7 @@ rnn_layer* rnn_layer_create(int neuronAmount, int neuronDim, ActivationType Acti
     rl->neuronAmount = neuronAmount;
     rl->sequence_length = 0;
 
-    rl->output = tensor_zero_create(2, (int[]) { 1, neuronAmount });
+    rl->output = tensor_zero_create(1, (int[]) { neuronAmount });
     if (!rl->output) {
         fprintf(stderr, "Error: Failed to create output for rnn_layer\n");
         free(rl);
@@ -58,7 +58,7 @@ Tensor* rnn_layer_forward(rnn_layer* rl, Tensor* input)
     }
 
     // Create a 1D tensor for output
-    Tensor* output = tensor_create(2, (int[]) { 1, rl->neuronAmount });
+    Tensor* output = tensor_create(1, (int[]) { rl->neuronAmount });
     if (!output) {
         fprintf(stderr, "Error: Failed to create output tensor in layer_forward\n");
         return NULL;
@@ -66,12 +66,12 @@ Tensor* rnn_layer_forward(rnn_layer* rl, Tensor* input)
 
     for (int i = 0; i < rl->neuronAmount; i++) {
         //giving the neuron hidden state the output of the layer that is the t-1 output
-        rl->neurons[i]->hidden_state = tensor_get_element(rl->output, (int[]) {0,i});
+        rl->neurons[i]->hidden_state = tensor_get_element(rl->output, (int[]) {i});
         //set neuron to the right timestamp
         rl->neurons[i]->timestamp = rl->sequence_length;
         float  activation = rnn_neuron_activation(input, rl->neurons[i]);
 
-        tensor_set(output, (int[]) { 0, i }, activation);
+        tensor_set(output, (int[]) { i }, activation);
     }
     
     if (rl->output)
@@ -109,7 +109,7 @@ Tensor* rnn_layer_backward(rnn_layer* rl, Tensor* output_gradients, float  learn
             //set neuron timestamp to the correct one
             rl->neurons[i]->timestamp = t;
             // Get the gradient for this neuron's output
-            float  output_gradient = tensor_get_element(output_gradients, (int[]) { 0, i });
+            float  output_gradient = tensor_get_element(output_gradients, (int[]) {  i });
 
             // Backpropagate through this neuron
             Tensor* neuron_input_gradients = rnn_neuron_backward(output_gradient, rl->neurons[i], learning_rate);

@@ -226,7 +226,7 @@ int tensor_get_index(Tensor* t, int* indices) {
     int index = 0;
     for (int i = 0; i < t->dims; i++) {
         if (indices[i] < 0 || indices[i] >= t->shape[i]) {
-            fprintf(stderr, "Error: Index %d out of bounds for dimension %d (size %d)\n",
+            fprintf(stderr, "Error: Index %d out of bounds for dimension %d (size %d) in tensor_get_index\n",
                 indices[i], i, t->shape[i]);
             return -1;
         }
@@ -318,7 +318,7 @@ Tensor* tensor_slice_range(Tensor* t, int start, int end)
     int inner_count = t->count / t->shape[0];
 
     // Create shape for the sliced tensor
-    float* new_shape = (float*)malloc(sizeof(float) * t->dims);
+    int* new_shape = (int*)malloc(sizeof(float) * t->dims);
     if (!new_shape) {
         fprintf(stderr, "Error: Memory allocation failed in tensor_slice_range\n");
         return NULL;
@@ -346,7 +346,7 @@ Tensor* tensor_get_row(Tensor* t, int row) {
     }
 
     // Create a tensor for the row
-    float* new_shape = (float*)malloc(sizeof(int) * (t->dims - 1));
+    int* new_shape = (int*)malloc(sizeof(int) * (t->dims - 1));
     if (!new_shape) {
         fprintf(stderr, "Error: Memory allocation failed in tensor_get_row\n");
         return NULL;
@@ -356,7 +356,6 @@ Tensor* tensor_get_row(Tensor* t, int row) {
     for (int i = 1; i < t->dims; i++) {
         new_shape[i - 1] = t->shape[i];
     }
-
     Tensor* row_tensor = tensor_create(t->dims - 1, new_shape);
     free(new_shape);
 
@@ -365,7 +364,6 @@ Tensor* tensor_get_row(Tensor* t, int row) {
     // Copy data for this row
     int* indices = (int*)malloc(sizeof(int) * t->dims);
     indices[0] = row;
-
     int* new_indices = (int*)malloc(sizeof(int) * (t->dims - 1));
     for (int i = 0; i < row_tensor->count; i++) {
         // Convert flat index to multi-dimensional indices for the row tensor
