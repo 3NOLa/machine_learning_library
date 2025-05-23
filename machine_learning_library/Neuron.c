@@ -20,14 +20,16 @@ neuron* neuron_create(int weightslength, ActivationType Activation)
 
     // Create a 1D tensor for weights
     n->weights = tensor_random_create(1, (int[]) { weightslength });
-    if (!n->weights) {
-        fprintf(stderr, "Error: Failed to create weights for neuron\n");
+    n->grad_weights = tensor_zero_create(1, (int[]) { weightslength });
+    if (!n->weights || !n->grad_weights) {
+        fprintf(stderr, "Error: Failed to create weights or grad_weights for neuron\n");
         free(n);
         return NULL;
     }
 
     // Initialize bias to a random value between -1 and 1
     n->bias = ((float )rand() / RAND_MAX) * 2 - 1;
+    n->grad_bias = 0.0;
     n->output = 0.0;  // Initialize output to 0
     n->pre_activation = 0.0;
 
@@ -89,7 +91,7 @@ float  neuron_activation(Tensor* input, neuron* n)
     return n->output;
 }
 
-Tensor* neuron_backward(float  output_gradient, neuron* n, float  learning_rate)
+void neuron_backward(float  output_gradient, neuron* n,Tensor* output_gradients)
 {
     if (!n || !n->input) {
         fprintf(stderr, "Error: NULL neuron or input in neuron_backward\n");
@@ -101,13 +103,6 @@ Tensor* neuron_backward(float  output_gradient, neuron* n, float  learning_rate)
     // Chain rule - gradient flows through activation function
     float  pre_activation_gradient = output_gradient * activation_derivative;
 
-    // Create gradients for inputs with the same shape as weights
-    Tensor* input_gradients = tensor_create(n->weights->dims, n->weights->shape);
-    if (!input_gradients) {
-        fprintf(stderr, "Error: Failed to create input gradients in neuron_backward\n");
-        return NULL;
-    }
-
     // Calculate gradients for this neuron's parameters and inputs
     for (int i = 0; i < n->weights->count; i++) {
         int indices[1] = { i };
@@ -118,20 +113,27 @@ Tensor* neuron_backward(float  output_gradient, neuron* n, float  learning_rate)
         // Get input value using tensor access
         float  input_val = tensor_get_element(n->input, indices);
 
-        // Calculate weight gradient
-        float  weight_gradient = pre_activation_gradient * input_val;
+        output_gradients->data[i] += pre_activation_gradient * original_weight;
 
-        // Store input gradient using original weight
-        tensor_set(input_gradients, indices, pre_activation_gradient * original_weight);
-
-        // Now update weight
-        tensor_set(n->weights, indices, original_weight + weight_gradient * learning_rate);
+        n->grad_weights->data[i] += pre_activation_gradient * input_val;
     }
 
     // Gradient for bias: dL/db = dL/dout * dout/dz * dz/db = output_gradient * activation_derivative * 1
-    n->bias += pre_activation_gradient * learning_rate;
+    n->grad_bias += pre_activation_gradient;
+}
 
-    return input_gradients;
+void neuron_update(neuron* n, float learning_rate) {
+    for (int i = 0; i < n->weights->count; ++i) {
+        n->weights->data[i] += learning_rate * n->grad_weights->data[i];
+    }
+    n->bias += learning_rate * n->grad_bias;
+}
+
+void neuron_zero_grad(neuron* n)
+{
+    if (!n) return;
+    tensor_fill(n->grad_weights, 0.0f);
+    n->grad_bias = 0.0f;
 }
 
 void neuron_free(neuron* n)

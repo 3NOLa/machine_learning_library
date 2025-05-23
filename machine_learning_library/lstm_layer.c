@@ -81,7 +81,7 @@ Tensor* lstm_layer_forward(lstm_layer* ll, Tensor* input)
     return output;
 }
 
-Tensor* lstm_layer_backward(lstm_layer* ll, Tensor* output_gradients, float  learning_rate)
+Tensor* lstm_layer_backward(lstm_layer* ll, Tensor* output_gradients)
 {
     if (!ll || !output_gradients) {
         fprintf(stderr, "Error: NULL dense_layer or gradients in lstm_layer_backward\n");
@@ -96,33 +96,19 @@ Tensor* lstm_layer_backward(lstm_layer* ll, Tensor* output_gradients, float  lea
     Tensor* accumulated_input_gradients = NULL;
 
     for (int t = ll->sequence_length - 1; t >= 0; t--) {
-        Tensor* timestep_input_gradients = NULL;
+
+        Tensor* timestep_input_gradients = tensor_create(ll->neurons[0]->f_g->n->weights->dims, ll->neurons[0]->f_g->n->weights->shape);
+        if (!timestep_input_gradients) {
+            fprintf(stderr, "Error: Failed to create input gradients in lstm_neuron_backward\n");
+            return NULL;
+        };
 
         for (int i = 0; i < ll->neuronAmount; i++) {
             ll->neurons[i]->timestamp = t;
 
             float  output_gradient = tensor_get_element(output_gradients, (int[]) { 0, i });
 
-            Tensor* neuron_input_gradients = lstm_neuron_backward(output_gradient, ll->neurons[i], learning_rate);
-
-            if (!neuron_input_gradients) {
-                fprintf(stderr, "Error: Failed to get input gradients from neuron %d\n", i);
-                continue;
-            }
-
-            if (timestep_input_gradients == NULL) {
-                timestep_input_gradients = tensor_create(neuron_input_gradients->dims, neuron_input_gradients->shape);
-                tensor_copy(timestep_input_gradients, neuron_input_gradients);
-            }
-            else {
-                for (int j = 0; j < neuron_input_gradients->count; j++) {
-                    float  current = tensor_get_element_by_index(timestep_input_gradients, j);
-                    float  to_add = tensor_get_element_by_index(neuron_input_gradients, j);
-                    tensor_set_by_index(timestep_input_gradients, j, current + to_add);
-                }
-            }
-
-            tensor_free(neuron_input_gradients);
+            lstm_neuron_backward(output_gradient, ll->neurons[i], timestep_input_gradients);
         }
 
         // Accumulate gradients across timesteps
@@ -141,6 +127,27 @@ Tensor* lstm_layer_backward(lstm_layer* ll, Tensor* output_gradients, float  lea
     }
 
     return accumulated_input_gradients;
+}
+
+void lstm_layer_update(lstm_layer* ll, float lr)
+{
+    if (!ll || ll->neuronAmount <= 0) {
+        fprintf(stderr, "Error: NULL or empty rnn_layer in rnn_layer_update\n");
+        return;
+    }
+
+    for (int i = 0; i < ll->neuronAmount; i++) {
+        if (ll->neurons[i]) {
+            lstm_neuron_update(ll->neurons[i], lr);
+        }
+    }
+}
+
+void lstm_layer_zero_grad(lstm_layer* ll)
+{
+    if (!ll) return;
+    for (int i = 0; i < ll->neuronAmount; ++i)
+        lstm_neuron_zero_grad(ll->neurons[i]);
 }
 
 void lstm_layer_reset_state(lstm_layer* ll)

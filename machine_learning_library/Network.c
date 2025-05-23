@@ -318,7 +318,7 @@ int backpropagation(network* net, Tensor* predictions, Tensor* targets)
 
     // Backpropagate through each layer in reverse order
     for (int i = net->layerAmount - 1; i >= 0; i--) {
-        new_gradients = net->layers[i]->backward(net->layers[i], current_gradients, net->learnningRate);
+        new_gradients = net->layers[i]->backward(net->layers[i], current_gradients);
         if (!new_gradients) {
             fprintf(stderr, "Error: Layer %d backpropagation failed\n", i);
 
@@ -346,12 +346,34 @@ int backpropagation(network* net, Tensor* predictions, Tensor* targets)
     return 1;
 }
 
+void network_update(network* net) {
+    for (int i = 0; i < net->layerAmount; i++) {
+        net->layers[i]->update(net->layers[i], net->learnningRate);
+    }
+}
+
+void network_zero_grad(network* net)
+{
+    for (int i = 0; i < net->layerAmount; i++) {
+        net->layers[i]->zero_grad(net->layers[i]);
+        }
+}
+
+void network_reset_state(network* net) {
+    for (int i = 0; i < net->layerAmount; i++) {
+        if (net->layers[i]->reset_state)
+            net->layers[i]->reset_state(net->layers[i]);
+    }
+}
+
 float  train(network* net, Tensor* input, Tensor* target)
 {
     if (!net || !input || !target) {
         fprintf(stderr, "Error: NULL parameters in train\n");
         return -1.0;  // Return negative error to indicate failure
     }
+
+    network_zero_grad(net);
 
     // Forward pass
     Tensor* predictions = forwardPropagation(net, input);
@@ -373,6 +395,8 @@ float  train(network* net, Tensor* input, Tensor* target)
     // Free resources
     tensor_free(predictions);
 
+    network_update(net);
+
     return error;
 }
 
@@ -383,18 +407,19 @@ float  rnn_train(network* net, Tensor* input, Tensor* target, int timestamps)
         return -1.0;  // Return negative error to indicate failure
     }
 
-    for (int i = 0; i < net->layerAmount; i++) {
-        if (net->layers[i]->reset_state)
-            net->layers[i]->reset_state(net->layers[i]);
-    }
+    network_zero_grad(net);
+
+    network_reset_state(net);
 
     Tensor* predictions = NULL;
     for (int i = 0; i < timestamps-1; i++)
     {
         Tensor* input_t = tensor_slice_range(input, i,i+1);
         input_t = tensor_flatten(input_t);
+
         Tensor* pred = forwardPropagation(net, input_t);
         tensor_free(input_t);
+
         if (predictions) tensor_free(predictions);  // free previous
         predictions = pred;
     }
@@ -410,6 +435,7 @@ float  rnn_train(network* net, Tensor* input, Tensor* target, int timestamps)
 
     // Free resources
     tensor_free(predictions);
+    network_update(net);
 
     return error;
 }

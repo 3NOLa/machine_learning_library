@@ -88,23 +88,17 @@ float  lstm_neuron_activation(Tensor* input, lstm_neuron* ln)
     return ln->short_memory_history[ln->timestamp] = ln->short_memory;
 }
 
-Tensor* lstm_neuron_backward(float  derivative, lstm_neuron* ln, float  learning_rate)
+void lstm_neuron_backward(float  derivative, lstm_neuron* ln, Tensor* input_gradients)
 {
     if (!ln) {
         fprintf(stderr, "Error: NULL neuron or input history in lstm_neuron_backward\n");
         return NULL;
     }
 
-    Tensor* input_gradients = tensor_create(ln->f_g->n->weights->dims, ln->f_g->n->weights->shape);
-    if (!input_gradients) {
-        fprintf(stderr, "Error: Failed to create input gradients in lstm_neuron_backward\n");
-        return NULL;
-    }
-
     float  activation_derivative = Tanh_function(ln->long_memory_history[ln->timestamp]);
     float  pre_activation_gradient = derivative * activation_derivative;
     ln->o_g_r->timestamp = ln->timestamp;
-    Tensor* o_g_r_tensor = rnn_neuron_backward(pre_activation_gradient, ln->o_g_r, learning_rate);
+    rnn_neuron_backward(pre_activation_gradient, ln->o_g_r, input_gradients);
     
     neuron n_value;
     neuron* n = &n_value;
@@ -113,24 +107,37 @@ Tensor* lstm_neuron_backward(float  derivative, lstm_neuron* ln, float  learning
 
     ln->f_g->timestamp = ln->timestamp;
     float  f_g_derivative = long_term_derviatve * ln->long_memory_history[ln->timestamp - 1];
-    Tensor* f_g_tensor = rnn_neuron_backward(f_g_derivative, ln->f_g, learning_rate);
+    rnn_neuron_backward(f_g_derivative, ln->f_g, input_gradients);
 
     ln->i_g_r->timestamp = ln->timestamp;
     float  i_g_r_derivative = long_term_derviatve * ln->i_g_p->hidden_state_history[ln->timestamp];
-    Tensor* i_g_r_tensor = rnn_neuron_backward(derivative, ln->i_g_r, learning_rate);
+    rnn_neuron_backward(derivative, ln->i_g_r, input_gradients);
 
     ln->i_g_p->timestamp = ln->timestamp;
     float  i_g_p_derivative = long_term_derviatve * ln->i_g_r->hidden_state_history[ln->timestamp];
-    Tensor* i_g_p_tensor = rnn_neuron_backward(i_g_p_derivative, ln->i_g_p, learning_rate);
-
-    tensor_add_more_inplace(o_g_r_tensor, (Tensor* []) { f_g_tensor , i_g_r_tensor, i_g_p_tensor}, 3);
-    tensor_free(f_g_tensor);
-    tensor_free(i_g_r_tensor);
-    tensor_free(i_g_p_tensor);
-
-    return o_g_r_tensor;
+    rnn_neuron_backward(i_g_p_derivative, ln->i_g_p, input_gradients);
 }
 
+void lstm_neuron_update(lstm_neuron* ln, float lr)
+{//probly need to chnage
+    if (!ln) {
+        fprintf(stderr, "Error: NULL rnn_neuron or inner neuron in lstm_neuron_update_weights\n");
+        return;
+    }
+
+    rnn_neuron_update(ln->f_g, lr);
+    rnn_neuron_update(ln->i_g_p, lr);
+    rnn_neuron_update(ln->i_g_r, lr);
+    rnn_neuron_update(ln->o_g_r, lr);
+}
+
+void lstm_neuron_zero_grad(lstm_neuron* ln)
+{//probly need to chnage
+    rnn_neuron_zero_grad(ln->f_g);
+    rnn_neuron_zero_grad(ln->i_g_p);
+    rnn_neuron_zero_grad(ln->i_g_r);
+    rnn_neuron_zero_grad(ln->o_g_r);
+}
 void lstm_neuron_free(lstm_neuron* ln)
 {
     if (ln) {

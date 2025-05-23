@@ -20,8 +20,10 @@ EXPORT typedef struct Layer {
     int neuronAmount;
     void* params;  
     Tensor* (*forward)(struct Layer* layer, Tensor* input);
-    Tensor* (*backward)(struct Layer* layer, Tensor* grad, float  learning_rate);
+    Tensor* (*backward)(struct Layer* layer, Tensor* grad);
+    void (*update)(struct Layer* layer, float  learning_rate);
     void (*free)(struct Layer* layer);
+    void (*zero_grad)(struct Layer* layer);
     //rnn only
     void (*reset_state)(struct layer* base_layer);
 }layer;
@@ -32,12 +34,18 @@ EXPORT Tensor* get_layer_output(layer* base_layer);
 EXPORT void set_layer_output(layer* base_layer, Tensor* output);
 
 EXPORT Tensor* wrapper_rnn_forward(layer* base_layer, Tensor* input);
-EXPORT Tensor* wrapper_rnn_backward(layer* base_layer, Tensor* grad, float  learning_rate);
+EXPORT Tensor* wrapper_rnn_backward(layer* base_layer, Tensor* grad);
+EXPORT void wrapper_rnn_update(layer* base_layer, float lr);
+EXPORT void wrapper_rnn_zero_grad(layer* base_layer);
 EXPORT void wrapper_rnn_reset_state(layer* base_layer);
 
 EXPORT Tensor* wrapper_dense_forward(layer* base_layer, Tensor* input);
-EXPORT Tensor* wrapper_dense_backward(layer* base_layer, Tensor* grad, float  learning_rate);
+EXPORT Tensor* wrapper_dense_backward(layer* base_layer, Tensor* gra);
+EXPORT void wrapper_dense_update(layer* base_layer, float lr);
+EXPORT void wrapper_dense_zero_grad(layer* base_layer);
 
 EXPORT Tensor* wrapper_lstm_forward(layer* base_layer, Tensor* input);
-EXPORT Tensor* wrapper_lstm_backward(layer* base_layer, Tensor* grad, float  learning_rate);
+EXPORT Tensor* wrapper_lstm_backward(layer* base_layer, Tensor* grad);
+EXPORT void wrapper_lstm_update(layer* base_layer, float lr);
+EXPORT void wrapper_lstm_zero_grad(layer* base_layer);
 EXPORT void wrapper_lstm_reset_state(layer* base_layer);

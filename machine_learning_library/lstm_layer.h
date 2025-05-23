@@ -14,6 +14,8 @@ EXPORT typedef struct {
 
 EXPORT lstm_layer* lstm_layer_create(int neuronAmount, int neuronDim, ActivationType Activationfunc);
 EXPORT Tensor* lstm_layer_forward(lstm_layer* ll, Tensor* input);
-EXPORT Tensor* lstm_layer_backward(lstm_layer* ll, Tensor* output_gradients, float  learning_rate);
+EXPORT Tensor* lstm_layer_backward(lstm_layer* ll, Tensor* output_gradients);
+EXPORT void lstm_layer_update(lstm_layer* ll, float lr);
+EXPORT void lstm_layer_zero_grad(lstm_layer* ll);
 EXPORT void lstm_layer_reset_state(lstm_layer* ll);
 EXPORT void lstm_layer_free(lstm_layer* ll);

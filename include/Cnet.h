@@ -15,7 +15,7 @@ int tensor_add_row(Tensor* t);
 
 void tensor_free(Tensor* t);
 int tensor_copy(Tensor* dest, Tensor* src);
-void tensor_zero(Tensor* t);
+void tensor_fill(Tensor* t,float value);
 
 // Access functions
 int tensor_get_index(Tensor* t, int* indices);
@@ -65,7 +65,9 @@ typedef enum {
 
 typedef struct neuron {
 	Tensor* weights;
-	float  bias;
+    	Tensor* grad_weights;
+    	float bias;
+   	float grad_bias;
 	Tensor* input;
 	float  pre_activation;
 	float  output;
@@ -77,7 +79,9 @@ typedef struct neuron {
 neuron* neuron_create(int weightslength, ActivationType func);
 void neuron_set_ActivationType(neuron* n, ActivationType Activation);
 float  neuron_activation(Tensor* input, neuron* n);
-Tensor* neuron_backward(float  derivative, neuron* n, float  learning_rate);
+void neuron_backward(float  derivative, neuron* n, Tensor* output_gradients);
+void neuron_update(neuron* n, float learning_rate);
+void neuron_zero_grad(neuron* n);
 void neuron_free(neuron* n);
 
 
@@ -119,8 +123,10 @@ typedef enum {
     int neuronAmount;
     void* params;  
     Tensor* (*forward)(struct Layer* layer, Tensor* input);
-    Tensor* (*backward)(struct Layer* layer, Tensor* grad, float  learning_rate);
+    Tensor* (*backward)(struct Layer* layer, Tensor* grad);
+    void (*update)(struct Layer* layer, float  learning_rate);
     void (*free)(struct Layer* layer);
+    void (*zero_grad)(struct Layer* layer);
     //rnn only
     void (*reset_state)(struct layer* base_layer);
 }layer;
@@ -131,14 +137,20 @@ Tensor* get_layer_output(layer* base_layer);
 void set_layer_output(layer* base_layer, Tensor* output);
 
 Tensor* wrapper_rnn_forward(layer* base_layer, Tensor* input);
-Tensor* wrapper_rnn_backward(layer* base_layer, Tensor* grad, float  learning_rate);
+Tensor* wrapper_rnn_backward(layer* base_layer, Tensor* grad);
+void wrapper_rnn_update(layer* base_layer, float lr);
+void wrapper_rnn_zero_grad(layer* base_layer);
 void wrapper_rnn_reset_state(layer* base_layer);
 
 Tensor* wrapper_dense_forward(layer* base_layer, Tensor* input);
-Tensor* wrapper_dense_backward(layer* base_layer, Tensor* grad, float  learning_rate);
+Tensor* wrapper_dense_backward(layer* base_layer, Tensor* gra);
+void wrapper_dense_update(layer* base_layer, float lr);
+void wrapper_dense_zero_grad(layer* base_layer);
 
 Tensor* wrapper_lstm_forward(layer* base_layer, Tensor* input);
-Tensor* wrapper_lstm_backward(layer* base_layer, Tensor* grad, float  learning_rate);
+Tensor* wrapper_lstm_backward(layer* base_layer, Tensor* grad);
+void wrapper_lstm_update(layer* base_layer, float lr);
+void wrapper_lstm_zero_grad(layer* base_layer);
 void wrapper_lstm_reset_state(layer* base_layer);
 
 typedef enum {
@@ -174,6 +186,9 @@ void network_train_type(network* net);
 
 Tensor* forwardPropagation(network* net, Tensor* data);
 int backpropagation(network* net, Tensor* predictions, Tensor* targets);
+void network_update(network* net);
+void network_zero_grad(network* net);
+void network_reset_state(network* net);
 
 float  train(network* net, Tensor* input, Tensor* target);
 void network_training(network* net, Tensor* input, Tensor* target, int epcho, int batch_size);
@@ -227,7 +242,9 @@ void layer_addNeuron(dense_layer* l);
 void layer_set_neuronAmount(dense_layer* l, int neuronAmount);
 void layer_set_activtion(dense_layer* l, ActivationType Activationfunc);
 Tensor* layer_forward(dense_layer* l, Tensor* input);
-Tensor* layer_backward(dense_layer* l, Tensor* input_gradients, float  learning_rate);
+Tensor* layer_backward(dense_layer* l, Tensor* input_gradients);
+void dense_layer_update(dense_layer* layer, float learning_rate);
+void dense_layer_zero_grad(dense_layer* dl);
 void layer_free(dense_layer* l);
 
 
@@ -236,8 +253,10 @@ void layer_free(dense_layer* l);
 
 typedef struct rnn_neuron {
 	neuron* n;
-	float  recurrent_weights;
-	float  hidden_state;
+	float recurrent_weights;
+    	float grad_recurrent_weights;
+    	float hidden_state;
+   	float grad_hidden_state;
 	Tensor* input_history[128];
 	float  hidden_state_history[128];
 	int timestamp;
@@ -245,8 +264,10 @@ typedef struct rnn_neuron {
 
 rnn_neuron* rnn_neuron_create(int weightslength, ActivationType func);
 void rnn_neuron_set_ActivationType(rnn_neuron* rn, ActivationType Activation);
-float  rnn_neuron_activation(Tensor* input, rnn_neuron* rn);
-Tensor* rnn_neuron_backward(float  derivative, rnn_neuron* rn, float  learning_rate);
+float rnn_neuron_activation(Tensor* input, rnn_neuron* rn);
+void rnn_neuron_backward(float  output_gradient, rnn_neuron* rn, Tensor* input_grads);
+void rnn_neuron_update(rnn_neuron* rn, float rl);
+void rnn_neuron_zero_grad(rnn_neuron* rn);
 void rnn_neuron_free(rnn_neuron* rn);
 
 typedef struct lstm_neuron {
@@ -265,7 +286,9 @@ typedef struct lstm_neuron {
 
 lstm_neuron* lstm_neuron_create(int weightslength, ActivationType func);
 float  lstm_neuron_activation(Tensor* input, lstm_neuron* ln);
-Tensor* lstm_neuron_backward(float  derivative, lstm_neuron* ln, float  learning_rate);
+void lstm_neuron_backward(float  derivative, lstm_neuron* ln, Tensor* input_gradients);
+void lstm_neuron_update(lstm_neuron* ln, float rl);
+void lstm_neuron_zero_grad(lstm_neuron* ln);
 void lstm_neuron_free(lstm_neuron* ln);
 
 typedef struct {
@@ -278,7 +301,9 @@ typedef struct {
 
 rnn_layer* rnn_layer_create(int neuronAmount, int neuronDim, ActivationType Activationfunc);
 Tensor* rnn_layer_forward(rnn_layer* rl, Tensor* input);
-Tensor* rnn_layer_backward(rnn_layer* rl, Tensor* output_gradients, float  learning_rate);
+Tensor* rnn_layer_backward(rnn_layer* rl, Tensor* output_gradients);
+void rnn_layer_update(rnn_layer* rl, float lr);
+void rnn_layer_zero_grad(rnn_layer* rl);
 void rnn_layer_reset_state(rnn_layer* rl);
 void rnn_layer_free(rnn_layer* rl);
 
@@ -292,7 +317,9 @@ typedef struct {
 
 lstm_layer* lstm_layer_create(int neuronAmount, int neuronDim, ActivationType Activationfunc);
 Tensor* lstm_layer_forward(lstm_layer* ll, Tensor* input);
-Tensor* lstm_layer_backward(lstm_layer* ll, Tensor* output_gradients, float  learning_rate);
+Tensor* lstm_layer_backward(lstm_layer* ll, Tensor* output_gradients);
+void lstm_layer_update(lstm_layer* ll, float lr);
+void lstm_layer_zero_grad(lstm_layer* ll);
 void lstm_layer_reset_state(lstm_layer* ll);
 void lstm_layer_free(lstm_layer* ll);
 

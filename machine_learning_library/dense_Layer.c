@@ -116,7 +116,7 @@ Tensor* layer_forward(dense_layer* l, Tensor* input)
     return output;
 }
 
-Tensor* layer_backward(dense_layer* l, Tensor* input_gradients, float  learning_rate)
+Tensor* layer_backward(dense_layer* l, Tensor* input_gradients)
 {
     if (!l || !input_gradients) {
         fprintf(stderr, "Error: NULL dense_layer or gradients in layer_backward\n");
@@ -142,37 +142,27 @@ Tensor* layer_backward(dense_layer* l, Tensor* input_gradients, float  learning_
         return NULL;
     }
 
-    // For each neuron in the layer
     for (int i = 0; i < l->neuronAmount; i++) {
-        // Get this neuron's portion of the gradient using proper tensor access
         int grad_indices[1] = { i };
         float  neuron_gradient = tensor_get_element(input_gradients, grad_indices);
-
-        // Compute gradients for this neuron's weights and bias
-        // Also get gradients with respect to inputs
-        Tensor* neuron_input_gradients = neuron_backward(neuron_gradient, l->neurons[i], learning_rate);
-        if (!neuron_input_gradients) {
-            fprintf(stderr, "Error: Failed to compute neuron gradients in layer_backward\n");
-            tensor_free(output_gradients);
-            return NULL;
-        }
-
-        // Accumulate input gradients from this neuron
-        for (int j = 0; j < output_gradients->count; j++) {
-            int out_indices[1] = { j };
-            int in_indices[1] = { j };
-
-            float  current = tensor_get_element(output_gradients, out_indices);
-            float  to_add = tensor_get_element(neuron_input_gradients, in_indices);
-
-            tensor_set(output_gradients, out_indices, current + to_add);
-        }
-
-        // Free the temporary gradients
-        tensor_free(neuron_input_gradients);
+        neuron_backward(neuron_gradient, l->neurons[i], output_gradients);
     }
 
     return output_gradients;
+}
+
+void dense_layer_update(dense_layer* layer, float learning_rate) {
+    for (int i = 0; i < layer->neuronAmount; i++) {
+        neuron_update(layer->neurons[i], learning_rate);
+    }
+}
+
+void dense_layer_zero_grad(dense_layer* layer)
+{
+    if (!layer) return;
+    for (int i = 0; i < layer->neuronAmount; i++) {
+        neuron_zero_grad(layer->neurons[i]);
+    }
 }
 
 void layer_free(dense_layer* l)

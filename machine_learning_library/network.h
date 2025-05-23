@@ -36,6 +36,9 @@ EXPORT void network_train_type(network* net);
 
 EXPORT Tensor* forwardPropagation(network* net, Tensor* data);
 EXPORT int backpropagation(network* net, Tensor* predictions, Tensor* targets);
+EXPORT void network_update(network* net);
+EXPORT void network_zero_grad(network* net);
+EXPORT void network_reset_state(network* net);
 
 EXPORT float  train(network* net, Tensor* input, Tensor* target);
 EXPORT EXPORT void network_training(network* net, Tensor* input, Tensor* target, int epcho,int batch_size);

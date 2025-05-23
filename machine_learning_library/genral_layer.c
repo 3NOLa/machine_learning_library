@@ -13,6 +13,8 @@ layer* general_layer_Initialize(LayerType type, int neuronAmount, int neuronDim,
 		l->params = layer_create(neuronAmount, neuronDim, Activationfunc);
 		l->forward = wrapper_dense_forward;
 		l->backward = wrapper_dense_backward;
+		l->update = wrapper_dense_update;
+		l->zero_grad = wrapper_dense_zero_grad;
 		l->free = layer_free;
 		l->reset_state = NULL;
 		break;
@@ -20,6 +22,8 @@ layer* general_layer_Initialize(LayerType type, int neuronAmount, int neuronDim,
 		l->params = rnn_layer_create(neuronAmount, neuronDim, Activationfunc);
 		l->forward = wrapper_rnn_forward;
 		l->backward = wrapper_rnn_backward;
+		l->update = wrapper_rnn_update;
+		l->zero_grad = wrapper_rnn_zero_grad;
 		l->free = rnn_layer_free;
 		l->reset_state = wrapper_rnn_reset_state;
 		break;
@@ -27,6 +31,8 @@ layer* general_layer_Initialize(LayerType type, int neuronAmount, int neuronDim,
 		l->params = lstm_layer_create(neuronAmount, neuronDim, Activationfunc);
 		l->forward = wrapper_lstm_forward;
 		l->backward = wrapper_lstm_backward;
+		l->update = wrapper_lstm_update;
+		l->zero_grad = wrapper_lstm_zero_grad;
 		l->free = lstm_layer_free;
 		l->reset_state = wrapper_rnn_reset_state;
 		break;
@@ -42,9 +48,19 @@ Tensor* wrapper_rnn_forward(layer* base_layer, Tensor* input) {
 	return rnn_layer_forward(rl, input);
 }
 
-Tensor* wrapper_rnn_backward(layer* base_layer,Tensor* grad, float  learning_rate) {
+Tensor* wrapper_rnn_backward(layer* base_layer,Tensor* grad) {
 	rnn_layer* rl = (rnn_layer*)base_layer->params;
-	return rnn_layer_backward(rl, grad, learning_rate);
+	return rnn_layer_backward(rl, grad);
+}
+
+void wrapper_rnn_update(layer* base_layer, float lr) {
+	rnn_layer* rl = (rnn_layer*)base_layer->params;
+	rnn_layer_update(rl, lr);
+}
+
+void wrapper_rnn_zero_grad(layer* base_layer) {
+	rnn_layer* rl = (rnn_layer*)base_layer->params;
+	rnn_layer_zero_grad(rl);
 }
 
 void wrapper_rnn_reset_state(layer* base_layer) {
@@ -57,9 +73,19 @@ Tensor* wrapper_dense_forward(layer* base_layer, Tensor* input) {
 	return layer_forward(dl, input);
 }
 
-Tensor* wrapper_dense_backward(layer* base_layer, Tensor* grad, float  learning_rate) {
+Tensor* wrapper_dense_backward(layer* base_layer, Tensor* grad) {
 	dense_layer* dl = (dense_layer*)base_layer->params;
-	return layer_backward(dl, grad, learning_rate);
+	return layer_backward(dl, grad);
+}
+
+void wrapper_dense_update(layer* base_layer, float lr) {
+	dense_layer* dl = (dense_layer*)base_layer->params;
+	dense_layer_update(dl, lr);
+}
+
+void wrapper_dense_zero_grad(layer* base_layer) {
+	dense_layer* dl = (dense_layer*)base_layer->params;
+	dense_layer_zero_grad(dl);
 }
 
 Tensor* wrapper_lstm_forward(layer* base_layer, Tensor* input)
@@ -68,10 +94,20 @@ Tensor* wrapper_lstm_forward(layer* base_layer, Tensor* input)
 	return lstm_layer_forward(ll, input);
 }
 
-Tensor* wrapper_lstm_backward(layer* base_layer, Tensor* grad, float  learning_rate)
+Tensor* wrapper_lstm_backward(layer* base_layer, Tensor* grad)
 {
 	lstm_layer* ll = (lstm_layer*)base_layer->params;
-	return lstm_layer_backward(ll, grad, learning_rate);
+	return lstm_layer_backward(ll, grad);
+}
+
+void wrapper_lstm_update(layer* base_layer, float lr) {
+	lstm_layer* ll = (lstm_layer*)base_layer->params;
+	lstm_layer_update(ll, lr);
+}
+
+void wrapper_lstm_zero_grad(layer* base_layer) {
+	lstm_layer* ll = (lstm_layer*)base_layer->params;
+	lstm_layer_zero_grad(ll);
 }
 
 void wrapper_lstm_reset_state(layer* base_layer)
@@ -163,5 +199,3 @@ void set_layer_output(layer* base_layer, Tensor* output)
 		break;
 	}
 }
-
-

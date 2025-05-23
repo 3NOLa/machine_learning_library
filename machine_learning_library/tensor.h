@@ -20,7 +20,7 @@ EXPORT int tensor_add_row(Tensor* t);
 
 EXPORT void tensor_free(Tensor* t);
 EXPORT int tensor_copy(Tensor* dest, Tensor* src);
-EXPORT void tensor_zero(Tensor* t);
+EXPORT void tensor_fill(Tensor* t,float value);
 
 // Access functions
 EXPORT int tensor_get_index(Tensor* t, int* indices);

@@ -22,7 +22,9 @@ rnn_neuron* rnn_neuron_create(int weightslength, ActivationType func)
     rn->n = n;
     
     rn->recurrent_weights = ((float )rand() / RAND_MAX) * 2.0 - 1.0;
+    rn->grad_recurrent_weights = 0.0;
     rn->hidden_state = 0.0;
+    rn->grad_hidden_state = 0.0;
     rn->timestamp = 0;
 
     for (int i = 0; i < MAX_TIMESTEPS; i++) {
@@ -88,7 +90,7 @@ float  rnn_neuron_activation(Tensor* input, rnn_neuron* rn)
     return rn->hidden_state;
 }
 
-Tensor* rnn_neuron_backward(float  output_gradient, rnn_neuron* rn, float  learning_rate)
+void rnn_neuron_backward(float  output_gradient, rnn_neuron* rn, Tensor* input_grads)
 {
     if (!rn || !rn->input_history[rn->timestamp]) {
         fprintf(stderr, "Error: NULL neuron or input history in rnn_neuron_backward\n");
@@ -100,44 +102,41 @@ Tensor* rnn_neuron_backward(float  output_gradient, rnn_neuron* rn, float  learn
 
     // Chain rule - gradient flows through activation function
     float  pre_activation_gradient = output_gradient * activation_derivative;
-
-    // Create gradients for inputs with the same shape as weights
-    Tensor* input_gradients = tensor_create(rn->n->weights->dims, rn->n->weights->shape);
-    if (!input_gradients) {
-        fprintf(stderr, "Error: Failed to create input gradients in rnn_neuron_backward\n");
-        return NULL;
-    }
-
     // For storing the gradient flowing back to the previous hidden state
     float  hidden_gradient = pre_activation_gradient * rn->recurrent_weights;
 
-    // Calculate gradients for this neuron's parameters and inputs
     for (int i = 0; i < rn->n->weights->count; i++) {
-        // Get original weight using tensor access
         float  original_weight = tensor_get_element_by_index(rn->n->weights, i);
 
-        // Get input value using tensor access (from history at this timestamp)
         float  input_val = tensor_get_element_by_index(rn->input_history[rn->timestamp], i);
 
-        // Calculate weight gradient
-        float  weight_gradient = pre_activation_gradient * input_val;
+        input_grads->data[i] = pre_activation_gradient * original_weight;
 
-        // Store input gradient using original weight
-        tensor_set_by_index(input_gradients, i, pre_activation_gradient * original_weight);
-
-        // Update weight
-        tensor_set_by_index(rn->n->weights, i, original_weight + weight_gradient * learning_rate);
+        rn->n->grad_weights->data[i] += pre_activation_gradient * input_val;
     }
 
-    // Update recurrent weight
-    float  recurrent_gradient = pre_activation_gradient * rn->hidden_state_history[rn->timestamp];
-    rn->recurrent_weights += recurrent_gradient * learning_rate;
+    rn->grad_recurrent_weights += pre_activation_gradient * rn->hidden_state_history[rn->timestamp];
+    rn->grad_hidden_state += hidden_gradient;
+    rn->n->grad_bias += pre_activation_gradient;
+}
 
-    // Update bias
-    rn->n->bias += pre_activation_gradient * learning_rate;
+void rnn_neuron_update(rnn_neuron* rn, float lr)
+{
+    if (!rn || !rn->n) {
+        fprintf(stderr, "Error: NULL rnn_neuron or inner neuron in rnn_neuron_update_weights\n");
+        return;
+    }
 
-    // Return the gradient to propagate back to previous layer
-    return input_gradients;
+    neuron_update(rn->n, lr);
+    rn->recurrent_weights += lr * rn->grad_recurrent_weights;
+}
+
+void rnn_neuron_zero_grad(rnn_neuron* rn)
+{
+    if (!rn || !rn->n) return;
+    neuron_zero_grad(rn->n);
+    rn->grad_recurrent_weights = 0.0f;
+    rn->grad_hidden_state = 0.0f;
 }
 
 void rnn_neuron_free(rnn_neuron* rn)

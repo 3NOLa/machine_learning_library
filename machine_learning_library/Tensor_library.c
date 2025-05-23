@@ -99,16 +99,11 @@ Tensor* tensor_zero_create(int dims, int* shape) {
     return t;
 }
 
-void tensor_zero(Tensor* t) {
+void tensor_fill(Tensor* t, float value) {
     if (!t || !t->data) return;
 
-    int total = 1;
-    for (int i = 0; i < t->dims; i++) {
-        total *= t->shape[i];
-    }
-
-    for (int i = 0; i < total; i++) {
-        t->data[i] = 0.0f;
+    for (int i = 0; i < t->count; i++) {
+        t->data[i] = value;
     }
 }
 
