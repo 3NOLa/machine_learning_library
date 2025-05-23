@@ -6,9 +6,8 @@ from python_binding.tasks import ffi, lib
 import numpy as np
 from collections.abc import MutableSequence
 
-
 class Tensor(MutableSequence):
-    def __init__(self, c_tensor=None, flatten: list = None, shape: list = None, dims: int = 2):
+    def __init__(self, c_tensor=None, flatten: list = None, shape: list = None, dims: int = 1):
         super(Tensor, self).__init__()
         self.c_tensor = c_tensor
         self.flatten = flatten
@@ -16,7 +15,7 @@ class Tensor(MutableSequence):
         self.dims = dims
 
     @staticmethod
-    def c_to_tensor(c_tensor):
+    def from_c_tensor(c_tensor):
         flatten = [c_tensor.data[i] for i in range(c_tensor.count)]
         shape = [c_tensor.shape[i] for i in range(c_tensor.dims)]
         return Tensor(c_tensor, flatten, shape, c_tensor.dims)
@@ -47,10 +46,24 @@ class Tensor(MutableSequence):
                 flatten.extend(vals)
                 return [len(vals)]
 
-        shape = [1]
-        shape.extend(recurse(values))
+        shape = recurse(values)
 
         return len(shape), shape, flatten
+
+    @staticmethod
+    def from_numpy(np_array):
+        if not isinstance(np_array, np.ndarray):
+            raise TypeError("input must be a NumPy ndarray")
+
+        flatten = np_array.flatten().astype(np.float32).tolist()
+        shape = list(np_array.shape)
+        dims = len(shape)
+
+        c_flatten = ffi.new("float []", flatten)
+        c_shape = ffi.new("int []", shape)
+
+        c_tensor = lib.tensor_create_flatten(dims, c_shape, c_flatten, len(flatten))
+        return Tensor(c_tensor, flatten, shape, dims)
 
     def __call__(self):
         print(f"tensor dims: {self.dims} ,shape: {self.shape}")
@@ -59,38 +72,16 @@ class Tensor(MutableSequence):
     def insert(self, index: int, value: _T) -> None:
         pass
 
-    @overload
-    @abstractmethod
-    def __getitem__(self, i: int) -> _T: ...
-
-    @overload
-    @abstractmethod
-    def __getitem__(self, s: slice) -> MutableSequence[_T]: ...
-
     def __getitem__(self, i: int) -> _T:
-        pass
 
-    @overload
-    @abstractmethod
-    def __setitem__(self, i: int, o: _T) -> None: ...
-
-    @overload
-    @abstractmethod
     def __setitem__(self, s: slice, o: Iterable[_T]) -> None: ...
 
-    def __setitem__(self, i: int, o: _T) -> None:
-        pass
-
-    @overload
-    @abstractmethod
     def __delitem__(self, i: int) -> None: ...
 
-    @overload
-    @abstractmethod
-    def __delitem__(self, i: slice) -> None: ...
-
-    def __delitem__(self, i: int) -> None:
-        pass
-
     def __len__(self) -> int:
+        
         pass
+
+    def __del__(self):
+        if self.c_tensor:
+            lib.tensor_free(self.c_tensor)
