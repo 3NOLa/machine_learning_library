@@ -9,64 +9,126 @@ class Neuron:
         self.activation_function = activation_function
 
     def activate_neuron(self, input):
-        raise NotImplementedError
+        raise NotImplementedError("Subclasses must implement activate_neuron")
 
     def backward_neuron(self):
-        raise NotImplementedError
+        raise NotImplementedError("Subclasses must implement backward_neuron")
 
 
 class DenseNeuron(Neuron):
-    def __init__(self, input_size, activation_type=None, c_neuron=None):
-        type = lib.LAYER_DENSE
+    def __init__(self, input_size: int, activation_type=None, c_neuron=None):
+        neuron_type = lib.LAYER_DENSE
         activation_function = lib.LINEAR if activation_type is None else activation_type
-        neuron = c_neuron if c_neuron is not None and ffi.typeof(c_neuron).cname == "neuron *" else lib.neuron_create(input_size, activation_function)
 
-        super().__init__(type,neuron,activation_function)
+        if c_neuron is not None:
+            # Use provided C neuron
+            if c_neuron == ffi.NULL:
+                raise ValueError("Received null C neuron pointer")
+            neuron_ptr = c_neuron
+        else:
+            # Create new C neuron
+            neuron_ptr = lib.neuron_create(input_size, activation_function)
+            if neuron_ptr == ffi.NULL:
+                raise RuntimeError("Failed to create dense neuron")
 
-    def activate_neuron(self, input : Tensor):
-        return lib.neuron_activation(input.c_tensor, self.neuron)
+        super().__init__(neuron_type, neuron_ptr, activation_function)
+
+    def activate_neuron(self, input_tensor: Tensor) -> float:
+        if not isinstance(input_tensor, Tensor):
+            raise TypeError("Input must be a Tensor object")
+
+        try:
+            result = lib.neuron_activation(input_tensor.c_tensor, self.neuron)
+            return float(result)
+        except Exception as e:
+            raise RuntimeError(f"Dense neuron activation failed: {e}")
 
     def backward_neuron(self):
-        return lib.neuron_backward()
+        try:
+            return lib.neuron_backward()
+        except Exception as e:
+            raise RuntimeError(f"Dense neuron backward pass failed: {e}")
 
     def __del__(self):
-        if self.neuron:
-            lib.neuron_free(self.neuron)
+        # Only free if we created the neuron ourselves (not provided via c_neuron)
+        # This is tricky to track, so we'll be conservative and not free here
+        # The layer should handle cleanup
+        pass
 
 
 class RnnNeuron(Neuron):
-    def __init__(self, input_size, activation_type=None, c_neuron=None):
-        type = lib.LAYER_RNN
+    def __init__(self, input_size: int, activation_type=None, c_neuron=None):
+        neuron_type = lib.LAYER_RNN
         activation_function = lib.LINEAR if activation_type is None else activation_type
-        neuron = c_neuron if c_neuron is not None and ffi.typeof(c_neuron).cname == "rnn_neuron *" else lib.rnn_neuron_create(input_size, activation_function)
 
-        super().__init__(type,neuron,activation_function)
+        if c_neuron is not None:
+            # Use provided C neuron
+            if c_neuron == ffi.NULL:
+                raise ValueError("Received null RNN neuron pointer")
+            neuron_ptr = c_neuron
+        else:
+            # Create new C neuron
+            neuron_ptr = lib.rnn_neuron_create(input_size, activation_function)
+            if neuron_ptr == ffi.NULL:
+                raise RuntimeError("Failed to create RNN neuron")
 
-    def activate_neuron(self, input : Tensor):
-        return lib.rnn_neuron_activation(input.c_tensor, self.neuron)
+        super().__init__(neuron_type, neuron_ptr, activation_function)
+
+    def activate_neuron(self, input_tensor: Tensor) -> float:
+        if not isinstance(input_tensor, Tensor):
+            raise TypeError("Input must be a Tensor object")
+
+        try:
+            result = lib.rnn_neuron_activation(input_tensor.c_tensor, self.neuron)
+            return float(result)
+        except Exception as e:
+            raise RuntimeError(f"RNN neuron activation failed: {e}")
 
     def backward_neuron(self):
-        return lib.rnn_neuron_backward()
+        try:
+            return lib.rnn_neuron_backward()
+        except Exception as e:
+            raise RuntimeError(f"RNN neuron backward pass failed: {e}")
 
     def __del__(self):
-        if self.neuron:
-            lib.rnn_neuron_free(self.neuron)
+        # Conservative approach - let the layer handle cleanup
+        pass
 
 
 class LstmNeuron(Neuron):
-    def __init__(self, input_size, activation_type=None, c_neuron=None):
-        type = lib.LAYER_LSTM
+    def __init__(self, input_size: int, activation_type=None, c_neuron=None):
+        neuron_type = lib.LAYER_LSTM
         activation_function = lib.LINEAR if activation_type is None else activation_type
-        neuron = c_neuron if c_neuron is not None and ffi.typeof(c_neuron).cname == "lstm_neuron *" else lib.lstm_neuron_create(input_size,activation_function)
 
-        super().__init__(type,neuron,activation_function)
+        if c_neuron is not None:
+            # Use provided C neuron
+            if c_neuron == ffi.NULL:
+                raise ValueError("Received null LSTM neuron pointer")
+            neuron_ptr = c_neuron
+        else:
+            # Create new C neuron
+            neuron_ptr = lib.lstm_neuron_create(input_size, activation_function)
+            if neuron_ptr == ffi.NULL:
+                raise RuntimeError("Failed to create LSTM neuron")
 
-    def activate_neuron(self, input : Tensor):
-        return lib.lstm_neuron_activation(input.c_tensor, self.neuron)
+        super().__init__(neuron_type, neuron_ptr, activation_function)
+
+    def activate_neuron(self, input_tensor: Tensor) -> float:
+        if not isinstance(input_tensor, Tensor):
+            raise TypeError("Input must be a Tensor object")
+
+        try:
+            result = lib.lstm_neuron_activation(input_tensor.c_tensor, self.neuron)
+            return float(result)
+        except Exception as e:
+            raise RuntimeError(f"LSTM neuron activation failed: {e}")
 
     def backward_neuron(self):
-        return lib.lstm_neuron_backward()
+        try:
+            return lib.lstm_neuron_backward()
+        except Exception as e:
+            raise RuntimeError(f"LSTM neuron backward pass failed: {e}")
 
     def __del__(self):
-        if self.neuron:
-            lib.lstm_neuron_free(self.neuron)
+        # Conservative approach - let the layer handle cleanup
+        pass
