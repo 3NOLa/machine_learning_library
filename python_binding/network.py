@@ -1,7 +1,7 @@
 from python_binding.tasks import ffi, lib
 from neuron import *
 from layer import *
-from Tensor import Tensor
+from MyTensor import Tensor
 from typing import *
 
 
@@ -26,7 +26,7 @@ class NetworkModel:
 
     @staticmethod
     def loss_derivative(loss, y_pred: Tensor, y_real:Tensor):
-        return Tensor.c_to_tensor(lib.loss_derivative_active_function(loss,y_pred.c_tensor,y_real.c_tensor))
+        return Tensor.from_c_tensor(lib.loss_derivative_active_function(loss,y_pred.c_tensor,y_real.c_tensor))
 
 
 class Network(NetworkModel):
@@ -61,7 +61,7 @@ class Network(NetworkModel):
         lib.network_train_type(self.c_network)
 
     def forward(self, data: Tensor):
-        return lib.forwardPropagation(self.c_network, data.c_tensor)
+        return Tensor.from_c_tensor(lib.forwardPropagation(self.c_network, data.c_tensor))
 
     def backward(self, predictions:Tensor, targets:Tensor):
         lib.backpropagation(self.c_network, predictions.c_tensor, targets.c_tensor)
@@ -69,9 +69,9 @@ class Network(NetworkModel):
 
 class checkModel(Network):
     def __init__(self):
-        self.layer1 = DenseLayer(10,10,lib.RELU)
-        self.layer2 = DenseLayer(5,10)
-        self.outputlayer = DenseLayer(1,5,lib.SIGMOID)
+        self.layer1 = DenseLayer(1,10,lib.RELU)
+        self.layer2 = DenseLayer(10,5)
+        self.outputlayer = DenseLayer(5,1,lib.SIGMOID)
 
         super(checkModel, self).__init__([self.layer1,self.layer2,self.outputlayer])
 
@@ -80,16 +80,17 @@ class check2Model(NetworkModel):
     def __init__(self):
         super(check2Model, self).__init__()
         self.input_layer = RnnLayer(10,10,lib.SIGMOID)
-        self.hidden_layer = DenseLayer(3,10)
-        self.output_layer = DenseLayer(1,3,lib.TANH)
+        self.hidden_layer = DenseLayer(10,3)
+        self.output_layer = DenseLayer(3,1,lib.TANH)
 
         self.layers.extend([self.input_layer,self.hidden_layer,self.output_layer])
 
     def forward(self, data:Tensor):
-        x = self.input_layer.layer_forward(data,5)
-        print(x)
+        x = self.input_layer.layer_forward(data)
+        print(f"x:{x}]")
         h1 = self.hidden_layer.layer_forward(x[-1])
         o = self.output_layer.layer_forward(h1)
+        print(f"o:{o}]")
 
         return o
 

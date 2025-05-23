@@ -1,6 +1,7 @@
 #include "tensor.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 
 Tensor* tensor_create(int dims, int* shape) {
@@ -67,8 +68,7 @@ Tensor* tensor_create_flatten(int dims, int* shape, float* flatten, int count)
     t->dims = dims;
     t->shape = (int*)malloc(sizeof(int) * dims);
     t->data = (float*)malloc(sizeof(float) * count);
-    memcpy(t->shape, shape, sizeof(int) * dims);
-    memcpy(t->data, flatten, sizeof(float) * count);
+    
     t->strides = (int*)malloc(sizeof(int) * dims);
     if (!t->shape || !t->strides || !t->data) {
         fprintf(stderr, "Error: Memory allocation failed for tensor shape/strides/data in tensor_create_flatten\n");
@@ -78,6 +78,9 @@ Tensor* tensor_create_flatten(int dims, int* shape, float* flatten, int count)
         free(t);
         return NULL;
     }
+
+    memcpy(t->shape, shape, sizeof(int) * dims);
+    memcpy(t->data, flatten, sizeof(float) * count);
 
     t->strides[dims - 1] = 1;
     for (int i = dims - 2; i >= 0; i--) {
@@ -178,40 +181,7 @@ void tensor_set_by_index(Tensor* t, int index, float  value) {
 
     t->data[index] = value;
 }
-/*Tensor* get_row(Tensor* m,int row) {
-    if (!m) {
-        fprintf(stderr, "Error: NULL matrix get_row\n");
-        return NULL;
-    }
 
-    Tensor* m_row = (Tensor*)malloc(sizeof(Tensor));
-    if (!m_row) {
-        fprintf(stderr, "Error: Memory allocation failed for matrix in get_row\n");
-        return NULL;
-    }
-    m_row->cols = m->cols;
-    m_row->rows = 1;
-    m_row->data = &m->data[row * m->cols];
-
-    return m_row;
-}
-Matrix* get_col(Matrix* m, int col) {
-    if (!m) {
-        fprintf(stderr, "Error: NULL matrix get_row\n");
-        return NULL;
-    }
-
-    Matrix* m_row = (Matrix*)malloc(sizeof(Matrix));
-    if (!m_row) {
-        fprintf(stderr, "Error: Memory allocation failed for matrix in get_row\n");
-        return NULL;
-    }
-    m_row->cols = m->cols;
-    m_row = 1;
-    m_row->data = &m->data[col * m->rows];
-
-    return m_row;
-}*/
 
 int tensor_get_index(Tensor* t, int* indices) {
     if (!t) {
@@ -310,7 +280,7 @@ Tensor* tensor_flatten(Tensor* t) {
 Tensor* tensor_slice_range(Tensor* t, int start, int end)
 {
     if (!t || start < 0 || end > t->shape[0] || start >= end) {
-        fprintf(stderr, "Error: Invalid parameters in tensor_slice_range\n");
+        fprintf(stderr, "Error: Invalid parameters in tensor_slice_range start: %d, end %d\n",start,end);
         return NULL;
     }
 
@@ -318,7 +288,7 @@ Tensor* tensor_slice_range(Tensor* t, int start, int end)
     int inner_count = t->count / t->shape[0];
 
     // Create shape for the sliced tensor
-    int* new_shape = (int*)malloc(sizeof(float) * t->dims);
+    int* new_shape = (int*)malloc(sizeof(int) * t->dims);
     if (!new_shape) {
         fprintf(stderr, "Error: Memory allocation failed in tensor_slice_range\n");
         return NULL;
@@ -334,7 +304,62 @@ Tensor* tensor_slice_range(Tensor* t, int start, int end)
 
     // Copy the slice
     int offset = start * inner_count;
-    memcpy(result->data, t->data + offset, sizeof(float ) * inner_count * outer_dim);
+    memcpy(result->data, t->data + offset, sizeof(float) * inner_count * outer_dim);
+
+    return result;
+}
+
+void tensor_squeeze(Tensor* t) {
+    int* new_shape = malloc(sizeof(int) * t->dims);  
+
+    if(!new_shape)
+    {
+        fprintf(stderr, "Error: Memory allocation failed in tensor_squeeze\n");
+        return NULL;
+    }
+
+    int new_ndim = 0;
+    for (int i = 0; i < t->dims; ++i) {
+        if (t->shape[i] != 1)
+            new_shape[new_ndim++] = t->shape[i];
+    }
+
+    free(t->shape);
+    t->shape = realloc(new_shape, sizeof(int) * new_ndim);
+    t->dims = new_ndim;
+}
+
+
+Tensor* tensor_slice_dim(Tensor* t, int start, int end,int dim)
+{
+    if (!t || start < 0 || end > t->shape[dim] || start >= end) {
+        fprintf(stderr, "Error: Invalid parameters in tensor_slice_range\n");
+        return NULL;
+    }
+
+    int outer_dim = end - start;
+    int inner_count = t->count / t->shape[dim];
+
+    // Create shape for the sliced tensor
+    int* new_shape = (int*)malloc(sizeof(int) * t->dims);
+    if (!new_shape) {
+        fprintf(stderr, "Error: Memory allocation failed in tensor_slice_range\n");
+        return NULL;
+    }
+
+    new_shape[dim] = outer_dim;
+    for (int i = 0; i < t->dims; i++) {
+        if(i != dim)
+            new_shape[i] = t->shape[i];
+    }
+
+    Tensor* result = tensor_create(t->dims, new_shape);
+    free(new_shape);
+    if (!result) return NULL;
+
+    // Copy the slice
+    int offset = start * inner_count;
+    memcpy(result->data, t->data + offset, sizeof(float) * inner_count * outer_dim);
 
     return result;
 }

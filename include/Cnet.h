@@ -28,6 +28,7 @@ void tensor_set_by_index(Tensor* t, int index, float  value);
 Tensor* tensor_reshape(Tensor* t, int dims, int* shape);
 Tensor* tensor_flatten(Tensor* t); // Convert to 1D tensor
 Tensor* tensor_slice_range(Tensor* t, int start, int end);
+void tensor_squeeze(Tensor* t);
 Tensor* tensor_get_row(Tensor* t, int row);
 Tensor* tensor_get_col(Tensor* t, int col);
 
@@ -230,15 +231,15 @@ Tensor* layer_backward(dense_layer* l, Tensor* input_gradients, float  learning_
 void layer_free(dense_layer* l);
 
 
-#define MAX_TIMESTEPS 128
+
 
 
 typedef struct rnn_neuron {
 	neuron* n;
 	float  recurrent_weights;
 	float  hidden_state;
-	Tensor* input_history[MAX_TIMESTEPS];
-	float  hidden_state_history[MAX_TIMESTEPS];
+	Tensor* input_history[128];
+	float  hidden_state_history[128];
 	int timestamp;
 } rnn_neuron;
 
@@ -251,9 +252,9 @@ void rnn_neuron_free(rnn_neuron* rn);
 typedef struct lstm_neuron {
 	float  short_memory;//cell state
 	float  long_memory;
-	Tensor* input_history[MAX_TIMESTEPS];
-	float  short_memory_history[MAX_TIMESTEPS];
-	float  long_memory_history[MAX_TIMESTEPS];//cell state history
+	Tensor* input_history[128];
+	float  short_memory_history[128];
+	float  long_memory_history[128];//cell state history
 	int timestamp;
 
 	rnn_neuron* i_g_r; //input_gate_remember

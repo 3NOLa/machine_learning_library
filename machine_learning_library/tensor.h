@@ -33,6 +33,7 @@ EXPORT void tensor_set_by_index(Tensor* t, int index, float  value);
 EXPORT Tensor* tensor_reshape(Tensor* t, int dims, int* shape);
 EXPORT Tensor* tensor_flatten(Tensor* t); // Convert to 1D tensor
 EXPORT Tensor* tensor_slice_range(Tensor* t, int start, int end);
+EXPORT void tensor_squeeze(Tensor* t);
 EXPORT Tensor* tensor_get_row(Tensor* t, int row);
 EXPORT Tensor* tensor_get_col(Tensor* t, int col);
 
