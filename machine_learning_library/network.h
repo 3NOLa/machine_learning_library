@@ -3,6 +3,9 @@
 #include "general_layer.h"
 #include "export.h"
 
+
+typedef enum OptimizerType OptimizerType;
+
 EXPORT typedef enum {
 	MSE,
 	MAE,
@@ -16,22 +19,30 @@ EXPORT typedef struct {
 	int layerAmount;
 	layer** layers;
 	int* layersSize;
+
 	float  learnningRate;
 	LossType lossFunction;
 	float  (*LossFuntionPointer)(struct network*, Tensor*);
 	Tensor* (*LossDerivativePointer)(struct network*, Tensor*);
 	float  (*train)(struct network*, Tensor*, Tensor*);
+
 	int input_dims;
 	int* input_shape;
-	LayerType type;
+	LayerType ltype;
+
+	OptimizerType otype;
 }network;
 
 EXPORT network* network_create(int layerAmount, int* layersSize, int input_dims, int* input_shape, ActivationType* activations, float  learnningRate, LossType lossFunction, LayerType type);
 EXPORT network* network_create_empty();
+EXPORT void network_free(network* net);
+
 EXPORT int add_layer(network* net, int layerSize, ActivationType Activationfunc, int input_dim);// add input layer if first layer otherwise put 0
 EXPORT int add_created_layer(network* net, layer* l);
+
 EXPORT int set_loss_function(network* net, LossType lossFunction);
-EXPORT void network_free(network* net);
+EXPORT void set_network_optimizer(network* net, OptimizerType type);
+
 EXPORT void network_train_type(network* net);
 
 EXPORT Tensor* forwardPropagation(network* net, Tensor* data);

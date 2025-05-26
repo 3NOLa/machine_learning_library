@@ -1,5 +1,6 @@
 #include "neuron.h"
 #include "rnn_neuron.h"
+#include "optimizers.h"
 
 rnn_neuron* rnn_neuron_create(int weightslength, ActivationType func)
 {
@@ -15,8 +16,10 @@ rnn_neuron* rnn_neuron_create(int weightslength, ActivationType func)
     }
 
     neuron* n = neuron_create(weightslength, func);
-    if (!n) {
-        fprintf(stderr, "Error: Memory allocation failed for neuron in rnn_neuron\n");
+    rn->opt = (optimizer*)malloc(sizeof(optimizer));
+    optimizer_set(rn->opt, SGD);
+    if (!n || !rn->opt) {
+        fprintf(stderr, "Error: Memory allocation failed for neuron or optimizer in rnn_neuron\n");
         return NULL;
     }
     rn->n = n;
@@ -126,9 +129,7 @@ void rnn_neuron_update(rnn_neuron* rn, float lr)
         fprintf(stderr, "Error: NULL rnn_neuron or inner neuron in rnn_neuron_update_weights\n");
         return;
     }
-
-    neuron_update(rn->n, lr);
-    rn->recurrent_weights += lr * rn->grad_recurrent_weights;
+    rnn_neuron_opt_update(rn, rn->opt, lr);
 }
 
 void rnn_neuron_zero_grad(rnn_neuron* rn)

@@ -1,6 +1,7 @@
 #include "neuron.h"
 #include "rnn_neuron.h"
 #include "lstm_neuron.h"
+#include "optimizers.h"
 
 lstm_neuron* lstm_neuron_create(int weightslength, ActivationType func)
 {
@@ -19,6 +20,8 @@ lstm_neuron* lstm_neuron_create(int weightslength, ActivationType func)
     rnn_neuron* i_g_r = rnn_neuron_create(weightslength, SIGMOID);
     rnn_neuron* i_g_p = rnn_neuron_create(weightslength, TANH);
     rnn_neuron* o_g_r = rnn_neuron_create(weightslength, SIGMOID);
+    ln->opt = (optimizer*)malloc(sizeof(optimizer));
+    optimizer_set(ln->opt, SGD);
     if (!f_g || !i_g_r || !i_g_p || !o_g_r) {
         fprintf(stderr, "Error: Memory allocation failed for neuron in lstm_neuron_create\n");
         return NULL;
@@ -125,10 +128,7 @@ void lstm_neuron_update(lstm_neuron* ln, float lr)
         return;
     }
 
-    rnn_neuron_update(ln->f_g, lr);
-    rnn_neuron_update(ln->i_g_p, lr);
-    rnn_neuron_update(ln->i_g_r, lr);
-    rnn_neuron_update(ln->o_g_r, lr);
+    lstm_neuron_opt_update(ln, ln->opt, lr);
 }
 
 void lstm_neuron_zero_grad(lstm_neuron* ln)
@@ -138,6 +138,7 @@ void lstm_neuron_zero_grad(lstm_neuron* ln)
     rnn_neuron_zero_grad(ln->i_g_r);
     rnn_neuron_zero_grad(ln->o_g_r);
 }
+
 void lstm_neuron_free(lstm_neuron* ln)
 {
     if (ln) {

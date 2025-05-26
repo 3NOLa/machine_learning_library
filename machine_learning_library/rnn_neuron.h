@@ -7,17 +7,24 @@
 
 typedef struct neuron;
 typedef struct Tensor;
+typedef struct optimizer optimizer; 
 typedef enum ActivationType;
 
 EXPORT typedef struct rnn_neuron {
     neuron* n;
+
     float recurrent_weights;
     float grad_recurrent_weights;
+
     float hidden_state;
     float grad_hidden_state;
+
     Tensor* input_history[MAX_TIMESTEPS];        
     float  hidden_state_history[MAX_TIMESTEPS];
+
     int timestamp;
+
+    optimizer* opt;
 } rnn_neuron;
 
 EXPORT rnn_neuron* rnn_neuron_create(int weightslength, ActivationType func);

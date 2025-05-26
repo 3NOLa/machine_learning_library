@@ -1,5 +1,5 @@
 #include "classification.h"
-
+#include "optimizers.h"
 
 network* network_create(int layerAmount, int* layersSize, int input_dims, int* input_shape, ActivationType* activations, float  learnningRate, LossType lossFunction,LayerType type)
 {
@@ -20,7 +20,9 @@ network* network_create(int layerAmount, int* layersSize, int input_dims, int* i
     net->LossFuntionPointer = LossTypeMap(lossFunction);
     net->LossDerivativePointer = LossTypeDerivativeMap(lossFunction);
     net->input_dims = input_dims;
-    net->type = type;
+    net->ltype = type;
+    net->otype = SGD;
+
 
     net->input_shape = (int*)malloc(sizeof(int) * input_dims);
     if (!net->input_shape) {
@@ -96,7 +98,7 @@ network* network_create_empty()
     net->LossDerivativePointer = NULL;
     net->lossFunction = MSE;
     net->train = NULL;
-    net->type = LAYER_DENSE;
+    net->ltype = LAYER_DENSE;
 
     return net;
 }
@@ -150,7 +152,7 @@ int add_layer(network* net, int layerSize, ActivationType Activationfunc, int in
     net->layers = new_layers;
 
     // Create the new layer
-    net->layers[net->layerAmount] = general_layer_Initialize(net->type,layerSize, actual_input_dim, Activationfunc);
+    net->layers[net->layerAmount] = general_layer_Initialize(net->ltype,layerSize, actual_input_dim, Activationfunc);
     if (!net->layers[net->layerAmount]) {
         fprintf(stderr, "Error: Failed to create dense_layer in add_layer\n");
         return 0;
@@ -195,13 +197,25 @@ int add_created_layer(network* net, layer* l)
 int set_loss_function(network* net, LossType lossFunction)
 {
     if (!net) {
-        fprintf(stderr, "Error: NULL network in add_layer\n");
+        fprintf(stderr, "Error: NULL network in set_loss_function\n");
         return 0;
     }
 
     net->lossFunction = lossFunction;
     net->LossFuntionPointer = LossTypeMap(lossFunction);
     net->LossDerivativePointer = LossTypeDerivativeMap(lossFunction);
+}
+
+void set_network_optimizer(network* net, OptimizerType type)
+{
+    if (!net) {
+        fprintf(stderr, "Error: NULL network in set_network_optimizer\n");
+        return;
+    }
+
+    net->otype = type;
+    for (int i = 0; i < net->layerAmount; i++)
+        set_layer_optimizer(net->layers[i], type);
 }
 
 void network_free(network* net)
@@ -228,7 +242,7 @@ void network_free(network* net)
 
 void network_train_type(network* net)
 {
-    switch (net->type)
+    switch (net->ltype)
     {
     case LAYER_DENSE:
         net->train = train;

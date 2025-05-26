@@ -1,5 +1,5 @@
 #include "general_layer.h"
-
+#include "optimizers.h"
 
 layer* general_layer_Initialize(LayerType type, int neuronAmount, int neuronDim, ActivationType Activationfunc)
 {
@@ -172,7 +172,7 @@ Tensor* get_layer_output(layer* base_layer)
 
 void set_layer_output(layer* base_layer, Tensor* output)
 {//maybe a problem here
-	;
+	
 	switch (base_layer->type)
 	{
 	case LAYER_DENSE:
@@ -195,6 +195,38 @@ void set_layer_output(layer* base_layer, Tensor* output)
 	}
 	default:
 		fprintf(stderr, "Erorr: not a valid in set_layer_output\n");
+		return NULL;
+		break;
+	}
+}
+
+void set_layer_optimizer(layer* base_layer, OptimizerType type)
+{
+	switch (base_layer->type)
+	{
+	case LAYER_DENSE:
+	{
+		dense_layer* dl = AS_DENSE(base_layer);
+		for (int i = 0; i < dl->neuronAmount; i++)
+			optimizer_set(dl->neurons[i]->opt, type);
+		break;
+	}
+	case LAYER_RNN:
+	{
+		rnn_layer* rl = AS_RNN(base_layer);
+		for (int i = 0; i < rl->neuronAmount; i++)
+			optimizer_set(rl->neurons[i]->opt, type);
+		break;
+	}
+	case LAYER_LSTM:
+	{
+		lstm_layer* ll = AS_LSTM(base_layer);
+		for (int i = 0; i < ll->neuronAmount; i++)
+			optimizer_set(ll->neurons[i]->opt, type);
+		break;
+	}
+	default:
+		fprintf(stderr, "Erorr: not a valid in set_layer_optimizer\n");
 		return NULL;
 		break;
 	}

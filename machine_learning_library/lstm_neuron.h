@@ -8,6 +8,7 @@
 typedef struct neuron;
 typedef struct rnn_neuron;
 typedef struct Tensor;
+typedef struct optimizer optimizer; 
 typedef enum ActivationType;
 
 EXPORT typedef struct lstm_neuron {
@@ -22,6 +23,8 @@ EXPORT typedef struct lstm_neuron {
     rnn_neuron* i_g_p; //input_gate_potinal also known as candidate cell
     rnn_neuron* o_g_r; //output_gate_remember 
     rnn_neuron* f_g; //forget_gate
+
+    optimizer* opt;
 } lstm_neuron;
 
 EXPORT lstm_neuron* lstm_neuron_create(int weightslength, ActivationType func);

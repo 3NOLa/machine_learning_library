@@ -1,5 +1,6 @@
 #include "neuron.h"
 #include "dense_layer.h"
+#include "optimizers.h"
 #include <stdio.h>
 
 neuron* neuron_create(int weightslength, ActivationType Activation)
@@ -21,13 +22,15 @@ neuron* neuron_create(int weightslength, ActivationType Activation)
     // Create a 1D tensor for weights
     n->weights = tensor_random_create(1, (int[]) { weightslength });
     n->grad_weights = tensor_zero_create(1, (int[]) { weightslength });
-    if (!n->weights || !n->grad_weights) {
-        fprintf(stderr, "Error: Failed to create weights or grad_weights for neuron\n");
+    n->opt = (optimizer*)malloc(sizeof(optimizer));
+    optimizer_set(n->opt, RMSPROP);
+    if (!n->weights || !n->grad_weights || !n->opt) {
+        fprintf(stderr, "Error: Failed to create weights or grad_weights or instilze optimizer for neuron\n");
         free(n);
         return NULL;
     }
 
-    // Initialize bias to a random value between -1 and 1
+
     n->bias = ((float )rand() / RAND_MAX) * 2 - 1;
     n->grad_bias = 0.0;
     n->output = 0.0;  // Initialize output to 0
@@ -122,11 +125,8 @@ void neuron_backward(float  output_gradient, neuron* n,Tensor* output_gradients)
     n->grad_bias += pre_activation_gradient;
 }
 
-void neuron_update(neuron* n, float learning_rate) {
-    for (int i = 0; i < n->weights->count; ++i) {
-        n->weights->data[i] += learning_rate * n->grad_weights->data[i];
-    }
-    n->bias += learning_rate * n->grad_bias;
+void neuron_update(neuron* n, float lr) {
+    neuron_opt_update(n, n->opt, lr);
 }
 
 void neuron_zero_grad(neuron* n)

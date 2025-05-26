@@ -4,7 +4,7 @@
 #include "network.h"
 #include "csv_parser.h"
 #include "tokenizer.h"
-
+#include "optimizers.h"
 
 void print_network_weights(network* net) {
     printf("Network weights:\n");
@@ -528,6 +528,7 @@ void test_rnn()
         fprintf(stderr, "Failed to create RNN network.\n");
         return 1;
     }
+    set_network_optimizer(net, RMSPROP);
     print_network_weights_rnn(net);
 
 

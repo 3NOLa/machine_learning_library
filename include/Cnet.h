@@ -53,6 +53,76 @@ void tensor_multiply_scalar_inplace(Tensor* target, float  scalar);
 // Print tensor
 void tensor_print(Tensor* t);
 
+
+typedef enum {
+	SGD, // SCHOLAR GRADINET DECENT
+	SGDM,// SGD WITH MOMENTUM
+	NESTEROV, // SGD WITH Nesterov Momentum
+	ADAM,
+	RMSPROP,
+}OptimizerType;
+
+typedef struct {
+	Tensor* velocity;
+	float fvelocity;
+	float momentum; // beta
+} MomentumState;
+
+typedef struct {
+	Tensor* velocity;
+	float fvelocity;
+	float momentum;
+}NesterovMomentumState;
+
+typedef struct {
+	Tensor* avg_sq_grad;
+	float favg_sq_grad;
+	float decay;
+	float epsilon;
+} RMSPropState;
+
+typedef struct {
+	Tensor* m;  // 1st moment (mean)
+	Tensor* v;  // 2nd moment (variance)
+	int t;      // timestep
+	float beta1;
+	float beta2;
+	float epsilon;
+} AdamState;
+
+typedef union {
+	MomentumState momentum;
+	NesterovMomentumState nesterov;
+	RMSPropState rmsprop;
+	AdamState adam;
+}OptimizerArgs;
+
+typedef struct optimizer{
+    OptimizerType type;
+	OptimizerArgs args;
+	void (*tensor_update)(Tensor*, Tensor*, float, OptimizerArgs*);
+	void (*float_update)(float*, float*, float, OptimizerArgs*);
+} optimizer;
+
+
+void optimizer_set(optimizer* op, OptimizerType type);
+
+void sgd_tensor_update(Tensor* data, Tensor* grad,float lr, OptimizerArgs* args);
+void sgd_float_update(float* data, float* grad, float lr, OptimizerArgs* args);
+
+void sgdm_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* args);
+void sgdm_float_update(float* data, float* grad, float lr, OptimizerArgs* args);
+
+void nesterov_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* args);
+void nesterov_float_update(float* data, float* grad, float lr, OptimizerArgs* args);
+
+void adam_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* args);
+void adam_float_update(float* data, float* grad, float lr, OptimizerArgs* args);
+
+void rmsprop_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* args);
+void rmsprop_float_update(float* data, float* grad, float lr, OptimizerArgs* args);
+
+
 typedef enum {
 	RELU,
 	LEAKY_RELU,
@@ -74,6 +144,7 @@ typedef struct neuron {
 	ActivationType Activation;
 	float  (*ActivationFunc)(float  value);
 	float  (*ActivationderivativeFunc)(struct neuron*);
+    	optimizer* opt;
 } neuron;
 
 neuron* neuron_create(int weightslength, ActivationType func);
@@ -83,7 +154,7 @@ void neuron_backward(float  derivative, neuron* n, Tensor* output_gradients);
 void neuron_update(neuron* n, float learning_rate);
 void neuron_zero_grad(neuron* n);
 void neuron_free(neuron* n);
-
+void neuron_opt_update(neuron* n, optimizer* opt, float lr);
 
 float  RELu_function(float  value);
 float  RELu_derivative_function(neuron* n); 
@@ -135,6 +206,8 @@ layer* general_layer_Initialize(LayerType type, int neuronAmount, int neuronDim,
 void general_layer_free(layer* base_layer);
 Tensor* get_layer_output(layer* base_layer);
 void set_layer_output(layer* base_layer, Tensor* output);
+void set_layer_optimizer(layer* base_layer, OptimizerType type);
+void set_layer_output(layer* base_layer, Tensor* output);
 
 Tensor* wrapper_rnn_forward(layer* base_layer, Tensor* input);
 Tensor* wrapper_rnn_backward(layer* base_layer, Tensor* grad);
@@ -174,6 +247,7 @@ typedef struct {
 	int input_dims;
 	int* input_shape;
 	LayerType type;
+	OptimizerType otype;
 }network;
 
 network* network_create(int layerAmount, int* layersSize, int input_dims, int* input_shape, ActivationType* activations, float  learnningRate, LossType lossFunction, LayerType type);
@@ -181,6 +255,7 @@ network* network_create_empty();
 int add_created_layer(network* net, layer* l);
 int add_layer(network* net, int layerSize, ActivationType Activationfunc, int input_dim);// add input layer if first layer otherwise put 0
 int set_loss_function(network* net, LossType lossFunction);
+void set_network_optimizer(network* net, OptimizerType type);
 void network_free(network* net);
 void network_train_type(network* net);
 
@@ -260,6 +335,7 @@ typedef struct rnn_neuron {
 	Tensor* input_history[128];
 	float  hidden_state_history[128];
 	int timestamp;
+	optimizer* opt;
 } rnn_neuron;
 
 rnn_neuron* rnn_neuron_create(int weightslength, ActivationType func);
@@ -269,6 +345,7 @@ void rnn_neuron_backward(float  output_gradient, rnn_neuron* rn, Tensor* input_g
 void rnn_neuron_update(rnn_neuron* rn, float rl);
 void rnn_neuron_zero_grad(rnn_neuron* rn);
 void rnn_neuron_free(rnn_neuron* rn);
+void rnn_neuron_opt_update(rnn_neuron* rn, optimizer* opt, float lr);
 
 typedef struct lstm_neuron {
 	float  short_memory;//cell state
@@ -282,6 +359,7 @@ typedef struct lstm_neuron {
 	rnn_neuron* i_g_p; //input_gate_potinal also known as candidate cell
 	rnn_neuron* o_g_r; //output_gate_remember 
 	rnn_neuron* f_g; //forget_gate
+   	optimizer* opt;
 } lstm_neuron;
 
 lstm_neuron* lstm_neuron_create(int weightslength, ActivationType func);
@@ -290,6 +368,7 @@ void lstm_neuron_backward(float  derivative, lstm_neuron* ln, Tensor* input_grad
 void lstm_neuron_update(lstm_neuron* ln, float rl);
 void lstm_neuron_zero_grad(lstm_neuron* ln);
 void lstm_neuron_free(lstm_neuron* ln);
+void lstm_neuron_opt_update(lstm_neuron* ln, optimizer* opt, float lr);
 
 typedef struct {
 	int neuronAmount;

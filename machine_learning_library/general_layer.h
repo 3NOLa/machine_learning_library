@@ -8,6 +8,8 @@
 #define AS_RNN(l)   ((rnn_layer*)((l)->params))
 #define AS_LSTM(l)   ((lstm_layer*)((l)->params))
 
+typedef enum OptimizerType OptimizerType;
+
 EXPORT typedef enum {
     LAYER_DENSE,
     LAYER_RNN,
@@ -19,6 +21,7 @@ EXPORT typedef struct Layer {
     LayerType type;
     int neuronAmount;
     void* params;  
+
     Tensor* (*forward)(struct Layer* layer, Tensor* input);
     Tensor* (*backward)(struct Layer* layer, Tensor* grad);
     void (*update)(struct Layer* layer, float  learning_rate);
@@ -32,6 +35,7 @@ EXPORT layer* general_layer_Initialize(LayerType type, int neuronAmount, int neu
 EXPORT void general_layer_free(layer* base_layer);
 EXPORT Tensor* get_layer_output(layer* base_layer);
 EXPORT void set_layer_output(layer* base_layer, Tensor* output);
+EXPORT void set_layer_optimizer(layer* base_layer, OptimizerType type);
 
 EXPORT Tensor* wrapper_rnn_forward(layer* base_layer, Tensor* input);
 EXPORT Tensor* wrapper_rnn_backward(layer* base_layer, Tensor* grad);
