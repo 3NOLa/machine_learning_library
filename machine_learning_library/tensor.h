@@ -1,6 +1,4 @@
 #pragma once
-#include <time.h>
-#include <stdlib.h>
 #include "export.h"
 
 EXPORT typedef struct {

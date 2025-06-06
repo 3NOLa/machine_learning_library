@@ -36,6 +36,14 @@ class NetworkModel:
         for layer in self.layers:
             layer.layer_grad_zero()
 
+    def set_optimizer(self, optimizer_type):
+        for layer in self.layers:
+            layer.set_layer_optimizer(optimizer_type)
+
+    def set_initializer(self, initializer_type):
+        for layer in self.layers:
+            layer.set_layer_initializer(initializer_type)
+
     @staticmethod
     def loss_function(loss_type, y_pred: Tensor, y_real: Tensor) -> float:
         """Calculate loss between predicted and real values"""
@@ -114,6 +122,9 @@ class Network(NetworkModel):
             lib.network_train_type(self.c_network)
         except Exception as e:
             raise RuntimeError(f"Failed to set training type: {e}")
+
+    def set_optimizer(self, optimizer_type):
+        lib.set_network_optimizer(self.c_network, optimizer_type)
 
     def forward(self, data: Tensor) -> Tensor:
         """Forward pass through the entire network"""

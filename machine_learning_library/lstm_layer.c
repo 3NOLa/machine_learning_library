@@ -1,6 +1,7 @@
 #include "dense_layer.h"
 #include "rnn_layer.h"
 #include "lstm_layer.h"
+#include "weights_initialization.h"
 
 
 lstm_layer* lstm_layer_create(int neuronAmount, int neuronDim, ActivationType Activationfunc)
@@ -148,6 +149,49 @@ void lstm_layer_zero_grad(lstm_layer* ll)
     if (!ll) return;
     for (int i = 0; i < ll->neuronAmount; ++i)
         lstm_neuron_zero_grad(ll->neurons[i]);
+}
+
+void lstm_layer_opt_init(lstm_layer* ll, Initializer* init, initializerType type)
+{
+    if (!init) {
+        switch (type) {
+        case RandomNormal:
+            init = initializer_random_normal(0, 1);
+            break;
+        case RandomUniform:
+            init = initializer_random_uniform(-1, 1);
+            break;
+        case XavierNormal:
+            init = initializer_xavier_normal(ll->neurons[0]->f_g->n->weights->count, ll->neuronAmount);
+            break;
+        case XavierUniform:
+            init = initializer_xavier_uniform(ll->neurons[0]->f_g->n->weights->count, ll->neuronAmount);
+            break;
+        case HeNormal:
+            init = initializer_he_normal(ll->neurons[0]->f_g->n->weights->count);
+            break;
+        case HeUniform:
+            init = initializer_he_uniform(ll->neurons[0]->f_g->n->weights->count);
+            break;
+        case LeCunNormal:
+            init = initializer_lecun_normal(ll->neurons[0]->f_g->n->weights->count);
+            break;
+        case LeCunUniform:
+            init = initializer_lecun_uniform(ll->neurons[0]->f_g->n->weights->count);
+            break;
+            //case Orthogonal:
+             //   init = initializer_orthogonal(f1, i1, i2);
+            //case Sparse:
+                //init = initializer_sparse(i1, i2);
+        default:
+            fprintf(stderr, "Error: not a valid type or not implmeneted yet in lstm_layer_opt_init\n");
+            return;
+        }
+    }
+
+    for (int i = 0; i < ll->neuronAmount; i++) {
+        lstm_neuron_opt_init(ll->neurons[i], init);
+    }
 }
 
 void lstm_layer_reset_state(lstm_layer* ll)

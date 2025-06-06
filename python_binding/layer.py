@@ -48,10 +48,17 @@ class Layer:
         return self.py_neurons[index]
 
     def layer_grad_zero(self):
-        raise TypeError("Input gradients must be a Tensor object")
+        raise TypeError("Subclasses must implement forward method")
 
     def update_layer_weights(self, lr: float):
-        raise TypeError("Input gradients must be a Tensor object")
+        raise TypeError("Subclasses must implement forward method")
+
+    def set_layer_optimizer(self, optimizer_type):
+        lib.set_layer_optimizer(self.layer_ptr, optimizer_type)
+
+    def set_layer_initializer(self, initializer_type):
+        initializer = ffi.cast("Initializer *", ffi.NULL)
+        self.layer_ptr.opt_init(self.layer_ptr,initializer , initializer_type)
 
     def __del__(self):
         if hasattr(self, 'layer_ptr') and self.layer_ptr and self.layer_ptr != ffi.NULL:
@@ -66,12 +73,10 @@ class DenseLayer(Layer):
     def __init__(self, input_dim: int, neuron_amount: int, activation_type=None):
         super().__init__(lib.LAYER_DENSE, input_dim, neuron_amount, activation_type)
 
-        # Create the specific dense layer
         self.layer_type_ptr = lib.layer_create(neuron_amount, input_dim, self.activation_function)
         if self.layer_type_ptr == ffi.NULL:
             raise RuntimeError("Failed to create dense layer")
 
-        # Create Python neuron wrappers
         self.py_neurons = []
         for i in range(neuron_amount):
             try:

@@ -2,6 +2,7 @@
 #include "dense_layer.h"
 #include "optimizers.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 neuron* neuron_create(int weightslength, ActivationType Activation)
 {
@@ -23,7 +24,7 @@ neuron* neuron_create(int weightslength, ActivationType Activation)
     n->weights = tensor_random_create(1, (int[]) { weightslength });
     n->grad_weights = tensor_zero_create(1, (int[]) { weightslength });
     n->opt = (optimizer*)malloc(sizeof(optimizer));
-    optimizer_set(n->opt, RMSPROP);
+    optimizer_set(n->opt, SGD);
     if (!n->weights || !n->grad_weights || !n->opt) {
         fprintf(stderr, "Error: Failed to create weights or grad_weights or instilze optimizer for neuron\n");
         free(n);

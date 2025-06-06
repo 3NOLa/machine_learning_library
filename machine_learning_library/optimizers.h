@@ -37,6 +37,8 @@ EXPORT typedef struct {
 EXPORT typedef struct {
 	Tensor* m;  // 1st moment (mean)
 	Tensor* v;  // 2nd moment (variance)
+	float fm;
+	float fv;
 	int t;      // timestep
 	float beta1;
 	float beta2;

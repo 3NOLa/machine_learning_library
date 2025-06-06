@@ -15,6 +15,7 @@ layer* general_layer_Initialize(LayerType type, int neuronAmount, int neuronDim,
 		l->backward = wrapper_dense_backward;
 		l->update = wrapper_dense_update;
 		l->zero_grad = wrapper_dense_zero_grad;
+		l->opt_init = wrapper_dense_opt_init;
 		l->free = layer_free;
 		l->reset_state = NULL;
 		break;
@@ -24,6 +25,7 @@ layer* general_layer_Initialize(LayerType type, int neuronAmount, int neuronDim,
 		l->backward = wrapper_rnn_backward;
 		l->update = wrapper_rnn_update;
 		l->zero_grad = wrapper_rnn_zero_grad;
+		l->opt_init = wrapper_rnn_opt_init;
 		l->free = rnn_layer_free;
 		l->reset_state = wrapper_rnn_reset_state;
 		break;
@@ -33,6 +35,7 @@ layer* general_layer_Initialize(LayerType type, int neuronAmount, int neuronDim,
 		l->backward = wrapper_lstm_backward;
 		l->update = wrapper_lstm_update;
 		l->zero_grad = wrapper_lstm_zero_grad;
+		l->opt_init = wrapper_lstm_opt_init;
 		l->free = lstm_layer_free;
 		l->reset_state = wrapper_rnn_reset_state;
 		break;
@@ -68,6 +71,11 @@ void wrapper_rnn_reset_state(layer* base_layer) {
 	rnn_layer_reset_state(rl);
 }
 
+void wrapper_rnn_opt_init(layer* base_layer, Initializer* init, initializerType type) {
+	rnn_layer* rl = (rnn_layer*)base_layer->params;
+	rnn_layer_opt_init(rl, init, type);
+}
+
 Tensor* wrapper_dense_forward(layer* base_layer, Tensor* input) {
 	dense_layer* dl = (dense_layer*)base_layer->params;
 	return layer_forward(dl, input);
@@ -86,6 +94,11 @@ void wrapper_dense_update(layer* base_layer, float lr) {
 void wrapper_dense_zero_grad(layer* base_layer) {
 	dense_layer* dl = (dense_layer*)base_layer->params;
 	dense_layer_zero_grad(dl);
+}
+
+void wrapper_dense_opt_init(layer* base_layer, Initializer* init, initializerType type) {
+	dense_layer* dl = (dense_layer*)base_layer->params;
+	dense_layer_opt_init(dl, init, type);
 }
 
 Tensor* wrapper_lstm_forward(layer* base_layer, Tensor* input)
@@ -114,6 +127,11 @@ void wrapper_lstm_reset_state(layer* base_layer)
 {
 	lstm_layer* ll = (lstm_layer*)base_layer->params;
 	lstm_layer_reset_state(ll);
+}
+
+void wrapper_lstm_opt_init(layer* base_layer, Initializer* init, initializerType type) {
+	lstm_layer* ll = (lstm_layer*)base_layer->params;
+	lstm_layer_opt_init(ll, init, type);
 }
 
 void general_layer_free(layer* base_layer)

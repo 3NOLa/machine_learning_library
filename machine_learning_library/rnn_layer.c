@@ -1,6 +1,6 @@
 #include "dense_layer.h"
 #include "rnn_layer.h"
-
+#include "weights_initialization.h"
 
 rnn_layer* rnn_layer_create(int neuronAmount, int neuronDim, ActivationType Activationfunc)
 {
@@ -153,6 +153,49 @@ void rnn_layer_zero_grad(rnn_layer* rl)
     if (!rl) return;
     for (int i = 0; i < rl->neuronAmount; ++i)
         rnn_neuron_zero_grad(rl->neurons[i]);
+}
+
+void rnn_layer_opt_init(rnn_layer* rl, Initializer* init, initializerType type)
+{
+    if (!init) {
+        switch (type) {
+        case RandomNormal:
+            init = initializer_random_normal(0, 1);
+            break;
+        case RandomUniform:
+            init = initializer_random_uniform(-1, 1);
+            break;
+        case XavierNormal:
+            init = initializer_xavier_normal(rl->neurons[0]->n->weights->count, rl->neuronAmount);
+            break;
+        case XavierUniform:
+            init = initializer_xavier_uniform(rl->neurons[0]->n->weights->count, rl->neuronAmount);
+            break;
+        case HeNormal:
+            init = initializer_he_normal(rl->neurons[0]->n->weights->count);
+            break;
+        case HeUniform:
+            init = initializer_he_uniform(rl->neurons[0]->n->weights->count);
+            break;
+        case LeCunNormal:
+            init = initializer_lecun_normal(rl->neurons[0]->n->weights->count);
+            break;
+        case LeCunUniform:
+            init = initializer_lecun_uniform(rl->neurons[0]->n->weights->count);
+            break;
+            //case Orthogonal:
+             //   init = initializer_orthogonal(f1, i1, i2);
+            //case Sparse:
+                //init = initializer_sparse(i1, i2);
+        default:
+            fprintf(stderr, "Error: not a valid type or not implmeneted yet in rnn_layer_opt_init\n");
+            return;
+        }
+    }
+
+    for (int i = 0; i < rl->neuronAmount; i++) {
+        rnn_neuron_opt_init(rl->neurons[i], init);
+    }
 }
 
 void rnn_layer_reset_state(rnn_layer* rl)

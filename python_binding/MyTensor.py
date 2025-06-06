@@ -140,6 +140,8 @@ class Tensor(MutableSequence):
     def __repr__(self):
         return self.__call__()
 
+    #def __add__(self): need to implenet this and more
+
     def __del__(self):
         if hasattr(self, 'c_tensor') and self.c_tensor and self.c_tensor != ffi.NULL:
             try:
@@ -147,6 +149,9 @@ class Tensor(MutableSequence):
             except:
                 pass  # Ignore errors during cleanup
             self.c_tensor = None
+
+    def __add__(self, other: 'Tensor') -> 'Tensor':
+        return Tensor.from_c_tensor(lib.tensor_add(self.c_tensor,other.c_tensor))
 
     def __setitem__(self, s: slice, o: Iterable[_T]) -> None:
         raise NotImplementedError("Tensor assignment not implemented")

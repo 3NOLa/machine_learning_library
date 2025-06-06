@@ -84,6 +84,8 @@ typedef struct {
 typedef struct {
 	Tensor* m;  // 1st moment (mean)
 	Tensor* v;  // 2nd moment (variance)
+	float fm;
+	float fv;
 	int t;      // timestep
 	float beta1;
 	float beta2;
@@ -122,6 +124,109 @@ void adam_float_update(float* data, float* grad, float lr, OptimizerArgs* args);
 void rmsprop_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* args);
 void rmsprop_float_update(float* data, float* grad, float lr, OptimizerArgs* args);
 
+ typedef enum initializerType {
+	RandomNormal,
+	RandomUniform,
+	XavierNormal,
+	XavierUniform,
+	HeNormal,
+	HeUniform,
+	LeCunNormal,
+	LeCunUniform,
+	Orthogonal,
+	Sparse
+}initializerType;
+
+ typedef struct {
+	float a;
+	int mean;
+	int stddev;
+} RandomaArgs;
+
+ typedef struct {
+	int fan_in; // weight amount
+	int fan_out; // neuron amount
+}XavierArgs;
+
+ typedef struct {
+	int fan_in; // weight amount
+} HeArgs;
+
+ typedef struct {
+	int fan_in; // weight amount
+} LeCunArgs;
+
+ typedef struct {
+	float gain;
+	int rows;
+	int cols; //shape
+} OrthogonalArgs;
+
+ typedef struct {
+	int sparsity_level;
+	int nonzero_initializer;
+} SparseArgs;
+
+ typedef union {
+	RandomaArgs random;
+	XavierArgs xavier;
+	HeArgs he;
+	LeCunArgs lecun;
+	OrthogonalArgs orth;
+	SparseArgs sparse;
+}InitializerArgs;
+
+ typedef struct Initializer {
+	initializerType type;
+	InitializerArgs args;
+	void (*tensor_init)(Tensor*, struct Initializer*);
+	void (*float_init)(float*, struct Initializer*);
+} Initializer;
+
+// Factory functions (clean user interface)
+ Initializer* initializer_random_normal(float mean, float stddev);
+ Initializer* initializer_random_uniform(float min, float max);
+
+ Initializer* initializer_xavier_normal(int fan_in, int fan_out);
+ Initializer* initializer_xavier_uniform(int fan_in, int fan_out);
+
+ Initializer* initializer_he_normal(int fan_in);
+ Initializer* initializer_he_uniform(int fan_in);
+
+ Initializer* initializer_lecun_normal(int fan_in);
+ Initializer* initializer_lecun_uniform(int fan_in);
+
+ Initializer* initializer_orthogonal(float gain, int rows, int cols);
+ Initializer* initializer_sparse(int sparsity_level, int nonzero_initializer);
+
+// Initialization logic for tensors and scalars
+ void random_normal_tensor_init(Tensor* data, Initializer* init);
+ void random_normal_float_init(float* data, Initializer* init);
+void random_uniform_tensor_init(Tensor* data, Initializer* init);
+ void random_uniform_float_init(float* data, Initializer* init);
+
+void xavier_normal_tensor_init(Tensor* data, Initializer* init);
+void xavier_normal_float_init(float* data, Initializer* init);
+void xavier_uniform_tensor_init(Tensor* data, Initializer* init);
+void xavier_uniform_float_init(float* data, Initializer* init);
+
+void he_normal_tensor_init(Tensor* data, Initializer* init);
+void he_normal_float_init(float* data, Initializer* init);
+ void he_uniform_tensor_init(Tensor* data, Initializer* init);
+ void he_uniform_float_init(float* data, Initializer* init);
+
+ void lecun_normal_tensor_init(Tensor* data, Initializer* init);
+ void lecun_normal_float_init(float* data, Initializer* init);
+ void lecun_uniform_tensor_init(Tensor* data, Initializer* init);
+ void lecun_uniform_float_init(float* data, Initializer* init);
+
+ void orthogonal_tensor_init(Tensor* data, Initializer* init);
+ void orthogonal_float_init(float* data, Initializer* init);
+
+ void sparse_tensor_init(Tensor* data, Initializer* init);
+ void sparse_float_init(float* data, Initializer* init);
+
+
 
 typedef enum {
 	RELU,
@@ -155,6 +260,7 @@ void neuron_update(neuron* n, float learning_rate);
 void neuron_zero_grad(neuron* n);
 void neuron_free(neuron* n);
 void neuron_opt_update(neuron* n, optimizer* opt, float lr);
+ void neuron_opt_init(neuron* n, Initializer* init);
 
 float  RELu_function(float  value);
 float  RELu_derivative_function(neuron* n); 
@@ -198,6 +304,7 @@ typedef enum {
     void (*update)(struct Layer* layer, float  learning_rate);
     void (*free)(struct Layer* layer);
     void (*zero_grad)(struct Layer* layer);
+     void (*opt_init)(struct Layer* layer, Initializer* init, initializerType type);
     //rnn only
     void (*reset_state)(struct layer* base_layer);
 }layer;
@@ -214,17 +321,20 @@ Tensor* wrapper_rnn_backward(layer* base_layer, Tensor* grad);
 void wrapper_rnn_update(layer* base_layer, float lr);
 void wrapper_rnn_zero_grad(layer* base_layer);
 void wrapper_rnn_reset_state(layer* base_layer);
+void wrapper_rnn_opt_init(layer* layer, Initializer* init, initializerType type);
 
 Tensor* wrapper_dense_forward(layer* base_layer, Tensor* input);
 Tensor* wrapper_dense_backward(layer* base_layer, Tensor* gra);
 void wrapper_dense_update(layer* base_layer, float lr);
 void wrapper_dense_zero_grad(layer* base_layer);
+void wrapper_dense_opt_init(layer* layer, Initializer* init, initializerType type);
 
 Tensor* wrapper_lstm_forward(layer* base_layer, Tensor* input);
 Tensor* wrapper_lstm_backward(layer* base_layer, Tensor* grad);
 void wrapper_lstm_update(layer* base_layer, float lr);
 void wrapper_lstm_zero_grad(layer* base_layer);
 void wrapper_lstm_reset_state(layer* base_layer);
+void wrapper_lstm_opt_init(layer* layer, Initializer* init, initializerType type);
 
 typedef enum {
 	MSE,
@@ -263,6 +373,7 @@ Tensor* forwardPropagation(network* net, Tensor* data);
 int backpropagation(network* net, Tensor* predictions, Tensor* targets);
 void network_update(network* net);
 void network_zero_grad(network* net);
+void network_opt_init(network* net, Initializer* init, initializerType type);
 void network_reset_state(network* net);
 
 float  train(network* net, Tensor* input, Tensor* target);
@@ -320,11 +431,8 @@ Tensor* layer_forward(dense_layer* l, Tensor* input);
 Tensor* layer_backward(dense_layer* l, Tensor* input_gradients);
 void dense_layer_update(dense_layer* layer, float learning_rate);
 void dense_layer_zero_grad(dense_layer* dl);
+void dense_layer_opt_init(dense_layer* dl, Initializer* init, initializerType type);
 void layer_free(dense_layer* l);
-
-
-
-
 
 typedef struct rnn_neuron {
 	neuron* n;
@@ -346,6 +454,7 @@ void rnn_neuron_update(rnn_neuron* rn, float rl);
 void rnn_neuron_zero_grad(rnn_neuron* rn);
 void rnn_neuron_free(rnn_neuron* rn);
 void rnn_neuron_opt_update(rnn_neuron* rn, optimizer* opt, float lr);
+ void rnn_neuron_opt_init(rnn_neuron* rn, Initializer* init);
 
 typedef struct lstm_neuron {
 	float  short_memory;//cell state
@@ -369,6 +478,7 @@ void lstm_neuron_update(lstm_neuron* ln, float rl);
 void lstm_neuron_zero_grad(lstm_neuron* ln);
 void lstm_neuron_free(lstm_neuron* ln);
 void lstm_neuron_opt_update(lstm_neuron* ln, optimizer* opt, float lr);
+ void lstm_neuron_opt_init(lstm_neuron* ln, Initializer* init);
 
 typedef struct {
 	int neuronAmount;
@@ -383,6 +493,7 @@ Tensor* rnn_layer_forward(rnn_layer* rl, Tensor* input);
 Tensor* rnn_layer_backward(rnn_layer* rl, Tensor* output_gradients);
 void rnn_layer_update(rnn_layer* rl, float lr);
 void rnn_layer_zero_grad(rnn_layer* rl);
+void rnn_layer_opt_init(rnn_layer* rl, Initializer* init, initializerType type);
 void rnn_layer_reset_state(rnn_layer* rl);
 void rnn_layer_free(rnn_layer* rl);
 
@@ -399,6 +510,7 @@ Tensor* lstm_layer_forward(lstm_layer* ll, Tensor* input);
 Tensor* lstm_layer_backward(lstm_layer* ll, Tensor* output_gradients);
 void lstm_layer_update(lstm_layer* ll, float lr);
 void lstm_layer_zero_grad(lstm_layer* ll);
+void lstm_layer_opt_init(lstm_layer* ll, Initializer* init, initializerType type);
 void lstm_layer_reset_state(lstm_layer* ll);
 void lstm_layer_free(lstm_layer* ll);
 

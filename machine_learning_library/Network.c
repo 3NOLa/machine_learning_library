@@ -373,6 +373,13 @@ void network_zero_grad(network* net)
         }
 }
 
+void network_opt_init(network* net, Initializer* init, initializerType type)
+{
+    for (int i = 0; i < net->layerAmount; i++) {
+        net->layers[i]->opt_init(net->layers[i],init,type);
+    }
+}
+
 void network_reset_state(network* net) {
     for (int i = 0; i < net->layerAmount; i++) {
         if (net->layers[i]->reset_state)

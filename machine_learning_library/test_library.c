@@ -5,6 +5,7 @@
 #include "csv_parser.h"
 #include "tokenizer.h"
 #include "optimizers.h"
+#include "weights_Initialization.h"
 
 void print_network_weights(network* net) {
     printf("Network weights:\n");
@@ -324,7 +325,9 @@ void test_neural_network() {
         fprintf(stderr, "Network creation failed\n");
         return;
     }
-
+    set_network_optimizer(net, ADAM);
+    Initializer* init = NULL;
+    network_opt_init(net,init, HeUniform);
     printf("Network created with %d layers\n", net->layerAmount);
 
     // Create XOR dataset
@@ -433,6 +436,9 @@ void test_2d_input() {
 
     // Initialize network with the input dimensions
     network* net = network_create(2, layerSizes, 2, input_shape, activations, 0.1, MSE, LAYER_DENSE);
+    set_network_optimizer(net, RMSPROP);
+    Initializer* init = initializer_random_normal(0,10);
+    network_opt_init(net, init, RandomNormal);
 
     // Create a simple target (e.g., 1 for diagonal line pattern)
     int target_shape[2] = { 1, 1 };
@@ -528,9 +534,10 @@ void test_rnn()
         fprintf(stderr, "Failed to create RNN network.\n");
         return 1;
     }
-    set_network_optimizer(net, RMSPROP);
+    set_network_optimizer(net, ADAM);
     print_network_weights_rnn(net);
-
+    Initializer* init = NULL;
+    network_opt_init(net, init, LeCunUniform);
 
     // Input: [3 timestamps x 2 features]
     Tensor* input_seq = tensor_create(2, (int[]) { timestamps, 2 });
@@ -601,7 +608,7 @@ void test_lstm()
         fprintf(stderr, "Failed to create RNN network.\n");
         return 1;
     }
-
+    set_network_optimizer(net, RMSPROP);
     // Input: [3 timestamps x 2 features]
     Tensor* input_seq = tensor_create(2, (int[]) { timestamps, 2 });
     float  input_data[] = {
@@ -644,6 +651,7 @@ void test_lstm()
 }
 
 int main() {
+    //srand(time(NULL));
     printf("===== Neural Network Library Test Program =====\n");
 
     // Test matrix operations

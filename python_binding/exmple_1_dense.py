@@ -12,9 +12,9 @@ class ExampleModel(NetworkModel):
         self.lr = 0.01
 
         # Define layers
-        self.input_layer = DenseLayer(1, 10, lib.TANH)
-        self.hidden_layer = DenseLayer(10, 10, lib.TANH)
-        self.output_layer = DenseLayer(10, 1, lib.TANH)
+        self.input_layer = DenseLayer(1, 10, lib.LINEAR)
+        self.hidden_layer = DenseLayer(10, 10, lib.LINEAR)
+        self.output_layer = DenseLayer(10, 1, lib.LINEAR)
 
         # Add layers to the model
         self.layers.extend([self.input_layer, self.hidden_layer, self.output_layer])
@@ -70,9 +70,10 @@ def main():
         # Instantiate model
         print("Creating model...")
         model = ExampleModel()
-
+        model.set_optimizer(lib.RMSPROP)
+        model.set_initializer(lib.XavierUniform)
         # Training loop
-        epochs = 1000  # Reduced for testing
+        epochs = 100  # Reduced for testing
         print(f"Starting training for {epochs} epochs...")
 
         for epoch in range(epochs):

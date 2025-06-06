@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\reanforcment_learning_project">
-      <UniqueIdentifier>{5fc815ae-7c51-4bf2-a76d-216b1bf4259b}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="tensor.h">
@@ -42,9 +39,6 @@
     <ClInclude Include="hashmap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="reinforcement.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="tokenizer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -67,6 +61,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="optimizers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="weights_Initialization.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -98,9 +95,6 @@
     <ClCompile Include="Classification.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="reinforcement_network.c">
-      <Filter>Source Files\reanforcment_learning_project</Filter>
-    </ClCompile>
     <ClCompile Include="csv_parser.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -126,6 +120,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="optimizers.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="weights_initialization.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

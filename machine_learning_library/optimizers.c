@@ -53,6 +53,8 @@ void optimizer_set(optimizer* op, OptimizerType type)
         op->args.adam.m = NULL;
         op->args.adam.v = NULL;
         op->args.adam.t = 0;
+        op->args.adam.fm = 0;
+        op->args.adam.fv = 0;
         op->args.adam.beta1 = 0.9f;
         op->args.adam.beta2 = 0.999f;
         op->args.adam.epsilon = 1e-8f;
@@ -147,12 +149,46 @@ void nesterov_float_update(float* data, float* grad, float lr, OptimizerArgs* ar
 
 void adam_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* args)
 {
+    if (!data || !grad || data->count != grad->count) {
+        fprintf(stderr, "Error: NULL data or grad or size isnt matching in adam_tensor_update\n");
+        return NULL;
+    }
 
+    if (!args->adam.m || !args->adam.v) {
+        args->adam.m = tensor_zero_create(data->dims, data->shape);
+        args->adam.v = tensor_zero_create(data->dims, data->shape);
+        if (!args->adam.m || !args->adam.v) {
+            fprintf(stderr, "Error: coudent mmalloc momentum in adam_tensor_update\n");
+            return NULL;
+        }
+    }
+
+    args->adam.t++;
+
+    for (int i = 0; i < data->count; i++)
+    {
+
+        args->adam.m->data[i] = args->adam.beta1 * args->adam.m->data[i] + (1.0f - args->adam.beta1) * grad->data[i];
+        args->adam.v->data[i] = args->adam.beta2 * args->adam.v->data[i] + (1.0f - args->adam.beta2) * grad->data[i] * grad->data[i];
+
+        float m_hat = args->adam.m->data[i] / (1.0f - powf(args->adam.beta1, args->adam.t));
+        float v_hat = args->adam.v->data[i] / (1.0f - powf(args->adam.beta2, args->adam.t));
+
+        data->data[i] += (lr * m_hat) / (sqrtf(v_hat) + args->adam.epsilon);
+    }
 }
 
 void adam_float_update(float* data, float* grad, float lr, OptimizerArgs* args)
 {
+    args->adam.t++;
 
+    args->adam.fm = args->adam.beta1 * args->adam.fm + (1.0f - args->adam.beta1) * (*grad);
+    args->adam.fv = args->adam.beta2 * args->adam.fv + (1.0f - args->adam.beta2) * (*grad) * (*grad);
+
+    float m_hat = args->adam.fm / (1.0f - powf(args->adam.beta1, args->adam.t));
+    float v_hat = args->adam.fv / (1.0f - powf(args->adam.beta2, args->adam.t));
+
+    *data += (lr * m_hat) / (sqrtf(v_hat) + args->adam.epsilon);
 }
 
 void rmsprop_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* args)

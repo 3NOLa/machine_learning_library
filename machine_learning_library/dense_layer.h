@@ -1,8 +1,12 @@
 #pragma once
 #include <stdio.h>
+#include <stdlib.h>
 #include "neuron.h"
 #include "active_functions.h"
 #include "export.h"
+
+typedef struct Initializer Initializer;
+typedef enum initializerType initializerType;
 
 EXPORT typedef struct {
 	int neuronAmount;
@@ -20,4 +24,5 @@ EXPORT Tensor* layer_forward(dense_layer* l, Tensor* input);
 EXPORT Tensor* layer_backward(dense_layer* l, Tensor* input_gradients);
 EXPORT void dense_layer_update(dense_layer* layer, float learning_rate);
 EXPORT void dense_layer_zero_grad(dense_layer* dl);
+EXPORT void dense_layer_opt_init(dense_layer* dl, Initializer* init, initializerType type);
 EXPORT void layer_free(dense_layer* l);

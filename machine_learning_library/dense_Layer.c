@@ -1,4 +1,5 @@
 #include "dense_layer.h"
+#include "weights_initialization.h"
 
 dense_layer* layer_create(int neuronAmount, int neuronDim, ActivationType Activationfunc)
 {
@@ -162,6 +163,49 @@ void dense_layer_zero_grad(dense_layer* layer)
     if (!layer) return;
     for (int i = 0; i < layer->neuronAmount; i++) {
         neuron_zero_grad(layer->neurons[i]);
+    }
+}
+
+void dense_layer_opt_init(dense_layer* dl, Initializer* init, initializerType type)
+{
+    if (!init) {
+        switch (type) {
+        case RandomNormal:
+            init =  initializer_random_normal(0, 1);
+            break;
+        case RandomUniform:
+            init = initializer_random_uniform(-1, 1);
+            break;
+        case XavierNormal:
+            init = initializer_xavier_normal(dl->neurons[0]->weights->count, dl->neuronAmount);
+            break;
+        case XavierUniform:
+            init = initializer_xavier_uniform(dl->neurons[0]->weights->count, dl->neuronAmount);
+            break;
+        case HeNormal:
+            init = initializer_he_normal(dl->neurons[0]->weights->count);
+            break;
+        case HeUniform:
+            init = initializer_he_uniform(dl->neurons[0]->weights->count);
+            break;
+        case LeCunNormal:
+            init = initializer_lecun_normal(dl->neurons[0]->weights->count);
+            break;
+        case LeCunUniform:
+            init = initializer_lecun_uniform(dl->neurons[0]->weights->count);
+            break;
+        //case Orthogonal:
+         //   init = initializer_orthogonal(f1, i1, i2);
+        //case Sparse:
+            //init = initializer_sparse(i1, i2);
+        default:
+            fprintf(stderr, "Error: not a valid type or not implmeneted yet in dense_layer_opt_init\n");
+            return; 
+        }
+    }
+
+    for (int i = 0; i < dl->neuronAmount; i++) {
+        neuron_opt_init(dl->neurons[i], init);
     }
 }
 

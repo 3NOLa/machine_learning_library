@@ -17,5 +17,6 @@ EXPORT Tensor* rnn_layer_forward(rnn_layer* rl, Tensor* input);
 EXPORT Tensor* rnn_layer_backward(rnn_layer* rl, Tensor* output_gradients);
 EXPORT void rnn_layer_update(rnn_layer* rl, float lr);
 EXPORT void rnn_layer_zero_grad(rnn_layer* rl);
+EXPORT void rnn_layer_opt_init(rnn_layer* rl, Initializer* init, initializerType type);
 EXPORT void rnn_layer_reset_state(rnn_layer* rl);
 EXPORT void rnn_layer_free(rnn_layer* rl);

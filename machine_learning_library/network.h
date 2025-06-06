@@ -49,6 +49,7 @@ EXPORT Tensor* forwardPropagation(network* net, Tensor* data);
 EXPORT int backpropagation(network* net, Tensor* predictions, Tensor* targets);
 EXPORT void network_update(network* net);
 EXPORT void network_zero_grad(network* net);
+EXPORT void network_opt_init(network* net, Initializer* init, initializerType type);
 EXPORT void network_reset_state(network* net);
 
 EXPORT float  train(network* net, Tensor* input, Tensor* target);
