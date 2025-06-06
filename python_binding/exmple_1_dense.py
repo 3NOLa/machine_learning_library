@@ -3,6 +3,7 @@ from neuron import *
 from layer import *
 from network import *
 from MyTensor import Tensor
+from py_enums import *
 import numpy as np
 
 
@@ -12,9 +13,9 @@ class ExampleModel(NetworkModel):
         self.lr = 0.01
 
         # Define layers
-        self.input_layer = DenseLayer(1, 10, lib.LINEAR)
-        self.hidden_layer = DenseLayer(10, 10, lib.LINEAR)
-        self.output_layer = DenseLayer(10, 1, lib.LINEAR)
+        self.input_layer = DenseLayer(1, 10, ActivationType.LINEAR)
+        self.hidden_layer = DenseLayer(10, 10, ActivationType.LINEAR)
+        self.output_layer = DenseLayer(10, 1, ActivationType.LINEAR)
 
         # Add layers to the model
         self.layers.extend([self.input_layer, self.hidden_layer, self.output_layer])
@@ -38,7 +39,7 @@ class ExampleModel(NetworkModel):
             raise TypeError("Both output and real_output must be Tensor objects")
 
         try:
-            grad = NetworkModel.loss_derivative(lib.MSE, output, real_output)
+            grad = NetworkModel.loss_derivative(LossType.MSE, output, real_output)
             super().backward(grad)
         except Exception as e:
             raise RuntimeError(f"Backward pass failed: {e}")
@@ -70,8 +71,8 @@ def main():
         # Instantiate model
         print("Creating model...")
         model = ExampleModel()
-        model.set_optimizer(lib.RMSPROP)
-        model.set_initializer(lib.XavierUniform)
+        model.set_optimizer(OptimizerType.RMSPROP)
+        model.set_initializer(InitializerType.XavierUniform)
         # Training loop
         epochs = 100  # Reduced for testing
         print(f"Starting training for {epochs} epochs...")
@@ -97,7 +98,7 @@ def main():
                 output = model.forward(sample)
 
                 # Calculate loss
-                loss = NetworkModel.loss_function(lib.MSE, output, label)
+                loss = NetworkModel.loss_function(LossType.MSE, output, label)
 
                 # Print progress
                 if epoch % 10 == 0:

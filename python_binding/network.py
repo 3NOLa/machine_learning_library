@@ -2,6 +2,7 @@ from python_binding.tasks import ffi, lib
 from neuron import *
 from layer import *
 from MyTensor import Tensor
+from py_enums import *
 from typing import *
 
 
@@ -36,16 +37,16 @@ class NetworkModel:
         for layer in self.layers:
             layer.layer_grad_zero()
 
-    def set_optimizer(self, optimizer_type):
+    def set_optimizer(self, optimizer_type: OptimizerType):
         for layer in self.layers:
             layer.set_layer_optimizer(optimizer_type)
 
-    def set_initializer(self, initializer_type):
+    def set_initializer(self, initializer_type: InitializerType):
         for layer in self.layers:
             layer.set_layer_initializer(initializer_type)
 
     @staticmethod
-    def loss_function(loss_type, y_pred: Tensor, y_real: Tensor) -> float:
+    def loss_function(loss_type: LossType, y_pred: Tensor, y_real: Tensor) -> float:
         """Calculate loss between predicted and real values"""
         if not isinstance(y_pred, Tensor) or not isinstance(y_real, Tensor):
             raise TypeError("Both y_pred and y_real must be Tensor objects")
@@ -57,7 +58,7 @@ class NetworkModel:
             raise RuntimeError(f"Loss function calculation failed: {e}")
 
     @staticmethod
-    def loss_derivative(loss_type, y_pred: Tensor, y_real: Tensor) -> Tensor:
+    def loss_derivative(loss_type: LossType, y_pred: Tensor, y_real: Tensor) -> Tensor:
         """Calculate loss derivative for backpropagation"""
         if not isinstance(y_pred, Tensor) or not isinstance(y_real, Tensor):
             raise TypeError("Both y_pred and y_real must be Tensor objects")
@@ -103,7 +104,7 @@ class Network(NetworkModel):
         }
         self.set_loss(lib.MSE)
 
-    def set_loss(self, loss_type):
+    def set_loss(self, loss_type: LossType):
         """Set the loss function for the network"""
         try:
             self.c_network.lossFunction = loss_type
@@ -123,7 +124,7 @@ class Network(NetworkModel):
         except Exception as e:
             raise RuntimeError(f"Failed to set training type: {e}")
 
-    def set_optimizer(self, optimizer_type):
+    def set_optimizer(self, optimizer_type: OptimizerType):
         lib.set_network_optimizer(self.c_network, optimizer_type)
 
     def forward(self, data: Tensor) -> Tensor:

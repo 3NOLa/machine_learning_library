@@ -1,10 +1,12 @@
 from python_binding.tasks import ffi, lib
 from neuron import *
 from MyTensor import Tensor
+from py_enums import *
 from typing import List
 
+
 class Layer:
-    def __init__(self, layer_type, input_dim: int, neuron_amount: int, activation_type=None):
+    def __init__(self, layer_type: LayerType, input_dim: int, neuron_amount: int, activation_type: ActivationType = None):
         self.layer_type_ptr = None
         self.type = layer_type
         self.input_dim = input_dim
@@ -53,10 +55,10 @@ class Layer:
     def update_layer_weights(self, lr: float):
         raise TypeError("Subclasses must implement forward method")
 
-    def set_layer_optimizer(self, optimizer_type):
+    def set_layer_optimizer(self, optimizer_type: OptimizerType):
         lib.set_layer_optimizer(self.layer_ptr, optimizer_type)
 
-    def set_layer_initializer(self, initializer_type):
+    def set_layer_initializer(self, initializer_type: InitializerType):
         initializer = ffi.cast("Initializer *", ffi.NULL)
         self.layer_ptr.opt_init(self.layer_ptr,initializer , initializer_type)
 
@@ -70,8 +72,8 @@ class Layer:
 
 
 class DenseLayer(Layer):
-    def __init__(self, input_dim: int, neuron_amount: int, activation_type=None):
-        super().__init__(lib.LAYER_DENSE, input_dim, neuron_amount, activation_type)
+    def __init__(self, input_dim: int, neuron_amount: int, activation_type: ActivationType = None):
+        super().__init__(LayerType.LAYER_DENSE, input_dim, neuron_amount, activation_type)
 
         self.layer_type_ptr = lib.layer_create(neuron_amount, input_dim, self.activation_function)
         if self.layer_type_ptr == ffi.NULL:
@@ -116,10 +118,11 @@ class DenseLayer(Layer):
     def layer_grad_zero(self):
         lib.dense_layer_zero_grad(self.layer_type_ptr)
 
+
 class RnnLayer(Layer):
-    def __init__(self, input_dim: int, neuron_amount: int, activation_type=None):
+    def __init__(self, input_dim: int, neuron_amount: int, activation_type: ActivationType = None):
         activation_type = activation_type if activation_type is not None else lib.LINEAR
-        super().__init__(lib.LAYER_RNN, input_dim, neuron_amount, activation_type)
+        super().__init__(LayerType.LAYER_RNN, input_dim, neuron_amount, activation_type)
 
         # Create the specific RNN layer
         self.layer_type_ptr = lib.rnn_layer_create(neuron_amount, input_dim, self.activation_function)
@@ -185,9 +188,10 @@ class RnnLayer(Layer):
     def layer_grad_zero(self):
         lib.rnn_layer_zero_grad(self.layer_type_ptr)
 
+
 class LstmLayer(Layer):
-    def __init__(self, input_dim: int, neuron_amount: int, activation_type=None):
-        super().__init__(lib.LAYER_LSTM, input_dim, neuron_amount, activation_type)
+    def __init__(self, input_dim: int, neuron_amount: int, activation_type: ActivationType = None):
+        super().__init__(LayerType.LAYER_LSTM, input_dim, neuron_amount, activation_type)
 
         # Create the specific LSTM layer
         self.layer_type_ptr = lib.lstm_layer_create(neuron_amount, input_dim, self.activation_function)

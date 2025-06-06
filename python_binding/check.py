@@ -37,7 +37,7 @@ def test_neurons():
     try:
         # Test LSTM Neuron
         print("Testing LSTM Neuron...")
-        n = LstmNeuron(10, lib.LINEAR)
+        n = LstmNeuron(10, ActivationType.LINEAR)
         print(f"LSTM neuron created: {n}")
     except Exception as e:
         print(f"Error testing LSTM neuron: {e}")
@@ -45,7 +45,7 @@ def test_neurons():
     try:
         # Test RNN Neuron
         print("Testing RNN Neuron...")
-        rn = RnnNeuron(10, lib.LINEAR)
+        rn = RnnNeuron(10, ActivationType.LINEAR)
         print(f"RNN neuron created: {rn}")
     except Exception as e:
         print(f"Error testing RNN neuron: {e}")
@@ -98,7 +98,7 @@ def test_layers():
         # Test Dense Layer
         print("Testing Dense Layer...")
         input_tensor = Tensor.list_to_tensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-        dn = DenseLayer(10, 5, lib.LINEAR)
+        dn = DenseLayer(10, 5, ActivationType.LINEAR)
         o = dn.layer_forward(input_tensor)
         print(f"Dense layer output: {o}")
 
@@ -150,7 +150,7 @@ def test_models():
 
         # Test loss calculation and backpropagation
         real = Tensor.list_to_tensor([1])
-        loss = NetworkModel.loss_function(lib.MSE, output, real)
+        loss = NetworkModel.loss_function(LossType.MSE, output, real)
         print(f"Loss: {loss}")
 
         check2.backward(output, real)

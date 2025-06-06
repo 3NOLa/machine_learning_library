@@ -1,9 +1,10 @@
 from python_binding.tasks import ffi, lib
 from MyTensor import Tensor
+from py_enums import *
 
 
 class Neuron:
-    def __init__(self, type, neuron, activation_function):
+    def __init__(self, type, neuron, activation_function: ActivationType):
         self.type = type
         self.neuron = neuron
         self.activation_function = activation_function
