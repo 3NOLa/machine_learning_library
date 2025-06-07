@@ -645,6 +645,20 @@ Tensor* tensor_add_scalar(Tensor* t, float  scalar) {
     return result;
 }
 
+Tensor* tensor_subtract_scalar(Tensor* t, float  scalar) {
+    if (!t) return NULL;
+
+    Tensor* result = tensor_create(t->dims, t->shape);
+    if (!result) return NULL;
+
+    for (int i = 0; i < t->count; i++) {
+        result->data[i] = t->data[i] - scalar;
+    }
+
+    return result;
+
+}
+
 Tensor* tensor_multiply_scalar(Tensor* t, float  scalar) {
     if (!t) return NULL;
 

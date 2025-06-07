@@ -33,10 +33,4 @@ except Exception as e:
     raise
 
 __all__ = ["ffi", "lib"]
-
-# Test basic functionality
-try:
-    result = lib.Sigmoid_function(10)
-    print(f"Sigmoid test result: {result}")
-except Exception as e:
-    print(f"Error testing sigmoid function: {e}")
+print("c library works")

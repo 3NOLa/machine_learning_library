@@ -38,6 +38,7 @@ Tensor* tensor_subtract(Tensor* a, Tensor* b);
 Tensor* tensor_multiply(Tensor* a, Tensor* b); // Element-wise multiplication
 Tensor* tensor_dot(Tensor* a, Tensor* b);      // Matrix multiplication when applicable
 Tensor* tensor_add_scalar(Tensor* t, float  scalar);
+Tensor* tensor_subtract_scalar(Tensor* t, float  scalar);
 Tensor* tensor_multiply_scalar(Tensor* t, float  scalar);
 float  tensor_sum(Tensor* t);
 float  tensor_mean(Tensor* t);

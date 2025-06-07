@@ -41,6 +41,7 @@ EXPORT Tensor* tensor_subtract(Tensor* a, Tensor* b);
 EXPORT Tensor* tensor_multiply(Tensor* a, Tensor* b); // Element-wise multiplication
 EXPORT Tensor* tensor_dot(Tensor* a, Tensor* b);      // Matrix multiplication when applicable
 EXPORT Tensor* tensor_add_scalar(Tensor* t, float  scalar);
+EXPORT Tensor* tensor_subtract_scalar(Tensor* t, float  scalar);
 EXPORT Tensor* tensor_multiply_scalar(Tensor* t, float  scalar);
 EXPORT float  tensor_sum(Tensor* t);
 EXPORT float  tensor_mean(Tensor* t);

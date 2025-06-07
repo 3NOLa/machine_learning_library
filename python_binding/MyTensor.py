@@ -50,11 +50,15 @@ class Tensor(MutableSequence):
                 return []
 
             if isinstance(vals[0], (list, tuple)):
-                sub_shape = recurse(vals[0])
+                sub_shapes = []
                 for sub in vals:
-                    if recurse(sub) != sub_shape:
+                    shape = recurse(sub)
+                    sub_shapes.append(shape)
+                first_shape = sub_shapes[0]
+                for shape in sub_shapes:
+                    if shape != first_shape:
                         raise ValueError("Ragged tensor detected")
-                return [len(vals)] + sub_shape
+                return [len(vals)] + first_shape
             else:
                 for x in vals:
                     if not isinstance(x, (int, float)):
@@ -131,27 +135,45 @@ class Tensor(MutableSequence):
                     raise IndexError(f"Index {index} out of bounds")
                 return self.flatten[index]
 
-    def __call__(self):
-        return f"Tensor: ({self.flatten}, tensor dims: {self.dims}, shape: {self.shape})"
+    def __iter__(self):
+        return self.TensorIterator(self)
 
-    def __str__(self):
-        return self.__call__()
+    class TensorIterator:
+        def __init__(self, outer):
+            self.tensor = outer
+            self.index = 0
 
-    def __repr__(self):
-        return self.__call__()
+        def __iter__(self):
+            return self
 
-    #def __add__(self): need to implenet this and more
+        def __next__(self):
+            if self.index < self.tensor.shape[0]:
+                index_tensor = self.tensor[self.index]
+                self.index += 1
+                return index_tensor
+            else:
+                raise StopIteration
 
-    def __del__(self):
-        if hasattr(self, 'c_tensor') and self.c_tensor and self.c_tensor != ffi.NULL:
-            try:
-                lib.tensor_free(self.c_tensor)
-            except:
-                pass  # Ignore errors during cleanup
-            self.c_tensor = None
+    def __add__(self, other: Union['Tensor', int ,float]) -> 'Tensor':
+        if isinstance(other,Tensor):
+            return Tensor.from_c_tensor(lib.tensor_add(self.c_tensor,other.c_tensor))
+        else:
+            return Tensor.from_c_tensor(lib.tensor_add_scalar(self.c_tensor, float(other)))
 
-    def __add__(self, other: 'Tensor') -> 'Tensor':
-        return Tensor.from_c_tensor(lib.tensor_add(self.c_tensor,other.c_tensor))
+    def __sub__(self, other: Union['Tensor', int ,float]) -> 'Tensor':
+        if isinstance(other,Tensor):
+            return Tensor.from_c_tensor(lib.tensor_subtract(self.c_tensor,other.c_tensor))
+        else:
+            return Tensor.from_c_tensor(lib.tensor_subtract_scalar(self.c_tensor, float(other)))
+
+    def __mul__(self, other: Union['Tensor', int ,float]) -> 'Tensor':
+        if isinstance(other,Tensor):
+            return Tensor.from_c_tensor(lib.tensor_multiply(self.c_tensor,other.c_tensor))
+        else:
+            return Tensor.from_c_tensor(lib.tensor_multiply_scalar(self.c_tensor, float(other)))
+
+    def __matmul__(self, other: 'Tensor') -> 'Tensor':
+        return Tensor.from_c_tensor(lib.tensor_dot(self.c_tensor, other.c_tensor))
 
     def __setitem__(self, s: slice, o: Iterable[_T]) -> None:
         raise NotImplementedError("Tensor assignment not implemented")
@@ -161,3 +183,20 @@ class Tensor(MutableSequence):
 
     def __delitem__(self, i: int) -> None:
         raise NotImplementedError("Tensor deletion not implemented")
+
+    def __call__(self):
+        return f"Tensor: ({self.flatten}, tensor dims: {self.dims}, shape: {self.shape})"
+
+    def __str__(self):
+        return self.__call__()
+
+    def __repr__(self):
+        return self.__call__()
+
+    def __del__(self):
+        if hasattr(self, 'c_tensor') and self.c_tensor and self.c_tensor != ffi.NULL:
+            try:
+                lib.tensor_free(self.c_tensor)
+            except:
+                pass  # Ignore errors during cleanup
+            self.c_tensor = None

@@ -67,6 +67,24 @@ def test_tensors():
         except Exception as e:
             print(f"Could not print tensor via C function: {e}")
 
+        a = Tensor.list_to_tensor([[1,2],
+                                   [3,4]])
+        b = Tensor.list_to_tensor([[5,6],
+                                   [7,8]])
+        aplusb = a + b
+        ab = a * b
+        aminusb = a-b
+        amat = a @ b
+
+        print(f"tensor a {a()}\ntensor b {b()}\ntensor a + b {aplusb()}\ntensor a - b {aminusb()}\ntensor a * b {ab()}\ntensor a @ b {amat()}\n")
+
+        iter_test = Tensor.list_to_tensor([[[1,2],[3,4]],[[5,6],[7,8]]])
+        print(f"Tensor created: {iter_test()}")
+        for dim in iter_test:
+            print(f"dim = {dim()}")
+            for mini_dim in dim:
+                print(f"    mini_dim = {mini_dim()}")
+
     except Exception as e:
         print(f"Error creating basic tensor: {e}")
 
