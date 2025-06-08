@@ -1,6 +1,6 @@
-from python_binding.tasks import ffi, lib
-from MyTensor import Tensor
-from py_enums import *
+from python_binding.cbinding.tasks import ffi,lib
+from .MyTensor import Tensor
+from .py_enums import *
 
 
 class Neuron:
@@ -18,8 +18,8 @@ class Neuron:
 
 class DenseNeuron(Neuron):
     def __init__(self, input_size: int, activation_type=None, c_neuron=None):
-        neuron_type = lib.LAYER_DENSE
-        activation_function = lib.LINEAR if activation_type is None else activation_type
+        neuron_type = LayerType.LAYER_DENSE
+        activation_function = ActivationType.LINEAR if activation_type is None else activation_type
 
         if c_neuron is not None:
             # Use provided C neuron
@@ -59,8 +59,8 @@ class DenseNeuron(Neuron):
 
 class RnnNeuron(Neuron):
     def __init__(self, input_size: int, activation_type=None, c_neuron=None):
-        neuron_type = lib.LAYER_RNN
-        activation_function = lib.LINEAR if activation_type is None else activation_type
+        neuron_type = LayerType.LAYER_RNN
+        activation_function = ActivationType.LINEAR if activation_type is None else activation_type
 
         if c_neuron is not None:
             # Use provided C neuron
@@ -98,8 +98,8 @@ class RnnNeuron(Neuron):
 
 class LstmNeuron(Neuron):
     def __init__(self, input_size: int, activation_type=None, c_neuron=None):
-        neuron_type = lib.LAYER_LSTM
-        activation_function = lib.LINEAR if activation_type is None else activation_type
+        neuron_type = LayerType.LAYER_LSTM
+        activation_function = ActivationType.LINEAR if activation_type is None else activation_type
 
         if c_neuron is not None:
             # Use provided C neuron

@@ -1,11 +1,5 @@
-from python_binding.tasks import ffi, lib
-from neuron import *
-from layer import *
-from network import *
-from MyTensor import Tensor
-from py_enums import *
+from python_binding.ml.network import *
 import numpy as np
-
 
 class ExampleModel(NetworkModel):
     def __init__(self):
@@ -14,8 +8,8 @@ class ExampleModel(NetworkModel):
 
         # Define layers
         self.input_layer = DenseLayer(1, 10, ActivationType.LINEAR)
-        self.hidden_layer = DenseLayer(10, 10, ActivationType.LINEAR)
-        self.output_layer = DenseLayer(10, 1, ActivationType.LINEAR)
+        self.hidden_layer = DenseLayer(10, 10, ActivationType.LINEAR,initializer_type=InitializerType.XavierUniform)
+        self.output_layer = DenseLayer(10, 1, ActivationType.LINEAR, initializer_type=InitializerType.LeCunUniform)
 
         # Add layers to the model
         self.layers.extend([self.input_layer, self.hidden_layer, self.output_layer])
@@ -72,7 +66,7 @@ def main():
         print("Creating model...")
         model = ExampleModel()
         model.set_optimizer(OptimizerType.RMSPROP)
-        model.set_initializer(InitializerType.XavierUniform)
+        #model.set_initializer(InitializerType.XavierUniform)
         # Training loop
         epochs = 100  # Reduced for testing
         print(f"Starting training for {epochs} epochs...")

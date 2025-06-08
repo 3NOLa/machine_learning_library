@@ -1,10 +1,5 @@
-from python_binding.tasks import ffi, lib
-from neuron import *
-from layer import *
-from network import *
-from MyTensor import Tensor
+from python_binding.ml.network import *
 import numpy as np
-
 
 def test_basic_functions():
     """Test basic library functions"""

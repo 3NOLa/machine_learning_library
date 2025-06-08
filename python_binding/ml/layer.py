@@ -1,16 +1,17 @@
-from python_binding.tasks import ffi, lib
-from neuron import *
-from MyTensor import Tensor
-from py_enums import *
+from python_binding.cbinding.tasks import ffi
+from .neuron import *
+from .MyTensor import Tensor
+from .py_enums import *
 from typing import List
 
 
 class Layer:
-    def __init__(self, layer_type: LayerType, input_dim: int, neuron_amount: int, activation_type: ActivationType = None):
+    def __init__(self, layer_type: LayerType, input_dim: int, neuron_amount: int, activation_type: ActivationType = None, initializer_type: InitializerType = None):
         self.layer_type_ptr = None
         self.type = layer_type
         self.input_dim = input_dim
-        self.activation_function = lib.LINEAR if activation_type is None else activation_type
+        self.activation_function = ActivationType.LINEAR if activation_type is None else activation_type
+        self.initializer_type = InitializerType.XavierNormal if initializer_type is None else initializer_type
         self.neuron_amount = neuron_amount
 
         # Initialize the general layer
@@ -72,12 +73,14 @@ class Layer:
 
 
 class DenseLayer(Layer):
-    def __init__(self, input_dim: int, neuron_amount: int, activation_type: ActivationType = None):
-        super().__init__(LayerType.LAYER_DENSE, input_dim, neuron_amount, activation_type)
+    def __init__(self, input_dim: int, neuron_amount: int, activation_type: ActivationType = None, initializer_type: InitializerType = None):
+        super().__init__(LayerType.LAYER_DENSE, input_dim, neuron_amount, activation_type, initializer_type)
 
         self.layer_type_ptr = lib.layer_create(neuron_amount, input_dim, self.activation_function)
         if self.layer_type_ptr == ffi.NULL:
             raise RuntimeError("Failed to create dense layer")
+
+        self.set_layer_initializer(self.initializer_type) #must call it after c layer init
 
         self.py_neurons = []
         for i in range(neuron_amount):
@@ -120,14 +123,17 @@ class DenseLayer(Layer):
 
 
 class RnnLayer(Layer):
-    def __init__(self, input_dim: int, neuron_amount: int, activation_type: ActivationType = None):
+    def __init__(self, input_dim: int, neuron_amount: int, activation_type: ActivationType = None, initializer_type: InitializerType = None):
         activation_type = activation_type if activation_type is not None else lib.LINEAR
-        super().__init__(LayerType.LAYER_RNN, input_dim, neuron_amount, activation_type)
+        super().__init__(LayerType.LAYER_RNN, input_dim, neuron_amount, activation_type, initializer_type)
 
         # Create the specific RNN layer
         self.layer_type_ptr = lib.rnn_layer_create(neuron_amount, input_dim, self.activation_function)
         if self.layer_type_ptr == ffi.NULL:
             raise RuntimeError("Failed to create RNN layer")
+
+        self.set_layer_initializer(self.initializer_type) #must call it after c layer init
+
 
         # Create Python neuron wrappers
         self.py_neurons = []
@@ -190,13 +196,15 @@ class RnnLayer(Layer):
 
 
 class LstmLayer(Layer):
-    def __init__(self, input_dim: int, neuron_amount: int, activation_type: ActivationType = None):
-        super().__init__(LayerType.LAYER_LSTM, input_dim, neuron_amount, activation_type)
+    def __init__(self, input_dim: int, neuron_amount: int, activation_type: ActivationType = None, initializer_type: InitializerType = None):
+        super().__init__(LayerType.LAYER_LSTM, input_dim, neuron_amount, activation_type, initializer_type)
 
         # Create the specific LSTM layer
         self.layer_type_ptr = lib.lstm_layer_create(neuron_amount, input_dim, self.activation_function)
         if self.layer_type_ptr == ffi.NULL:
             raise RuntimeError("Failed to create LSTM layer")
+
+        self.set_layer_initializer(self.initializer_type) #must call it after c layer init
 
         # Create Python neuron wrappers
         self.py_neurons = []

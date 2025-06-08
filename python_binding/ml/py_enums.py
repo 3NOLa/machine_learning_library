@@ -1,4 +1,4 @@
-from python_binding.tasks import ffi, lib
+from python_binding.cbinding.tasks import lib
 from enum import IntEnum
 
 

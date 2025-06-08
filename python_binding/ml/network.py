@@ -1,8 +1,7 @@
-from python_binding.tasks import ffi, lib
-from neuron import *
-from layer import *
-from MyTensor import Tensor
-from py_enums import *
+from python_binding.cbinding.tasks import ffi,lib
+from .layer import *
+from .MyTensor import Tensor
+from .py_enums import *
 from typing import *
 
 

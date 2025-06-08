@@ -122,7 +122,6 @@ Initializer* initializer_lecun_uniform(int fan_in) {
 		fprintf(stderr, "Error: Memory allocation failed for Initializer in initializer_lecun_uniform\n");
 		return NULL;
 	}
-	fprintf(stderr, "\n\t\t\t\tin\t\t\n");
 	init->type = LeCunUniform;
 	init->args.lecun.fan_in = fan_in;
 	init->tensor_init = lecun_uniform_tensor_init;

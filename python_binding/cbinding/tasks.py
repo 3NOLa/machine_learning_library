@@ -3,7 +3,7 @@ import os
 
 ffi = FFI()
 
-# Use relative path or environment variable for better portability
+# write here the directory for the dll and header of the c library
 dll_path = os.environ.get('ML_LIB_PATH', "C:\\Users\\keyna\\source\\repos\\machine_learning_library\\x64\\Debug\\machine_learning_library.dll")
 header_path = os.environ.get('ML_HEADER_PATH', "C:\\Users\\keyna\\source\\repos\\machine_learning_library\\include\\Cnet.h")
 
