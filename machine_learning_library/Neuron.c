@@ -77,13 +77,7 @@ float  neuron_activation(Tensor* input, neuron* n)
     }
 
     // Calculate weighted sum using tensor operations
-    float  sum = 0.0;
-    for (int i = 0; i < input->count; i++) {
-        // Use proper tensor element access functions
-        float  input_val = tensor_get_element_by_index(input, i);
-        float  weight_val = tensor_get_element_by_index(n->weights, i);
-        sum += input_val * weight_val;
-    }
+    float  sum = tensor_dot(n->weights, input);
 
     // Add bias
     sum += n->bias;
@@ -108,20 +102,11 @@ void neuron_backward(float  output_gradient, neuron* n,Tensor* output_gradients)
     float  pre_activation_gradient = output_gradient * activation_derivative;
 
     // Calculate gradients for this neuron's parameters and inputs
-    for (int i = 0; i < n->weights->count; i++) {
-        int indices[1] = { i };
-
-        // Get original weight using tensor access
-        float  original_weight = tensor_get_element(n->weights, indices);
-
-        // Get input value using tensor access
-        float  input_val = tensor_get_element(n->input, indices);
-
-        output_gradients->data[i] += pre_activation_gradient * original_weight;
-
-        n->grad_weights->data[i] += pre_activation_gradient * input_val;
-    }
-
+    tensor_multiply_scalar_existing_more(
+        (Tensor * []) { output_gradients, n->grad_weights },
+        (Tensor * []) { n->weights , n->input},
+        (float[]) { pre_activation_gradient, pre_activation_gradient },
+        2);
     // Gradient for bias: dL/db = dL/dout * dout/dz * dz/db = output_gradient * activation_derivative * 1
     n->grad_bias += pre_activation_gradient;
 }

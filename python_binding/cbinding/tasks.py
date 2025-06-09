@@ -1,20 +1,22 @@
 from cffi import FFI
+from pathlib import Path
 import os
 
 ffi = FFI()
 
+directory_path = Path(__file__).parent.parent.parent
 # write here the directory for the dll and header of the c library
-dll_path = os.environ.get('ML_LIB_PATH', "C:\\Users\\keyna\\source\\repos\\machine_learning_library\\x64\\Debug\\machine_learning_library.dll")
-header_path = os.environ.get('ML_HEADER_PATH', "C:\\Users\\keyna\\source\\repos\\machine_learning_library\\include\\Cnet.h")
+dll_path = directory_path / 'x64' / 'Debug' / 'machine_learning_library.dll'
+header_path = directory_path / 'include' / 'Cnet.h'
 
 try:
-    lib = ffi.dlopen(dll_path)
+    lib = ffi.dlopen(str(dll_path))
 except OSError as e:
     print(f"Failed to load library: {e}")
     raise
 
 try:
-    with open(header_path, 'r') as f:
+    with open(str(header_path), 'r') as f:
         header_content = f.read()
         # Remove any #include statements and preprocessor directives that CFFI can't handle
         lines = header_content.split('\n')

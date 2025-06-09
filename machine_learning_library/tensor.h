@@ -39,10 +39,16 @@ EXPORT Tensor* tensor_get_col(Tensor* t, int col);
 EXPORT Tensor* tensor_add(Tensor* a, Tensor* b);
 EXPORT Tensor* tensor_subtract(Tensor* a, Tensor* b);
 EXPORT Tensor* tensor_multiply(Tensor* a, Tensor* b); // Element-wise multiplication
-EXPORT Tensor* tensor_dot(Tensor* a, Tensor* b);      // Matrix multiplication when applicable
+EXPORT Tensor* tensor_div(Tensor* a, Tensor* b);
+EXPORT Tensor* tensor_mmul(Tensor* a, Tensor* b);      // Matrix multiplication when applicable
+//EXPORT float sum8(__m256 v); // sum a simd register (8 elements)
+EXPORT float tensor_dot(Tensor* a, Tensor* b);
 EXPORT Tensor* tensor_add_scalar(Tensor* t, float  scalar);
 EXPORT Tensor* tensor_subtract_scalar(Tensor* t, float  scalar);
 EXPORT Tensor* tensor_multiply_scalar(Tensor* t, float  scalar);
+EXPORT void tensor_multiply_scalar_exsting(Tensor* dest,Tensor* source, float  scalar);
+EXPORT void tensor_multiply_scalar_existing_more(Tensor* dests[], Tensor* sources[], const float scalar[], int amount);
+EXPORT Tensor* tensor_div_scalar(Tensor* t, float  scalar);
 EXPORT float  tensor_sum(Tensor* t);
 EXPORT float  tensor_mean(Tensor* t);
 

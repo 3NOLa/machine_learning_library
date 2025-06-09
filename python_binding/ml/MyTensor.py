@@ -6,6 +6,7 @@ from collections.abc import MutableSequence
 
 _T = TypeVar('_T')
 
+
 class Tensor(MutableSequence):
     def __init__(self, c_tensor=None, flatten: list[float] = None, shape: list = None, dims: int = 1):
         super(Tensor, self).__init__()
@@ -22,6 +23,14 @@ class Tensor(MutableSequence):
         flatten = [c_tensor.data[i] for i in range(c_tensor.count)]
         shape = [c_tensor.shape[i] for i in range(c_tensor.dims)]
         return Tensor(c_tensor, flatten, shape, c_tensor.dims)
+
+    @staticmethod
+    def list_to_tensor_np(values: Union[List, List[List]]) -> 'Tensor':
+        if not values:
+            raise ValueError("Cannot create tensor from empty list")
+
+        np_array = np.array(values, dtype=np.float32)
+        return Tensor.from_numpy(np_array)
 
     @staticmethod
     def list_to_tensor(values: Union[List, List[List]]) -> 'Tensor':

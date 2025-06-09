@@ -122,11 +122,7 @@ Tensor* rnn_layer_backward(rnn_layer* rl, Tensor* output_gradients)
         }
         else {
             // Add this timestep's gradients to the accumulated gradients
-            for (int j = 0; j < timestep_input_gradients->count; j++) {
-                float  current = tensor_get_element_by_index(accumulated_input_gradients, j);
-                float  to_add = tensor_get_element_by_index(timestep_input_gradients, j);
-                tensor_set_by_index(accumulated_input_gradients, j, current + to_add);
-            }
+            tensor_add_inplace(accumulated_input_gradients, timestep_input_gradients);
             tensor_free(timestep_input_gradients);
         }
     }

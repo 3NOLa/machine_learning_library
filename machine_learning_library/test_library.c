@@ -90,7 +90,7 @@ void test_matrix_operations2() {
     printf("\n===== Testing Matrix Operations =====\n");
 
     // Test matrix creation
-    int shape1[2] = { 2,3 };
+    int shape1[2] = { 5,5 };
     int shape2[2] = { 3,2 };
 
     Tensor* a = tensor_random_create(2, shape1);

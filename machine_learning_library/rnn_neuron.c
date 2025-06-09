@@ -73,13 +73,7 @@ float  rnn_neuron_activation(Tensor* input, rnn_neuron* rn)
     }
 
     // Calculate weighted sum using tensor operations
-    float  sum = 0.0;
-    for (int i = 0; i < input->count; i++) {
-        // Use proper tensor element access functions
-        float  input_val = tensor_get_element_by_index(input, i);
-        float  weight_val = tensor_get_element_by_index(rn->n->weights, i);
-        sum += input_val * weight_val;
-    }
+    float  sum = tensor_dot(rn->n->weights, input);
 
     sum += rn->hidden_state * rn->recurrent_weights;
     sum += rn->n->bias;
@@ -108,15 +102,13 @@ void rnn_neuron_backward(float  output_gradient, rnn_neuron* rn, Tensor* input_g
     // For storing the gradient flowing back to the previous hidden state
     float  hidden_gradient = pre_activation_gradient * rn->recurrent_weights;
 
-    for (int i = 0; i < rn->n->weights->count; i++) {
-        float  original_weight = tensor_get_element_by_index(rn->n->weights, i);
-
-        float  input_val = tensor_get_element_by_index(rn->input_history[rn->timestamp], i);
-
-        input_grads->data[i] = pre_activation_gradient * original_weight;
-
-        rn->n->grad_weights->data[i] += pre_activation_gradient * input_val;
-    }
+    // Calculate gradients for this neuron's parameters and inputs
+    tensor_multiply_scalar_existing_more(
+        (Tensor * []) {input_grads, rn->n->grad_weights},
+        (Tensor * []) {rn->n->weights, rn->input_history[rn->timestamp]},
+        (float[]) {pre_activation_gradient, pre_activation_gradient},
+         2
+    );
 
     rn->grad_recurrent_weights += pre_activation_gradient * rn->hidden_state_history[rn->timestamp];
     rn->grad_hidden_state += hidden_gradient;

@@ -1,6 +1,7 @@
 #include "tensor.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <immintrin.h> // For AVX/AVX2
 #include <string.h>
 #include <time.h>
 
@@ -94,17 +95,31 @@ Tensor* tensor_zero_create(int dims, int* shape) {
     Tensor* t = tensor_create(dims, shape);
     if (!t) return NULL;
 
-    for (int i = 0; i < t->count; i++)
+    __m256 vf = _mm256_set1_ps(0.0);
+    int i = 0;
+    for (; i < t->count - 8; i += 8) {
+        _mm256_storeu_ps(&t->data[i], vf);
+    }
+
+    for (; i < t->count; ++i) {
         t->data[i] = 0.0;
+    }
     return t;
 }
 
 void tensor_fill(Tensor* t, float value) {
     if (!t || !t->data) return;
 
-    for (int i = 0; i < t->count; i++) {
+    __m256 vf = _mm256_set1_ps(value);
+    int i = 0;
+    for (; i < t->count - 8; i += 8) {
+        _mm256_storeu_ps(&t->data[i], vf);
+    }
+
+    for (; i < t->count; ++i) {
         t->data[i] = value;
     }
+    return t;
 }
 
 Tensor* tensor_random_create(int dims, int* shape) {
@@ -478,8 +493,17 @@ Tensor* tensor_add(Tensor* a, Tensor* b) {
     Tensor* result = tensor_create(a->dims, a->shape);
     if (!result) return NULL;
 
-    // Add elements
-    for (int i = 0; i < a->count; i++) {
+    //this code use a special cpu instruion that copy 8 elemnts at once(parallelism)
+    int i = 0;
+    for (; i <= a->count - 8; i+=8) { 
+        __m256 va = _mm256_loadu_ps(&a->data[i]);
+        __m256 vb = _mm256_loadu_ps(&b->data[i]);
+        __m256 vr = _mm256_add_ps(va, vb);
+        _mm256_storeu_ps(&result->data[i], vr);
+    }
+
+    // must add it because the loop before stops 7 elemnts or less before the end
+    for (; i < a->count; i++) {
         result->data[i] = a->data[i] + b->data[i];
     }
 
@@ -504,9 +528,20 @@ void tensor_add_inplace(Tensor* target, Tensor* other) {
     }
 
     // Add elements
-    for (int i = 0; i < target->count; i++) {
+    //this code use a special cpu instruion that copy 8 elemnts at once(parallelism)
+    int i = 0;
+    for (; i <= target->count - 8; i += 8) {
+        __m256 va = _mm256_loadu_ps(&other->data[i]);
+        __m256 vb = _mm256_loadu_ps(&target->data[i]);
+        __m256 vr = _mm256_add_ps(va, vb);
+        _mm256_storeu_ps(&target->data[i], vr);
+    }
+
+    // must add it because the loop before stops 7 elemnts or less before the end
+    for (; i < target->count; i++) {
         target->data[i] += other->data[i];
     }
+
 }
 
 void tensor_add_more_inplace(Tensor* target, Tensor* others[],int amount) {
@@ -531,9 +566,20 @@ void tensor_add_more_inplace(Tensor* target, Tensor* others[],int amount) {
     }
 
     // Add elements
-    for (int i = 0; i < target->count; i++) {
-        for(int j=0;j<amount;j++)
-            target->data[i] += others[j]->data[i];
+    for (int i = 0; i < amount; i++) {
+        //this code use a special cpu instruion that copy 8 elemnts at once(parallelism)
+        int j = 0;
+        for (; j <= target->count - 8; j += 8) {
+            __m256 va = _mm256_loadu_ps(&target->data[j]);
+            __m256 vb = _mm256_loadu_ps(&others[i]->data[j]);
+            __m256 vr = _mm256_add_ps(va, vb);
+            _mm256_storeu_ps(&target->data[j], vr);
+        }
+
+        // must add it because the loop before stops 7 elemnts or less before the end
+        for (; j < target->count; j++) {
+            target->data[j] += others[i]->data[j];
+        }
     }
 }
 
@@ -558,8 +604,16 @@ Tensor* tensor_subtract(Tensor* a, Tensor* b) {
     Tensor* result = tensor_create(a->dims, a->shape);
     if (!result) return NULL;
 
-    // Subtract elements
-    for (int i = 0; i < a->count; i++) {
+    int i = 0;
+    for (; i <= a->count - 8; i += 8) {
+        __m256 va = _mm256_loadu_ps(&a->data[i]);
+        __m256 vb = _mm256_loadu_ps(&b->data[i]);
+        __m256 vr = _mm256_sub_ps(va, vb);
+        _mm256_storeu_ps(&result->data[i], vr);
+    }
+
+    // must add it because the loop before stops 7 elemnts or less before the end
+    for (; i < a->count; i++) {
         result->data[i] = a->data[i] - b->data[i];
     }
 
@@ -587,20 +641,115 @@ Tensor* tensor_multiply(Tensor* a, Tensor* b) {
     Tensor* result = tensor_create(a->dims, a->shape);
     if (!result) return NULL;
 
-    // Multiply elements
-    for (int i = 0; i < a->count; i++) {
+    int i = 0;
+    for (; i <= a->count - 8; i += 8) {
+        __m256 va = _mm256_loadu_ps(&a->data[i]);
+        __m256 vb = _mm256_loadu_ps(&b->data[i]);
+        __m256 vr = _mm256_mul_ps(va, vb);
+        _mm256_storeu_ps(&result->data[i], vr);
+    }
+
+    // must add it because the loop before stops 7 elemnts or less before the end
+    for (; i < a->count; i++) {
         result->data[i] = a->data[i] * b->data[i];
     }
 
     return result;
 }
 
-Tensor* tensor_dot(Tensor* a, Tensor* b) {
+Tensor* tensor_div(Tensor* a, Tensor* b) {
+    if (!a || !b) return NULL;
+
+    // Check if dimensions match
+    if (a->dims != b->dims) {
+        fprintf(stderr, "Error: Tensor dimensions don't match for tensor_div\n");
+        return NULL;
+    }
+
+    // Check if shapes match
+    for (int i = 0; i < a->dims; i++) {
+        if (a->shape[i] != b->shape[i]) {
+            fprintf(stderr, "Error: Tensor shapes don't match for tensor_div\n");
+            return NULL;
+        }
+    }
+
+    // Create result tensor
+    Tensor* result = tensor_create(a->dims, a->shape);
+    if (!result) return NULL;
+
+    int i = 0;
+    for (; i <= a->count - 8; i += 8) {
+        __m256 va = _mm256_loadu_ps(&a->data[i]);
+        __m256 vb = _mm256_loadu_ps(&b->data[i]);
+        __m256 vr = _mm256_div_ps(va, vb);
+        _mm256_storeu_ps(&result->data[i], vr);
+    }
+
+    // must add it because the loop before stops 7 elemnts or less before the end
+    for (; i < a->count; i++) {
+        result->data[i] = a->data[i] / b->data[i];
+    }
+
+    return result;
+}
+
+float sum8(__m256 v) {
+    __m128 vlow = _mm256_castps256_ps128(v);             // low 128
+    __m128 vhigh = _mm256_extractf128_ps(v, 1);            // high 128
+    __m128 sum128 = _mm_add_ps(vlow, vhigh); //{s0,s1,s2,s3}              // add low and high
+
+    // now do 4-lane horizontal sum
+    __m128 shuf = _mm_movehdup_ps(sum128);  // {s1, s1, s3, s3}
+    __m128 sums = _mm_add_ps(sum128, shuf); // {s0+s1, 2s1, s2+s3, 2s3}
+    shuf = _mm_movehl_ps(shuf, sums); // {s2+s3, 2s3, ?, ?}
+    sums = _mm_add_ss(sums, shuf); // {s0+s1+s2+s3, 2s1 + 2s3,?,?}
+
+    return _mm_cvtss_f32(sums);  // from register first num to a float
+}
+
+float tensor_dot(Tensor* a, Tensor* b) {
+    if (!a || !b) return 0.0;
+
+    // Check if dimensions match
+    if (a->dims != b->dims) {
+        fprintf(stderr, "Error: Tensor dimensions don't match for element-wise multiplication\n");
+        return 0.0;
+    }
+
+    // Check if shapes match
+    for (int i = 0; i < a->dims; i++) {
+        if (a->shape[i] != b->shape[i]) {
+            fprintf(stderr, "Error: Tensor shapes don't match for element-wise multiplication\n");
+            return 0.0;
+        }
+    }
+
+    // Create result tensor
+    float result = 0.0;
+
+    int i = 0;
+    for (; i <= a->count - 8; i += 8) {
+        __m256 va = _mm256_loadu_ps(&a->data[i]);
+        __m256 vb = _mm256_loadu_ps(&b->data[i]);
+        __m256 vr = _mm256_mul_ps(va, vb);
+        result += sum8(vr);
+    }
+
+    // must add it because the loop before stops 7 elemnts or less before the end
+    for (; i < a->count; i++) {
+        result += a->data[i] * b->data[i];
+    }
+
+    return result;
+}
+
+Tensor* tensor_mmul(Tensor* a, Tensor* b) {
     if (!a || !b) return NULL;
 
     // For now, we only implement matrix multiplication (2D tensors)
     if (a->dims != 2 || b->dims != 2) {
-        fprintf(stderr, "Error: tensor_dot currently only supports 2D tensors\n");
+        fprintf(stderr, "Error: tensor_mmul currently only supports 2D tensors\n");
         return NULL;
     }
 
@@ -638,7 +787,15 @@ Tensor* tensor_add_scalar(Tensor* t, float  scalar) {
     Tensor* result = tensor_create(t->dims, t->shape);
     if (!result) return NULL;
 
-    for (int i = 0; i < t->count; i++) {
+    __m256 vs = _mm256_set1_ps(scalar);
+    int i = 0;
+    for (; i < t->count - 8; i+=8) {
+        __m256 vt = _mm256_loadu_ps(&t->data[i]);
+        __m256 vr = _mm256_add_ps(vt, vs);
+        _mm256_storeu_ps(&result->data[i], vr);
+    }
+
+    for (; i < result->count; i++) {
         result->data[i] = t->data[i] + scalar;
     }
 
@@ -651,7 +808,15 @@ Tensor* tensor_subtract_scalar(Tensor* t, float  scalar) {
     Tensor* result = tensor_create(t->dims, t->shape);
     if (!result) return NULL;
 
-    for (int i = 0; i < t->count; i++) {
+    __m256 vs = _mm256_set1_ps(scalar);
+    int i = 0;
+    for (; i < t->count - 8; i += 8) {
+        __m256 vt = _mm256_loadu_ps(&t->data[i]);
+        __m256 vr = _mm256_sub_ps(vt, vs);
+        _mm256_storeu_ps(&result->data[i], vr);
+    }
+
+    for (; i < result->count; i++) {
         result->data[i] = t->data[i] - scalar;
     }
 
@@ -665,8 +830,119 @@ Tensor* tensor_multiply_scalar(Tensor* t, float  scalar) {
     Tensor* result = tensor_create(t->dims, t->shape);
     if (!result) return NULL;
 
-    for (int i = 0; i < t->count; i++) {
+    __m256 vs = _mm256_set1_ps(scalar);
+    int i = 0;
+    for (; i < t->count - 8; i += 8) {
+        __m256 vt = _mm256_loadu_ps(&t->data[i]);
+        __m256 vr = _mm256_mul_ps(vt, vs);
+        _mm256_storeu_ps(&result->data[i], vr);
+    }
+
+    for (; i < result->count; i++) {
         result->data[i] = t->data[i] * scalar;
+    }
+
+    return result;
+}
+
+void tensor_multiply_scalar_exsting(Tensor* dest, Tensor* source, float  scalar) {
+    if (!dest || !source) return NULL;
+
+    // Check if dimensions match
+    if (dest->dims != source->dims) {
+        fprintf(stderr, "Error: Tensor dimensions don't match for addition\n");
+        return NULL;
+    }
+
+    // Check if shapes match
+    for (int i = 0; i < source->dims; i++) {
+        if (source->shape[i] != dest->shape[i]) {
+            fprintf(stderr, "Error: Tensor shapes don't match for addition\n");
+            return NULL;
+        }
+    }
+
+    __m256 vs = _mm256_set1_ps(scalar);
+    int i = 0;
+    for (; i <= source->count - 8; i += 8) {
+        __m256 va = _mm256_loadu_ps(&source->data[i]);
+        __m256 vr = _mm256_mul_ps(va, vs);
+        _mm256_storeu_ps(&dest->data[i], vr);
+    }
+
+    // must add it because the loop before stops 7 elemnts or less before the end
+    for (; i < dest->count; i++) {
+        dest->data[i] = source->data[i] * scalar;
+    }
+}
+
+void tensor_multiply_scalar_existing_more(
+    Tensor* dests[],      
+    Tensor* sources[],    
+    const float scalar[], 
+    int amount)          
+{
+    for (int k = 0; k < amount; ++k)
+    {
+        if (!dests[k] || !sources[k]) {
+            fprintf(stderr,
+                "tensor_multiply_scalar_existing_more: NULL tensor at slot %d\n", k);
+            return;
+        }
+
+        if (dests[k]->dims != sources[k]->dims) {
+            fprintf(stderr,
+                "tensor_multiply_scalar_existing_more: dim mismatch at slot %d\n", k);
+            return;
+        }
+
+        for (int d = 0; d < dests[k]->dims; ++d) {
+            if (dests[k]->shape[d] != sources[k]->shape[d]) {
+                fprintf(stderr,
+                    "tensor_multiply_scalar_existing_more: shape mismatch at slot %d\n", k);
+                return;
+            }
+        }
+    }
+
+    for (int k = 0; k < amount; ++k)
+    {
+        __m256 vs = _mm256_set1_ps(scalar[k]);   
+
+        int j = 0;
+        int cnt = sources[k]->count;           
+
+        for (; j <= cnt - 8; j += 8) {
+            __m256 va = _mm256_loadu_ps(&sources[k]->data[j]); 
+            __m256 vd = _mm256_loadu_ps(&dests[k]->data[j]);  
+            __m256 vr = _mm256_fmadd_ps(va, vs, vd);         
+            _mm256_storeu_ps(&dests[k]->data[j], vr);      
+        }
+
+        for (; j < cnt; ++j) {
+            dests[k]->data[j] += sources[k]->data[j] * scalar[k];
+        }
+    }
+}
+
+
+
+Tensor* tensor_div_scalar(Tensor* t, float  scalar) {
+    if (!t) return NULL;
+
+    Tensor* result = tensor_create(t->dims, t->shape);
+    if (!result) return NULL;
+
+    __m256 vs = _mm256_set1_ps(scalar);
+    int i = 0;
+    for (; i < t->count - 8; i += 8) {
+        __m256 vt = _mm256_loadu_ps(&t->data[i]);
+        __m256 vr = _mm256_div_ps(vt, vs);
+        _mm256_storeu_ps(&result->data[i], vr);
+    }
+
+    for (; i < result->count; i++) {
+        result->data[i] = t->data[i] / scalar;
     }
 
     return result;
@@ -676,7 +952,13 @@ float  tensor_sum(Tensor* t) {
     if (!t) return 0.0;
 
     float  sum = 0.0;
-    for (int i = 0; i < t->count; i++) {
+    int i = 0;
+    for (; i < t->count - 8; i+=8) {
+        __m256 va = _mm256_loadu_ps(&t->data[i]);
+        sum += sum8(va);
+    }
+
+    for (; i < t->count; i++) {
         sum += t->data[i];
     }
 
