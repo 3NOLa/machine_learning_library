@@ -866,13 +866,14 @@ void tensor_multiply_scalar_exsting(Tensor* dest, Tensor* source, float  scalar)
     int i = 0;
     for (; i <= source->count - 8; i += 8) {
         __m256 va = _mm256_loadu_ps(&source->data[i]);
-        __m256 vr = _mm256_mul_ps(va, vs);
+        __m256 vd = _mm256_loadu_ps(&dest->data[i]);
+        __m256 vr = _mm256_fmadd_ps(va, vs, vd);// (a * b) + c
         _mm256_storeu_ps(&dest->data[i], vr);
     }
 
     // must add it because the loop before stops 7 elemnts or less before the end
     for (; i < dest->count; i++) {
-        dest->data[i] = source->data[i] * scalar;
+        dest->data[i] += source->data[i] * scalar;
     }
 }
 

@@ -3,6 +3,7 @@
 #include "rnn_neuron.h"
 #include "lstm_neuron.h"
 #include "optimizers.h"
+#include <immintrin.h> 
 #include <math.h>
 
 
@@ -70,11 +71,10 @@ void sgd_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* args
 {
     if (!data || !grad || data->count != grad->count) {
         fprintf(stderr, "Error: NULL data or grad or size isnt matching in sgd_tensor_update\n");
-        return NULL;
+        return;
     }
 
-    for (int i = 0; i < data->count; i++)
-        data->data[i] += lr * grad->data[i];
+    tensor_multiply_scalar_exsting(data, grad, lr);
 }
 
 void sgd_float_update(float* data, float* grad, float lr, OptimizerArgs* args)
@@ -86,18 +86,34 @@ void sgdm_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* arg
 {
     if(!data || !grad || data->count != grad->count){
 		fprintf(stderr, "Error: NULL data or grad or size isnt matching in sgdm_tensor_update\n");
-		return NULL;
+		return;
 	}
 
     if (!args->momentum.velocity) {
         args->momentum.velocity = tensor_zero_create(data->dims, data->shape);
         if (!args->momentum.velocity) {
             fprintf(stderr, "Error: coudent mmalloc momentum in sgdm_tensor_update\n");
-            return NULL;
+            return;
         }
     }
+    __m256 vm = _mm256_set1_ps(args->momentum.momentum);
+    __m256 vmn = _mm256_set1_ps((1 - args->momentum.momentum));
+    __m256 vlr = _mm256_set1_ps(lr);
+    int i = 0;
+    for (; i < data->count - 8; i+=8)
+    {
+        __m256 amv = _mm256_loadu_ps(&args->momentum.velocity->data[i]);
+        __m256 vg = _mm256_loadu_ps(&grad->data[i]);
+        __m256 vr = _mm256_add_ps(_mm256_mul_ps(vm, amv), _mm256_mul_ps(vmn, vg));
 
-    for (int i = 0; i < data->count; i++)
+        __m256 vd = _mm256_loadu_ps(&data->data[i]);
+        __m256 vf = _mm256_fmadd_ps(vlr, vr, vd);// (a * b) + c
+
+        _mm256_storeu_ps(&args->momentum.velocity->data[i], vr);
+        _mm256_storeu_ps(&data->data[i], vf);
+    }
+
+    for (; i < data->count; i++)
     {
         args->momentum.velocity->data[i] = args->momentum.momentum * args->momentum.velocity->data[i] + (1 - args->momentum.momentum) * grad->data[i];
 
@@ -117,18 +133,35 @@ void nesterov_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs*
 {
     if (!data || !grad || data->count != grad->count) {
         fprintf(stderr, "Error: NULL data or grad or size isnt matching in nesterov_tensor_update\n");
-        return NULL;
+        return;
     }
 
     if (!args->nesterov.velocity) {
         args->nesterov.velocity = tensor_zero_create(data->dims, data->shape);
         if (!args->nesterov.velocity) {
             fprintf(stderr, "Error: coudent mmalloc momentum in nesterov_tensor_update\n");
-            return NULL;
+            return;
         }
     }
 
-    for (int i = 0; i < data->count; i++)
+    __m256 vm = _mm256_set1_ps(args->nesterov.momentum);
+    __m256 vlr = _mm256_set1_ps(lr);
+    int i = 0;
+    for (; i < data->count - 8; i += 8)
+    {
+        __m256 anv = _mm256_loadu_ps(&args->nesterov.velocity->data[i]);
+        __m256 vg = _mm256_loadu_ps(&grad->data[i]);
+        __m256 vr = _mm256_add_ps(_mm256_mul_ps(vm, anv), _mm256_mul_ps(vg, vlr));
+
+
+        __m256 vd = _mm256_loadu_ps(&data->data[i]);
+        __m256 vf = _mm256_add_ps(_mm256_fmadd_ps(vm, anv, vr), vd);
+
+        _mm256_storeu_ps(&args->nesterov.velocity->data[i], vr);
+        _mm256_storeu_ps(&data->data[i], vf);
+    }
+
+    for (; i < data->count; i++)
     {
         float v_prev = args->nesterov.velocity->data[i];
 
@@ -151,7 +184,7 @@ void adam_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* arg
 {
     if (!data || !grad || data->count != grad->count) {
         fprintf(stderr, "Error: NULL data or grad or size isnt matching in adam_tensor_update\n");
-        return NULL;
+        return;
     }
 
     if (!args->adam.m || !args->adam.v) {
@@ -159,13 +192,44 @@ void adam_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* arg
         args->adam.v = tensor_zero_create(data->dims, data->shape);
         if (!args->adam.m || !args->adam.v) {
             fprintf(stderr, "Error: coudent mmalloc momentum in adam_tensor_update\n");
-            return NULL;
+            return;
         }
     }
 
     args->adam.t++;
 
-    for (int i = 0; i < data->count; i++)
+    __m256 vb1 = _mm256_set1_ps(args->adam.beta1);
+    __m256 vb2 = _mm256_set1_ps(args->adam.beta2);
+    __m256 ve = _mm256_set1_ps(args->adam.epsilon);
+    __m256 vb1n = _mm256_set1_ps((1.0f - args->adam.beta1));
+    __m256 vb2n = _mm256_set1_ps((1.0f - args->adam.beta2));
+    __m256 vpf1 = _mm256_set1_ps((1.0f - powf(args->adam.beta1, args->adam.t)));
+    __m256 vpf2 = _mm256_set1_ps((1.0f - powf(args->adam.beta2, args->adam.t)));
+    __m256 vlr = _mm256_set1_ps(lr);
+    int i = 0;
+    for (; i < data->count - 8; i += 8)
+    {
+        __m256 vmd = _mm256_loadu_ps(&args->adam.m->data[i]);
+        __m256 vvd = _mm256_loadu_ps(&args->adam.v->data[i]);
+        __m256 vg = _mm256_loadu_ps(&grad->data[i]);
+
+        __m256 vf1 = _mm256_fmadd_ps(vb1, vmd, _mm256_mul_ps(vb1n, vg));
+
+        __m256 vg2 = _mm256_mul_ps(vg, vg);
+        __m256 vf2 = _mm256_fmadd_ps(vb2, vvd, _mm256_mul_ps(vb2n, vg2));
+
+        __m256 vmh = _mm256_div_ps(vf1, vpf1);
+        __m256 vvh = _mm256_div_ps(vf2, vpf2);
+
+        __m256 vd = _mm256_loadu_ps(&data->data[i]);
+        __m256 vfinal = _mm256_add_ps(_mm256_div_ps(_mm256_mul_ps(vlr,vmh), _mm256_add_ps(_mm256_sqrt_ps(vvh),ve)), vd);
+
+        _mm256_storeu_ps(&args->adam.m->data[i], vf1);
+        _mm256_storeu_ps(&args->adam.v->data[i], vf2);
+        _mm256_storeu_ps(&data->data[i], vfinal);
+    }
+
+    for (; i < data->count; i++)
     {
 
         args->adam.m->data[i] = args->adam.beta1 * args->adam.m->data[i] + (1.0f - args->adam.beta1) * grad->data[i];
@@ -195,18 +259,41 @@ void rmsprop_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* 
 {
     if (!data || !grad || data->count != grad->count) {
         fprintf(stderr, "Error: NULL data or grad or size isnt matching in rmsprop_tensor_update\n");
-        return NULL;
+        return;
     }
 
     if (!args->rmsprop.avg_sq_grad) {
         args->rmsprop.avg_sq_grad = tensor_zero_create(data->dims, data->shape);
         if (!args->rmsprop.avg_sq_grad) {
             fprintf(stderr, "Error: coudent malloc momentum in rmsprop_tensor_update\n");
-            return NULL;
+            return;
         }
     }
 
-    for (int i = 0; i < data->count; i++)
+
+    __m256 vard = _mm256_set1_ps(args->rmsprop.decay); 
+    __m256 vare = _mm256_set1_ps(args->rmsprop.epsilon);
+    __m256 vardn = _mm256_set1_ps((1 - args->rmsprop.decay)); 
+    __m256 vlr = _mm256_set1_ps(lr);
+    int i = 0;
+    for (; i < data->count - 8; i += 8)
+    {
+        __m256 varad = _mm256_loadu_ps(&args->rmsprop.avg_sq_grad->data[i]);
+        __m256 vg = _mm256_load_ps(&grad->data[i]);
+        __m256 vg2 = _mm256_mul_ps(vg, vg);
+        
+        __m256 vr = _mm256_mul_ps(vard, varad);
+        __m256 vf = _mm256_fmadd_ps(vardn, vg2, vr);
+
+        __m256 vd = _mm256_load_ps(&data->data[i]);
+        __m256 vupdate_term = _mm256_mul_ps(vlr, _mm256_div_ps(vg, _mm256_sqrt_ps(_mm256_add_ps(vf, vare))));
+        __m256 vfinal = _mm256_add_ps(vd, vupdate_term);
+
+        _mm256_storeu_ps(&args->rmsprop.avg_sq_grad->data[i], vf);
+        _mm256_storeu_ps(&data->data[i], vfinal);
+    }
+
+    for (; i < data->count; i++)
     {
         args->rmsprop.avg_sq_grad->data[i] = args->rmsprop.decay * args->rmsprop.avg_sq_grad->data[i] + (1 - args->rmsprop.decay) * grad->data[i] * grad->data[i];
 

@@ -316,11 +316,11 @@ void test_neural_network() {
     printf("\n===== Testing Neural Network =====\n");
 
     // Create a simple XOR network
-    int layers[] = { 4, 1 };           // Hidden layer with 4 neurons, output layer with 1 neuron
+    int layers[] = { 4, 10, 1 };           // Hidden layer with 4 neurons, output layer with 1 neuron
     int input_shape[] = { 2 };
-    ActivationType activations[] = { TANH, SIGMOID };
+    ActivationType activations[] = { TANH, SIGMOID,  SIGMOID };
 
-    network* net = network_create(2, layers, 1, input_shape, activations, 0.1,MSE,LAYER_DENSE);
+    network* net = network_create(3, layers, 1, input_shape, activations, 0.1,MSE,LAYER_DENSE);
     if (!net) {
         fprintf(stderr, "Network creation failed\n");
         return;
