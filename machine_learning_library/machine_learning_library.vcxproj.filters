@@ -66,6 +66,9 @@
     <ClInclude Include="weights_Initialization.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="cfgparse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Tensor_library.c">
@@ -123,6 +126,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="weights_initialization.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cfgparse.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -40,7 +40,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -140,6 +140,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="active_functions.h" />
+    <ClInclude Include="cfgparse.h" />
     <ClInclude Include="classification.h" />
     <ClInclude Include="csv_parser.h" />
     <ClInclude Include="export.h" />
@@ -159,6 +160,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Activation_Functions.c" />
+    <ClCompile Include="cfgparse.c" />
     <ClCompile Include="check.c" />
     <ClCompile Include="Classification.c" />
     <ClCompile Include="csv_parser.c" />

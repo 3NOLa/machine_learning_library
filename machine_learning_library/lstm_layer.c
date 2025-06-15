@@ -212,3 +212,5 @@ void lstm_layer_free(lstm_layer* ll)
         free(ll);
     }
 }
+
+int save_lstm_layer_model(const FILE* wfp, const FILE* cfp, const lstm_layer* ll){}

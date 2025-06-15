@@ -405,7 +405,7 @@ void test_neural_network() {
 
         tensor_free(single_input);
     }
-
+    save_model(net,"C:\\Users\\keyna\\source\\repos\\machine_learning_library\\models_saves\\xor.cfg", "C:\\Users\\keyna\\source\\repos\\machine_learning_library\\models_saves\\xor.bin");
     // Clean up
     tensor_free(inputs);
     tensor_free(outputs);
@@ -650,6 +650,58 @@ void test_lstm()
     network_free(net);
 }
 
+void loading_xor_model_files() {
+    Tensor* inputs;
+    Tensor* outputs;
+    create_xor_dataset(&inputs, &outputs, 4);
+
+    if (!inputs || !outputs) {
+        fprintf(stderr, "Failed to create XOR dataset\n");
+        return;
+    }
+    
+    network* net = load_model("C:\\Users\\keyna\\source\\repos\\machine_learning_library\\models_saves\\xor.cfg", "C:\\Users\\keyna\\source\\repos\\machine_learning_library\\models_saves\\xor.bin");
+
+    print_network_weights(net);
+
+    // Test the trained network
+    printf("\nloading_xor_model_files:\n");
+    printf("Input\t\tTarget\tPrediction\n");
+
+    for (int i = 0; i < 4; i++) {
+        // Get input example
+        Tensor* single_input = tensor_get_row(inputs, i);
+        if (!single_input) {
+            fprintf(stderr, "Failed to slice test example %d\n", i);
+            continue;
+        }
+
+        // Forward pass
+        Tensor* prediction = forwardPropagation(net, single_input);
+
+        if (prediction) {
+            int input_indices1[2] = { i, 0 };
+            int input_indices2[2] = { i, 1 };
+            int output_indices[2] = { i, 0 };
+            int pred_indices[2] = { 0,0 };
+
+            printf("[%.1f, %.1f]\t%.1f\t%.4f\n",
+                tensor_get_element(inputs, input_indices1),
+                tensor_get_element(inputs, input_indices2),
+                tensor_get_element(outputs, output_indices),
+                tensor_get_element(prediction, pred_indices));
+
+            tensor_free(prediction);
+        }
+
+        tensor_free(single_input);
+    }
+
+    tensor_free(inputs);
+    tensor_free(outputs);
+    network_free(net);
+}
+
 int main() {
     //srand(time(NULL));
     printf("===== Neural Network Library Test Program =====\n");
@@ -681,6 +733,8 @@ int main() {
     test_tokenize();
 
     test_lstm();
+
+    loading_xor_model_files();
 
     printf("\n===== Tests Completed =====\n");
     return 0;

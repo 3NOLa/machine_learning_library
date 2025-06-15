@@ -20,3 +20,4 @@ EXPORT void lstm_layer_zero_grad(lstm_layer* ll);
 EXPORT void lstm_layer_opt_init(lstm_layer* ll, Initializer* init, initializerType type);
 EXPORT void lstm_layer_reset_state(lstm_layer* ll);
 EXPORT void lstm_layer_free(lstm_layer* ll);
+EXPORT int save_lstm_layer_model(const FILE* wfp, const FILE* cfp, const lstm_layer* ll);

@@ -1,5 +1,6 @@
 #include "classification.h"
 #include "optimizers.h"
+#include "cfgparse.h"
 
 network* network_create(int layerAmount, int* layersSize, int input_dims, int* input_shape, ActivationType* activations, float  learnningRate, LossType lossFunction,LayerType type)
 {
@@ -385,6 +386,147 @@ void network_reset_state(network* net) {
         if (net->layers[i]->reset_state)
             net->layers[i]->reset_state(net->layers[i]);
     }
+}
+
+int save_model(const network* net, const char* cfg_path, const char* weights_path)
+{
+    FILE* wfp = NULL;
+    FILE* cfp = NULL;
+
+    errno_t werr = fopen_s(&wfp, weights_path, "wb");
+    errno_t cerr = fopen_s(&cfp, cfg_path, "w");
+
+    if (werr != 0) {
+        fprintf(stderr, "Error opening weights file: %s\n", weights_path);
+    }
+    if (cerr != 0) {
+        fprintf(stderr, "Error opening config file: %s\n", cfg_path);
+    }
+
+    if (werr != 0 || cerr != 0) {
+        if (wfp) fclose(wfp);  // clean up any open file
+        return 1;
+    }
+
+    fprintf(cfp, "# Network model file\n");
+    fprintf(cfp, "\n# Network\n");
+    fprintf(cfp, "layers amount = %d\n", net->layerAmount);
+    fprintf(cfp, "learning rate = %f\n", net->learnningRate);
+    fprintf(cfp, "Optimizer Type = %d\n", net->otype);
+    fprintf(cfp, "Network Type = %d\n", net->ltype);
+    fprintf(cfp, "Loss Type = %d\n", net->lossFunction);
+
+
+    for (int i = 0; i < net->layerAmount; i++)
+    {
+        fprintf(cfp, "\n# Layer %d\n", i);
+        save_layer_model(wfp, cfp, net->layers[i]);
+    }
+
+    if (wfp) fclose(wfp);
+    if (cfp) fclose(cfp);
+    fprintf(stderr, "saved network model success");
+}
+
+void load_weights_model(network* net, FILE* wfp) {
+    for (int i = 0; i < net->layerAmount; i++)
+    {
+        load_layer_weights_model(wfp, net->layers[i]);
+    }
+}
+
+network* load_model(const char* cfg_path, const char* weights_path) {
+    FILE* wfp = NULL;
+    FILE* cfp = NULL;
+
+    errno_t werr = fopen_s(&wfp, weights_path, "rb");
+    errno_t cerr = fopen_s(&cfp, cfg_path, "r");
+
+    if (werr != 0) {
+        fprintf(stderr, "Error opening weights file: %s\n", weights_path);
+    }
+    if (cerr != 0) {
+        fprintf(stderr, "Error opening config file: %s\n", cfg_path);
+    }
+
+    ConfigMap* map = ConfigMapcreate(20);
+
+    char line[MAX_LINE];
+    while (fgets(line, sizeof(line), cfp)) {
+        // Skip comments and empty lines
+        char* trimmed = trim(line);
+        if (trimmed[0] == '#' || trimmed[0] == '\0') continue;
+
+        parse_cfg_line(trimmed, map);
+    }
+
+    if (cfp) fclose(cfp);
+    // Fetch config values only once per field
+    ConfigValues* layersVal = Configmap_get(map, "layers amount");
+    ConfigValues* neuronsVal = Configmap_get(map, "neurons amount");
+    ConfigValues* inputDimVal = Configmap_get(map, "Layer input dim");
+    ConfigValues* shapeVal = Configmap_get(map, "Layer shape");
+    ConfigValues* activationsVal = Configmap_get(map, "Activation type");
+    ConfigValues* lrVal = Configmap_get(map, "learning rate");
+    ConfigValues* lossVal = Configmap_get(map, "Loss Type");
+    ConfigValues* typeVal = Configmap_get(map, "Network Type");
+
+    // Convert to typed pointers
+    int layersAmount = layersVal[0].i;
+    int* neurons = config_values_to_int_array(neuronsVal, layersAmount);
+    int inputDim = inputDimVal[0].i;
+    int* inputShape = config_values_to_int_array(shapeVal,inputDim);
+    ActivationType* activations = (ActivationType*)config_values_to_int_array(activationsVal, layersAmount);
+    float learningRate = lrVal[0].f;
+    LossType lossFunction = (LossType)lossVal[0].i;
+    LayerType networkType = (LayerType)typeVal[0].i;
+
+    // Print debug info
+    fprintf(stderr, "Creating network with:\n");
+    fprintf(stderr, "  layers amount       = %d\n", layersAmount);
+
+    fprintf(stderr, "  neurons amount      = ");
+    for (int i = 0; i < layersAmount; i++) {
+        fprintf(stderr, "%d ", neurons[i]);
+    }
+    fprintf(stderr, "\n");
+
+    fprintf(stderr, "  input dim           = %d\n", inputDim);
+
+    fprintf(stderr, "  input shape         = ");
+    for (int i = 0; i < inputDim; i++) {
+        fprintf(stderr, "%d ", inputShape[i]);
+    }
+    fprintf(stderr, "\n");
+
+    fprintf(stderr, "  activation types    = ");
+    for (int i = 0; i < layersAmount; i++) {
+        fprintf(stderr, "%d ", activations[i]);  // Replace with string if desired
+    }
+    fprintf(stderr, "\n");
+
+    fprintf(stderr, "  learning rate       = %f\n", learningRate);
+    fprintf(stderr, "  loss type           = %d\n", lossFunction);
+    fprintf(stderr, "  network type        = %d\n", networkType);
+
+    // Create the network
+    network* net = network_create(
+        layersAmount,
+        neurons,
+        inputDim,
+        inputShape,
+        activations,
+        learningRate,
+        lossFunction,
+        networkType
+    );
+
+
+    set_network_optimizer(net, (OptimizerType)Configmap_get(map, "Optimizer Type")[0].i);
+
+    load_weights_model(net, wfp);
+
+    return net;
 }
 
 float  train(network* net, Tensor* input, Tensor* target)

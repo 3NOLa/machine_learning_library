@@ -220,3 +220,31 @@ void rnn_layer_free(rnn_layer* rl)
         free(rl);
     }
 }
+
+int save_rnn_layer_model(const FILE* wfp, const FILE* cfp, const rnn_layer* rl) {
+    fprintf(cfp, "Layer Type = rnn layer\n");
+    fprintf(cfp, "neurons amount = %d\n", rl->neuronAmount);
+    fprintf(cfp, "Activation type = %d\n", rl->Activationenum);
+    fprintf(cfp, "Layer input dim = %d\n", rl->neurons[0]->n->weights->dims);
+    fprintf(cfp, "Layer shape = ");
+    for (int i = 0; i < rl->neurons[0]->n->weights->dims; i++) {
+        fprintf(cfp, "%d, ", rl->neurons[0]->n->weights->shape[i]);
+    }
+    fprintf(cfp, "\n");
+
+    for (int i = 0; i < rl->neuronAmount; i++) {
+        fwrite(rl->neurons[i]->n->weights->data, sizeof(float), rl->neurons[i]->n->weights->count, wfp);
+        fwrite(&rl->neurons[i]->n->bias, sizeof(float), 1, wfp);
+        fwrite(&rl->neurons[i]->recurrent_weights, sizeof(float), 1, wfp);
+        fwrite(&rl->neurons[i]->hidden_state, sizeof(float), 1, wfp);
+    }
+}
+
+int load_rnn_layer_weights_model(const FILE* wfp, const rnn_layer* rl) {
+    for (int i = 0; i < rl->neuronAmount; i++) {
+        fread(rl->neurons[i]->n->weights->data, sizeof(float), rl->neurons[i]->n->weights->count, wfp);
+        fread(&rl->neurons[i]->n->bias, sizeof(float), 1, wfp);
+        fread(&rl->neurons[i]->recurrent_weights, sizeof(float), 1, wfp);
+        fread(&rl->neurons[i]->hidden_state, sizeof(float), 1, wfp);
+    }
+}

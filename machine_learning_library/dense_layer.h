@@ -26,3 +26,6 @@ EXPORT void dense_layer_update(dense_layer* layer, float learning_rate);
 EXPORT void dense_layer_zero_grad(dense_layer* dl);
 EXPORT void dense_layer_opt_init(dense_layer* dl, Initializer* init, initializerType type);
 EXPORT void layer_free(dense_layer* l);
+EXPORT int save_dense_layer_model(const FILE* wfp, const FILE* cfp, const dense_layer* dl);
+EXPORT int load_dense_layer_weights_model(const FILE* wfp, const dense_layer* dl);
+

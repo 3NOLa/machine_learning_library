@@ -225,3 +225,28 @@ void layer_free(dense_layer* l)
         free(l);
     }
 }
+
+int save_dense_layer_model(const FILE* wfp, const FILE* cfp, const dense_layer* dl) {
+    fprintf(cfp, "Layer Type = dense layer\n");
+    fprintf(cfp, "neurons amount = %d\n", dl->neuronAmount);
+    fprintf(cfp, "Activation type = %d\n", dl->Activationenum);
+    fprintf(cfp, "Layer input dim = %d\n", dl->neurons[0]->weights->dims);
+    fprintf(cfp, "Layer shape = ");
+    for (int i = 0; i < dl->neurons[0]->weights->dims; i++) {
+        fprintf(cfp, "%d, ", dl->neurons[0]->weights->shape[i]);
+    }
+    fprintf(cfp, "\n");
+
+    for (int i = 0; i < dl->neuronAmount; i++){
+        fwrite(dl->neurons[i]->weights->data, sizeof(float), dl->neurons[i]->weights->count, wfp);
+        fwrite(&dl->neurons[i]->bias, sizeof(float), 1, wfp);
+    }
+}
+
+int load_dense_layer_weights_model(const FILE* wfp, const dense_layer* dl) {
+
+    for (int i = 0; i < dl->neuronAmount; i++) {
+        fread(dl->neurons[i]->weights->data, sizeof(float), dl->neurons[i]->weights->count, wfp);
+        fread(&dl->neurons[i]->bias, sizeof(float), 1, wfp);
+    }
+}

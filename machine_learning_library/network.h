@@ -51,6 +51,9 @@ EXPORT void network_update(network* net);
 EXPORT void network_zero_grad(network* net);
 EXPORT void network_opt_init(network* net, Initializer* init, initializerType type);
 EXPORT void network_reset_state(network* net);
+EXPORT int save_model(const network* net, const char* cfg_path, const char* weights_path);
+EXPORT void load_weights_model(network* net, FILE* wfp);
+EXPORT network* load_model(const char* cfg_path, const char* weights_path);
 
 EXPORT float  train(network* net, Tensor* input, Tensor* target);
 EXPORT EXPORT void network_training(network* net, Tensor* input, Tensor* target, int epcho,int batch_size);

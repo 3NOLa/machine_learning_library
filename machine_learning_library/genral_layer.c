@@ -249,3 +249,60 @@ void set_layer_optimizer(layer* base_layer, OptimizerType type)
 		break;
 	}
 }
+
+int save_layer_model(const FILE* wfp, const FILE* cfp,const layer* base_layer) {
+	
+	switch (base_layer->type)
+	{
+	case LAYER_DENSE:
+	{
+		dense_layer* dl = AS_DENSE(base_layer);
+		save_dense_layer_model(wfp,cfp, dl);
+		break;
+	}
+	case LAYER_RNN:
+	{
+		rnn_layer* rl = AS_RNN(base_layer);
+		save_rnn_layer_model(wfp, cfp, rl);
+		break;
+	}
+	case LAYER_LSTM:
+	{
+		lstm_layer* ll = AS_LSTM(base_layer);
+		save_lstm_layer_model(wfp, cfp, ll);
+		break;
+	}
+	default:
+		fprintf(stderr, "Erorr: not a valid type in save_layer_model\n");
+		return NULL;
+		break;
+	}
+}
+
+int load_layer_weights_model(const FILE* wfp, const layer* base_layer){
+	switch (base_layer->type)
+	{
+	case LAYER_DENSE:
+	{
+		dense_layer* dl = AS_DENSE(base_layer);
+		load_dense_layer_weights_model(wfp, dl);
+		break;
+	}
+	case LAYER_RNN:
+	{
+		rnn_layer* rl = AS_RNN(base_layer);
+		load_rnn_layer_weights_model(wfp, rl);
+		break;
+	}
+	case LAYER_LSTM:
+	{
+		lstm_layer* ll = AS_LSTM(base_layer);
+		//save_lstm_layer_model(wfp, cfp, ll);
+		break;
+	}
+	default:
+		fprintf(stderr, "Erorr: not a valid type in save_layer_model\n");
+		return NULL;
+		break;
+	}
+}

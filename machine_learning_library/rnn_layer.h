@@ -20,3 +20,6 @@ EXPORT void rnn_layer_zero_grad(rnn_layer* rl);
 EXPORT void rnn_layer_opt_init(rnn_layer* rl, Initializer* init, initializerType type);
 EXPORT void rnn_layer_reset_state(rnn_layer* rl);
 EXPORT void rnn_layer_free(rnn_layer* rl);
+EXPORT int save_rnn_layer_model(const FILE* wfp, const FILE* cfp, const rnn_layer* rl);
+EXPORT int load_rnn_layer_weights_model(const FILE* wfp, const rnn_layer* rl);
+
