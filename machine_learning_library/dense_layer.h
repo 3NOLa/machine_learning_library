@@ -12,7 +12,7 @@ typedef enum OptimizerType OptimizerType;
 EXPORT typedef struct {
 	int neuronAmount;
 	Tensor* output;
-	neuron** neurons;
+	Tensor* weights;
 	ActivationType Activationenum;
 }dense_layer;
 

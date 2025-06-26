@@ -20,28 +20,8 @@ dense_layer* layer_create(int neuronAmount, int neuronDim, ActivationType Activa
     L->neuronAmount = neuronAmount;
     L->output = NULL;
 
-    L->neurons = (neuron**)malloc(sizeof(neuron*) * neuronAmount);
-    if (!L->neurons) {
-        fprintf(stderr, "Error: Memory allocation failed for neurons array\n");
-        free(L);
-        return NULL;
-    }
-
-    // Create each neuron
-    for (int i = 0; i < neuronAmount; i++) {
-        L->neurons[i] = neuron_create(neuronDim, Activationfunc);
-        if (!L->neurons[i]) {
-            fprintf(stderr, "Error: Failed to create neuron %d\n", i);
-            // Free previously created neurons
-            for (int j = 0; j < i; j++) {
-                neuron_free(L->neurons[j]);
-            }
-            free(L->neurons);
-            free(L);
-            return NULL;
-        }
-    }
-
+    L->weights = tensor_create(2, (int[]) { neuronAmount, neuronDim });
+    
     return L;
 }
 
