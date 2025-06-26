@@ -1,6 +1,7 @@
 from cffi import FFI
 from pathlib import Path
-import os
+import platform
+
 
 ffi = FFI()
 

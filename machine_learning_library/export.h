@@ -5,3 +5,5 @@
 #else
 #define EXPORT
 #endif
+
+typedef enum {false , true} bool;

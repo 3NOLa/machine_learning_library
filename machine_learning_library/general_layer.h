@@ -37,8 +37,12 @@ EXPORT void general_layer_free(layer* base_layer);
 EXPORT Tensor* get_layer_output(layer* base_layer);
 EXPORT void set_layer_output(layer* base_layer, Tensor* output);
 EXPORT void set_layer_optimizer(layer* base_layer, OptimizerType type);
-EXPORT int save_layer_model(const FILE* wfp, const FILE* cfp, const layer* base_layer);
-EXPORT int load_layer_weights_model(const FILE* wfp, const layer* base_layer);
+EXPORT int save_layer_model(const FILE* wfp, const FILE* cfp, layer* base_layer);
+EXPORT int load_layer_weights_model(const FILE* wfp, layer* base_layer);
+EXPORT int save_layer_weights_bin_file(const char* bin_path, const char* cfg_path, layer* base_layer);
+EXPORT int load_layer_weights_bin_file(const char* bin_path, layer* base_layer);
+EXPORT int save_layers_bin_file(const char* bin_path, const char* cfg_path, layer* base_layers[], const int amount);
+EXPORT int load_layers_bin_file(const char* bin_path, layer* base_layers[], const int amount);
 
 //rnn layer
 EXPORT Tensor* wrapper_rnn_forward(layer* base_layer, Tensor* input);

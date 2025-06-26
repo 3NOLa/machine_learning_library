@@ -525,6 +525,7 @@ network* load_model(const char* cfg_path, const char* weights_path) {
     set_network_optimizer(net, (OptimizerType)Configmap_get(map, "Optimizer Type")[0].i);
 
     load_weights_model(net, wfp);
+    if (wfp) fclose(wfp);
 
     return net;
 }

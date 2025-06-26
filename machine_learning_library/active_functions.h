@@ -40,5 +40,7 @@ EXPORT float  gelu_derivative_function(neuron* n);
 EXPORT float  swish_function(float  value);
 EXPORT float  swish_derivative_function(neuron* n);
 
+
+
 EXPORT float  (*ActivationTypeMap(ActivationType function))(float );
 EXPORT float  (*ActivationTypeDerivativeMap(ActivationType function))(neuron*);

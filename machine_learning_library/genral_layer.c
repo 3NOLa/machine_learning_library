@@ -225,8 +225,7 @@ void set_layer_optimizer(layer* base_layer, OptimizerType type)
 	case LAYER_DENSE:
 	{
 		dense_layer* dl = AS_DENSE(base_layer);
-		for (int i = 0; i < dl->neuronAmount; i++)
-			optimizer_set(dl->neurons[i]->opt, type);
+		dense_layer_set_optimizer(dl, type);
 		break;
 	}
 	case LAYER_RNN:
@@ -250,59 +249,168 @@ void set_layer_optimizer(layer* base_layer, OptimizerType type)
 	}
 }
 
-int save_layer_model(const FILE* wfp, const FILE* cfp,const layer* base_layer) {
+int save_layer_model(const FILE* wfp, const FILE* cfp, layer* base_layer) {
 	
 	switch (base_layer->type)
 	{
 	case LAYER_DENSE:
 	{
 		dense_layer* dl = AS_DENSE(base_layer);
-		save_dense_layer_model(wfp,cfp, dl);
+		return save_dense_layer_model(wfp,cfp, dl);
 		break;
 	}
 	case LAYER_RNN:
 	{
 		rnn_layer* rl = AS_RNN(base_layer);
-		save_rnn_layer_model(wfp, cfp, rl);
+		return save_rnn_layer_model(wfp, cfp, rl);
 		break;
 	}
 	case LAYER_LSTM:
 	{
 		lstm_layer* ll = AS_LSTM(base_layer);
-		save_lstm_layer_model(wfp, cfp, ll);
+		return save_lstm_layer_model(wfp, cfp, ll);
 		break;
 	}
 	default:
 		fprintf(stderr, "Erorr: not a valid type in save_layer_model\n");
-		return NULL;
+		return 0;
 		break;
 	}
+
+	return 0;
 }
 
-int load_layer_weights_model(const FILE* wfp, const layer* base_layer){
+int load_layer_weights_model(const FILE* wfp, layer* base_layer){
 	switch (base_layer->type)
 	{
 	case LAYER_DENSE:
 	{
 		dense_layer* dl = AS_DENSE(base_layer);
 		load_dense_layer_weights_model(wfp, dl);
+		return 1;
 		break;
 	}
 	case LAYER_RNN:
 	{
 		rnn_layer* rl = AS_RNN(base_layer);
 		load_rnn_layer_weights_model(wfp, rl);
+		return 1;
 		break;
 	}
 	case LAYER_LSTM:
 	{
 		lstm_layer* ll = AS_LSTM(base_layer);
 		//save_lstm_layer_model(wfp, cfp, ll);
+		return 1;
 		break;
 	}
 	default:
 		fprintf(stderr, "Erorr: not a valid type in save_layer_model\n");
-		return NULL;
+		return 0;
 		break;
 	}
+}
+
+
+int save_layer_weights_bin_file(const char* bin_path, const char* cfg_path, layer* base_layer) {
+	FILE* wfp = NULL;
+	FILE* cfp = NULL;
+
+	errno_t werr = fopen_s(&wfp, bin_path, "ab");
+	errno_t cerr = fopen_s(&cfp, cfg_path, "a");
+
+	if (werr != 0) {
+		fprintf(stderr, "Error opening weights file: %s in save_layer_weights_bin_file\n", bin_path);
+		return 0;
+	}
+	if (cerr != 0) {
+		fprintf(stderr, "Error opening config file: %s in save_layer_weights_bin_file\n", cfg_path);
+		return 0;
+	}
+
+	fprintf(cfp, "#layer\n");
+	save_layer_model(wfp, cfp, base_layer);
+	fprintf(cfp, "\n");
+
+	if (cfp) fclose(cfp);
+	if (wfp) fclose(wfp);
+
+	return 1;
+}
+
+int load_layer_weights_bin_file(const char* bin_path, layer* base_layer) {
+	static long tell = 0;  // Keeps track of where we left off
+	FILE* wfp = NULL;
+
+	errno_t werr = fopen_s(&wfp, bin_path, "rb");
+	if (werr != 0 || !wfp) {
+		fprintf(stderr, "Error opening weights file: %s in load_layer_weights_bin_file\n", bin_path);
+		return 0;
+	}
+
+	// Move to the last read position
+	if (fseek(wfp, tell, SEEK_SET) != 0) {
+		fprintf(stderr, "Error seeking to position %ld\n", tell);
+		fclose(wfp);
+		return 0;
+	}
+
+	// Load layer weights from current position
+	if (!load_layer_weights_model(wfp, base_layer)) {
+		fprintf(stderr, "Failed to load layer weights\n");
+		fclose(wfp);
+		return 0;
+	}
+
+	// Save current file pointer position for next call
+	tell = ftell(wfp);
+
+	fclose(wfp);
+	return 1;
+}
+
+int load_layers_bin_file(const char* bin_path, layer* base_layers[],const int amount) {
+	FILE* wfp = NULL;
+
+	errno_t werr = fopen_s(&wfp, bin_path, "rb");
+	if (werr != 0 || !wfp) {
+		fprintf(stderr, "Error opening weights file: %s in load_layer_weights_bin_file\n", bin_path);
+		return 0;
+	}
+
+	for (int i = 0; i < amount; i++)
+	{
+		load_layer_weights_model(wfp, base_layers[i]);
+	}
+	fclose(wfp);
+	return 1;
+}
+
+int save_layers_bin_file(const char* bin_path, const char* cfg_path, layer* base_layers[], const int amount) {
+	FILE* wfp = NULL;
+	FILE* cfp = NULL;
+
+	errno_t werr = fopen_s(&wfp, bin_path, "wb");
+	errno_t cerr = fopen_s(&cfp, cfg_path, "w");
+	fprintf(stderr, "\n%s\n", bin_path);
+	if (werr != 0) {
+		fprintf(stderr, "Error opening weights file: %s in save_layer_weights_bin_file\n", bin_path);
+		return 0;
+	}
+	if (cerr != 0) {
+		fprintf(stderr, "Error opening config file: %s in save_layer_weights_bin_file\n", cfg_path);
+		return 0;
+	}
+	
+	for (int i = 0; i < amount; i++)
+	{
+		fprintf(cfp, "#layer\n");
+		save_layer_model(wfp, cfp, base_layers[i]);
+		fprintf(cfp, "\n");
+	}
+
+	if (cfp) fclose(cfp);
+	if (wfp) fclose(wfp);
+
+	return 1;
 }

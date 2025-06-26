@@ -247,13 +247,60 @@ void tensor_set_bt_index(Tensor* t, int index, float  value) {
 
 int tensor_copy(Tensor* dest,Tensor* src) {
     if (!src || !dest) return NULL;
+    memcpy(dest->data, src->data, sizeof(float) * src->count);
+    return true;
+}
 
-    //Tensor* t = tensor_create(src->dims, src->shape);
-    //if (!t) return NULL;
+void transpose_blocked(const float* src, float* dst, int rows, int cols) {
+    for (int i = 0; i < rows; i += 8) {
+        for (int j = 0; j < cols; j += 8) {
+            int max_i = (i + 8 > rows) ? rows : i + 8;
+            int max_j = (j + 8 > cols) ? cols : j + 8;
 
-    memcpy(dest->data, src->data, sizeof(float ) * src->count);
-    return 1;
-    //return t;
+            for (int bi = i; bi < max_i; bi++) {
+                for (int bj = j; bj < max_j; bj++) {
+                    dst[bj * rows + bi] = src[bi * cols + bj];
+                }
+            }
+        }
+    }
+}
+
+Tensor* tensor_transpose(Tensor* t) {
+    int* result_shape = t->shape;
+    result_shape[t->dims - 1] ^= result_shape[t->dims - 2];
+    result_shape[t->dims - 2] ^= result_shape[t->dims - 1];
+    result_shape[t->dims - 1] ^= result_shape[t->dims - 2];
+
+    Tensor* result = tensor_create(t->dims, result_shape);
+    if (!result) return NULL;
+
+    if(t->dims == 2)
+        transpose_blocked(t->data, result->data, t->shape[0], t->shape[1]);
+    else if (t->dims == 3) {
+        for(int i=0;i<t->shape[0];i++)
+            transpose_blocked(&t->data[t->strides[0]], &result->data[result->strides[0]], t->shape[1], t->shape[2]);
+    }
+    return result;
+}
+
+void tensor_transpose_inplace(Tensor* t) {
+    float* tmp = malloc(sizeof(float) * t->count);
+    if (!tmp) return;
+
+    if (t->dims == 2)
+        transpose_blocked(t->data, tmp, t->shape[0], t->shape[1]);
+    else if (t->dims == 3) {
+        for (int i = 0; i < t->shape[0]; i++)
+            transpose_blocked(&t->data[t->strides[0]], &tmp[t->strides[0]], t->shape[1], t->shape[2]);
+    }
+
+    t->shape[t->dims - 1] ^= t->shape[t->dims - 2];
+    t->shape[t->dims - 2] ^= t->shape[t->dims - 1];
+    t->shape[t->dims - 1] ^= t->shape[t->dims - 2];
+
+    memcpy(t->data, tmp, sizeof(float) * t->count);
+    free(tmp);
 }
 
 Tensor* tensor_reshape(Tensor* t, int dims, int* shape) {
@@ -583,6 +630,40 @@ void tensor_add_more_inplace(Tensor* target, Tensor* others[],int amount) {
     }
 }
 
+void tensor_div_scalar_inplace(Tensor* t, float  scalar) {
+    if (!t) return;
+
+    int i = 0;
+    __m256 vs = _mm256_set1_ps(scalar);
+    for (; i <= t->count - 8; i += 8) {
+        __m256 va = _mm256_loadu_ps(&t->data[i]);
+        __m256 vr = _mm256_div_ps(va, vs);
+        _mm256_storeu_ps(&t->data[i], vr);
+    }
+
+    // must add it because the loop before stops 7 elemnts or less before the end
+    for (; i < t->count; i++) {
+        t->data[i] /= scalar;
+    } 
+}
+
+void tensor_mul_scalar_inplace(Tensor* t, float scalar) {
+    if (!t) return;
+
+    int i = 0;
+    __m256 vs = _mm256_set1_ps(scalar);
+    for (; i <= t->count - 8; i += 8) {
+        __m256 va = _mm256_loadu_ps(&t->data[i]);
+        __m256 vr = _mm256_mul_ps(va, vs);
+        _mm256_storeu_ps(&t->data[i], vr);
+    }
+
+    // must add it because the loop before stops 7 elemnts or less before the end
+    for (; i < t->count; i++) {
+        t->data[i] *= scalar;
+    }
+}
+
 Tensor* tensor_subtract(Tensor* a, Tensor* b) {
     if (!a || !b) return NULL;
 
@@ -660,13 +741,11 @@ Tensor* tensor_multiply(Tensor* a, Tensor* b) {
 Tensor* tensor_div(Tensor* a, Tensor* b) {
     if (!a || !b) return NULL;
 
-    // Check if dimensions match
     if (a->dims != b->dims) {
         fprintf(stderr, "Error: Tensor dimensions don't match for tensor_div\n");
         return NULL;
     }
 
-    // Check if shapes match
     for (int i = 0; i < a->dims; i++) {
         if (a->shape[i] != b->shape[i]) {
             fprintf(stderr, "Error: Tensor shapes don't match for tensor_div\n");
@@ -744,42 +823,119 @@ float tensor_dot(Tensor* a, Tensor* b) {
     return result;
 }
 
-Tensor* tensor_mmul(Tensor* a, Tensor* b) {
-    if (!a || !b) return NULL;
-
-    // For now, we only implement matrix multiplication (2D tensors)
-    if (a->dims != 2 || b->dims != 2) {
-        fprintf(stderr, "Error: tensor_mmul currently only supports 2D tensors\n");
-        return NULL;
-    }
-
-    // Check dimensions for matrix multiplication
-    if (a->shape[1] != b->shape[0]) {
-        fprintf(stderr, "Error: Incompatible dimensions for matrix multiplication\n");
-        return NULL;
-    }
-
-    // Create result tensor
-    int result_shape[2] = { a->shape[0], b->shape[1] };
-    Tensor* result = tensor_zero_create(2, result_shape);
-    if (!result) return NULL;
-
-    // Perform matrix multiplication
-    for (int i = 0; i < a->shape[0]; i++) {
-        for (int j = 0; j < b->shape[1]; j++) {
+void matmul(float* a, float* b, float* result, int a_dim, int b_dim, int same_dim) {// assuming b is transpoed for fatser calc
+    for (int i = 0; i < a_dim; i++) {
+        for (int j = 0; j < b_dim; j++) {
             float  sum = 0.0;
-            for (int k = 0; k < a->shape[1]; k++) {
-                int a_indices[2] = { i, k };
-                int b_indices[2] = { k, j };
-                sum += tensor_get_element(a, a_indices) * tensor_get_element(b, b_indices);
+            int k = 0;
+            for (; k < same_dim - 8; k += 8) {
+                __m256 va = _mm256_loadu_ps(&a[i * same_dim + k]);
+                __m256 vb = _mm256_loadu_ps(&b[j * b_dim + k]);
+                __m256 vr = _mm256_mul_ps(va, vb);
+                sum += sum8(vr);
             }
-            int result_indices[2] = { i, j };
-            tensor_set(result, result_indices, sum);
+
+            for (; k < same_dim; k++) {
+                sum += a[i * same_dim + k] * b[j * same_dim + k];
+            }
+            result[i * b_dim + k] = sum;
         }
     }
-
-    return result;
 }
+
+void tensor_mmul(Tensor* a, Tensor* b, Tensor* result, bool transposed) {
+    if (!a || !b || !result) return;
+
+    int adims = a->dims;
+    int bdims = b->dims;
+    int rdims = result->dims;
+
+    if (rdims < 1 || rdims > 3) {
+        fprintf(stderr, "Error: Unsupported result tensor dims: %d\n", rdims);
+        return;
+    }
+
+    // Normalize 1D to 2D
+    int a_rows, a_cols, b_rows, b_cols, r_rows, r_cols;
+    int batch = 1;
+
+    if (adims == 1) {
+        a_rows = 1;
+        a_cols = a->shape[0];
+    }
+    else {
+        a_rows = a->shape[adims - 2];
+        a_cols = a->shape[adims - 1];
+    }
+
+    if (bdims == 1) {
+        b_rows = b->shape[0];
+        b_cols = 1;
+    }
+    else {
+        b_rows = b->shape[bdims - 2];
+        b_cols = b->shape[bdims - 1];
+    }
+
+    if (rdims == 1) {
+        r_rows = 1;
+        r_cols = result->shape[0];
+    }
+    else {
+        r_rows = result->shape[rdims - 2];
+        r_cols = result->shape[rdims - 1];
+    }
+
+    // Batch size for 3D tensors
+    if (adims == 3 || bdims == 3 || rdims == 3) {
+        if (a->shape[0] != b->shape[0] || a->shape[0] != result->shape[0]) {
+            fprintf(stderr, "Error: Mismatched batch dimensions\n");
+            return;
+        }
+        batch = a->shape[0];
+    }
+
+    // Transpose logic
+    if (!transposed) {
+        Tensor* b_t = tensor_transpose(b);
+
+        if (batch == 1) {
+            if (a_cols != b_rows || r_rows != a_rows || r_cols != b_cols) {
+                fprintf(stderr, "Error: Invalid shapes (non-batched)\n");
+                return;
+            }
+            matmul(a->data, b_t->data, result->data, a_rows, b_cols, a_cols);
+        }
+        else {
+            for (int i = 0; i < batch; i++) {
+                matmul(&a->data[i * a->strides[0]],
+                    &b_t->data[i * b_t->strides[0]],
+                    &result->data[i * result->strides[0]],
+                    a_rows, b_cols, a_cols);
+            }
+        }
+
+        tensor_free(b_t);
+    }
+    else {
+        if (batch == 1) {
+            if (a_cols != b_cols || r_rows != a_rows || r_cols != b_rows) {
+                fprintf(stderr, "Error: Invalid shapes for transposed multiply\n");
+                return;
+            }
+            matmul(a->data, b->data, result->data, a_rows, b_rows, a_cols);
+        }
+        else {
+            for (int i = 0; i < batch; i++) {
+                matmul(&a->data[i * a->strides[0]],
+                    &b->data[i * b->strides[0]],
+                    &result->data[i * result->strides[0]],
+                    a_rows, b_rows, a_cols);
+            }
+        }
+    }
+}
+
 
 Tensor* tensor_add_scalar(Tensor* t, float  scalar) {
     if (!t) return NULL;

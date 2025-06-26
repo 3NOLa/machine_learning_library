@@ -221,7 +221,7 @@ void rnn_layer_free(rnn_layer* rl)
     }
 }
 
-int save_rnn_layer_model(const FILE* wfp, const FILE* cfp, const rnn_layer* rl) {
+int save_rnn_layer_model(const FILE* wfp, const FILE* cfp, rnn_layer* rl) {
     fprintf(cfp, "Layer Type = rnn layer\n");
     fprintf(cfp, "neurons amount = %d\n", rl->neuronAmount);
     fprintf(cfp, "Activation type = %d\n", rl->Activationenum);
@@ -238,9 +238,11 @@ int save_rnn_layer_model(const FILE* wfp, const FILE* cfp, const rnn_layer* rl) 
         fwrite(&rl->neurons[i]->recurrent_weights, sizeof(float), 1, wfp);
         fwrite(&rl->neurons[i]->hidden_state, sizeof(float), 1, wfp);
     }
+
+    return 1;
 }
 
-int load_rnn_layer_weights_model(const FILE* wfp, const rnn_layer* rl) {
+int load_rnn_layer_weights_model(const FILE* wfp, rnn_layer* rl) {
     for (int i = 0; i < rl->neuronAmount; i++) {
         fread(rl->neurons[i]->n->weights->data, sizeof(float), rl->neurons[i]->n->weights->count, wfp);
         fread(&rl->neurons[i]->n->bias, sizeof(float), 1, wfp);

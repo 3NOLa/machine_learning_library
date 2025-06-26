@@ -6,6 +6,7 @@
 #include "tokenizer.h"
 #include "optimizers.h"
 #include "weights_Initialization.h"
+#include "self_attention_layer.h"
 
 void print_network_weights(network* net) {
     printf("Network weights:\n");
@@ -702,6 +703,27 @@ void loading_xor_model_files() {
     network_free(net);
 }
 
+#include <math.h>
+
+void self_attention_check_gradient(self_attention* sa, Tensor* input, float epsilon) {
+    int seq_len = sa->seq_len;
+    int input_dim = sa->input_dim;
+
+    // Run forward once to get the original output
+    self_attention_forward(sa, input);
+
+    // Create dummy loss gradient: ∂L/∂Y = 1
+    Tensor* dL_dY = tensor_create(sa->output->dims, sa->output->shape);
+    tensor_copy(sa->output, dL_dY);
+    tensor_fill(dL_dY, 1.0f);
+
+    // Run backward to compute analytic gradients
+    self_attention_backward(sa, dL_dY);
+
+    tensor_free(dL_dY);
+}
+
+
 int main() {
     //srand(time(NULL));
     printf("===== Neural Network Library Test Program =====\n");
@@ -735,6 +757,17 @@ int main() {
     test_lstm();
 
     loading_xor_model_files();
+
+
+    int seq_len = 4, input_dim = 3, d_k = 2, d_v = 2;
+    self_attention* sa = self_attention_create(seq_len, input_dim, d_k, d_v,1);
+    
+    Tensor* input = tensor_random_create(3, (int[]) {1, seq_len, input_dim }, -1.0f, 1.0f);
+
+    self_attention_check_gradient(sa, input, 1e-4);
+
+    tensor_free(input);
+    self_attention_free(sa);
 
     printf("\n===== Tests Completed =====\n");
     return 0;

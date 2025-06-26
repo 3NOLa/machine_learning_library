@@ -141,7 +141,7 @@ class Tensor(MutableSequence):
             else:
                 if index < 0 or index >= len(self.flatten):
                     raise IndexError(f"Index {index} out of bounds")
-                return self.flatten[index]
+                return lib.tensor_get_element_by_index(self.c_tensor,index)
 
     def __iter__(self):
         return self.TensorIterator(self)

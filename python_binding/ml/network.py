@@ -3,7 +3,8 @@ from .layer import *
 from .MyTensor import Tensor
 from .py_enums import *
 from typing import *
-
+import configparser
+from pathlib import Path
 
 class NetworkModel:
     def __init__(self):
@@ -70,6 +71,57 @@ class NetworkModel:
         except Exception as e:
             raise RuntimeError(f"Loss derivative calculation failed: {e}")
 
+    def save_model(self, name: str = None):
+        name = f'Python{name or self.__class__.__name__}'
+        base_dir = Path(__file__).resolve().parent.parent.parent / 'models_saves'
+        base_dir.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
+
+        model_path = base_dir / f"{name}.cfg"
+        model_bin_path = base_dir / f"{name}.bin"
+        counter = 1
+
+        while model_path.exists() or model_bin_path.exists():
+            model_path = base_dir / f"{name}({counter}).cfg"
+            model_bin_path = base_dir / f"{name}({counter}).bin"
+            counter += 1
+
+        c_layers = [layer.layer_ptr for layer in self.layers]
+        ffi_layers = ffi.new("layer*[]", c_layers)
+
+        c_chars_path = ffi.new("char[]", str(model_path.absolute()).encode('utf-8'))
+        c_chars_bin_path = ffi.new("char[]", str(model_bin_path.absolute()).encode('utf-8'))
+
+        lib.save_layers_bin_file(c_chars_bin_path, c_chars_path, ffi_layers, len(c_layers))
+
+    def load_model(self, name: str = None):
+        name = f'Python{name or self.__class__.__name__}'
+        base_dir = Path(__file__).resolve().parent.parent.parent / 'models_saves'
+        base_dir.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
+
+        model_bin_path = base_dir / f"{name}.bin"
+        model_check = model_bin_path
+        counter = 1
+
+        while model_check.exists():
+            model_bin_path = model_check
+            model_check = base_dir / f"{name}({counter}).bin"
+            counter += 1
+
+        c_layers = [layer.layer_ptr for layer in self.layers]
+        ffi_layers = ffi.new("layer*[]",c_layers)
+
+        c_chars_bin_path = ffi.new("char[]",str(model_bin_path.absolute()).encode('utf-8'))
+
+        lib.load_layers_bin_file(c_chars_bin_path,ffi_layers,len(c_layers))
+
+        i: int = 0
+        for layer in self.layers:
+            layer.layer_ptr = ffi_layers[i]
+            i+=1
+
+    def print_network_weights(self):
+        for layer in self.layers:
+            layer.print_weights()
 
 class Network(NetworkModel):
     def __init__(self, layers: List[Layer]):

@@ -316,6 +316,12 @@ Tensor* get_layer_output(layer* base_layer);
 void set_layer_output(layer* base_layer, Tensor* output);
 void set_layer_optimizer(layer* base_layer, OptimizerType type);
 void set_layer_output(layer* base_layer, Tensor* output);
+int save_layer_model(const FILE* wfp, const FILE* cfp, layer* base_layer);
+int load_layer_weights_model(const FILE* wfp, layer* base_layer);
+int save_layer_weights_bin_file(const char* bin_path, const char* cfg_path, layer* base_layer);
+int load_layer_weights_bin_file(const char* bin_path, layer* base_layer);
+int save_layers_bin_file(const char* bin_path, const char* cfg_path, layer* base_layers[], const int amount);
+int load_layers_bin_file(const char* bin_path, layer* base_layers[], const int amount);
 
 Tensor* wrapper_rnn_forward(layer* base_layer, Tensor* input);
 Tensor* wrapper_rnn_backward(layer* base_layer, Tensor* grad);
@@ -376,6 +382,9 @@ void network_update(network* net);
 void network_zero_grad(network* net);
 void network_opt_init(network* net, Initializer* init, initializerType type);
 void network_reset_state(network* net);
+int save_model(const network* net, const char* cfg_path, const char* weights_path);
+void load_weights_model(network* net, FILE* wfp);
+network* load_model(const char* cfg_path, const char* weights_path);
 
 float  train(network* net, Tensor* input, Tensor* target);
 void network_training(network* net, Tensor* input, Tensor* target, int epcho, int batch_size);
@@ -434,6 +443,8 @@ void dense_layer_update(dense_layer* layer, float learning_rate);
 void dense_layer_zero_grad(dense_layer* dl);
 void dense_layer_opt_init(dense_layer* dl, Initializer* init, initializerType type);
 void layer_free(dense_layer* l);
+int save_dense_layer_model(const FILE* wfp, const FILE* cfp, dense_layer* dl);
+int load_dense_layer_weights_model(const FILE* wfp, dense_layer* dl);
 
 typedef struct rnn_neuron {
 	neuron* n;
@@ -497,6 +508,8 @@ void rnn_layer_zero_grad(rnn_layer* rl);
 void rnn_layer_opt_init(rnn_layer* rl, Initializer* init, initializerType type);
 void rnn_layer_reset_state(rnn_layer* rl);
 void rnn_layer_free(rnn_layer* rl);
+int save_rnn_layer_model(const FILE* wfp, const FILE* cfp, rnn_layer* rl);
+int load_rnn_layer_weights_model(const FILE* wfp, rnn_layer* rl);
 
 typedef struct {
 	int neuronAmount;
@@ -518,3 +531,40 @@ void lstm_layer_free(lstm_layer* ll);
 char** tokeknize(const char* text, int* token_count);
 void to_lowercase(char* str);
 char* remove_punctuation(const char* input);
+
+typedef enum VarType {
+	TYPE_INT,
+	TYPE_FLOAT,
+	TYPE_ENUM
+}VarType;
+
+typedef union ConfigValues {
+	int i;
+	float f;
+	char s[32];
+}ConfigValues;
+
+typedef struct ConfigNode {
+	char* key;
+	VarType type;
+	ConfigValues value[128];
+	int count;
+	struct ConfigNode* next;
+} ConfigNode;
+
+typedef struct {
+	ConfigNode** buckets;
+	int size;  // Number of buckets
+	int count; // Number of items
+} ConfigMap;
+
+ConfigMap* ConfigMapcreate(int size);
+unsigned int Confighash_string(const char* str, int size);
+int Configmap_put(ConfigMap* map, const char* key, char* valueStr);
+ConfigValues* Configmap_get(ConfigMap* map, const char* key);
+void Configmap_free(ConfigMap* map);
+
+char* trim(char* str);
+void parse_cfg_line(const char* line, ConfigMap* map);
+
+int* config_values_to_int_array(ConfigValues* vals, int count);

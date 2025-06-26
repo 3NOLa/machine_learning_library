@@ -3,6 +3,7 @@ from .neuron import *
 from .MyTensor import Tensor
 from .py_enums import *
 from typing import List
+from pathlib import Path
 
 
 class Layer:
@@ -10,8 +11,8 @@ class Layer:
         self.layer_type_ptr = None
         self.type = layer_type
         self.input_dim = input_dim
-        self.activation_function = ActivationType.LINEAR if activation_type is None else activation_type
-        self.initializer_type = InitializerType.XavierNormal if initializer_type is None else initializer_type
+        self.activation_function = activation_type or ActivationType.LINEAR
+        self.initializer_type = initializer_type or InitializerType.XavierNormal
         self.neuron_amount = neuron_amount
 
         # Initialize the general layer
@@ -62,6 +63,20 @@ class Layer:
     def set_layer_initializer(self, initializer_type: InitializerType):
         initializer = ffi.cast("Initializer *", ffi.NULL)
         self.layer_ptr.opt_init(self.layer_ptr,initializer , initializer_type)
+
+    def save_layer_weights(self, binary_path: Path, cfg_path: Path):
+        c_model_path = ffi.new("char[]", str(cfg_path.absolute()).encode('utf-8'))
+        c_model_bin_path = ffi.new("char[]", str(binary_path.absolute()).encode('utf-8'))
+
+        lib.save_layer_weights_bin_file(c_model_bin_path, c_model_path, self.layer_ptr)
+
+    def load_layer_weights(self, binary_path):
+        c_model_bin_path = ffi.new("char[]", str(binary_path.absolute()).encode('utf-8'))
+
+        lib.load_layer_weights_bin_file(c_model_bin_path, self.layer_ptr)
+
+    def print_weights(self):
+        raise TypeError("Subclasses must implement forward method")
 
     def __del__(self):
         if hasattr(self, 'layer_ptr') and self.layer_ptr and self.layer_ptr != ffi.NULL:
@@ -121,6 +136,9 @@ class DenseLayer(Layer):
     def layer_grad_zero(self):
         lib.dense_layer_zero_grad(self.layer_type_ptr)
 
+    def print_weights(self):
+        for i in range(self.neuron_amount):
+            lib.tensor_print(self.layer_type_ptr.neurons[i].weights)
 
 class RnnLayer(Layer):
     def __init__(self, input_dim: int, neuron_amount: int, activation_type: ActivationType = None, initializer_type: InitializerType = None):

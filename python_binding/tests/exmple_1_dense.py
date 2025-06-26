@@ -1,4 +1,5 @@
 from python_binding.ml.network import *
+from python_binding.cbinding.tasks import ffi,lib
 import numpy as np
 
 class ExampleModel(NetworkModel):
@@ -66,6 +67,7 @@ def main():
         print("Creating model...")
         model = ExampleModel()
         model.set_optimizer(OptimizerType.RMSPROP)
+        model.save_model("example")
         #model.set_initializer(InitializerType.XavierUniform)
         # Training loop
         epochs = 100  # Reduced for testing
@@ -118,8 +120,51 @@ def main():
                 test_tensor = Tensor.list_to_tensor([norm_test_val])
                 prediction = model.forward(test_tensor)
                 # De-normalize prediction for comparison
-                pred_val = prediction.flatten[0] * (y_max - y_min) + y_min
+                pred_val = prediction[0] * (y_max - y_min) + y_min
                 expected = 2 * test_val + 3
+                print(f"Input: {test_val}, Predicted: {pred_val:.3f}, Expected: {expected:.3f}")
+            except Exception as e:
+                print(f"Error testing with input {test_val}: {e}")
+
+        #model.save_model("example")
+        #model.print_network_weights()
+
+        new_model = ExampleModel()
+        new_model.set_optimizer(OptimizerType.RMSPROP)
+        #new_model.load_model("example")
+
+        print("\nTesting loaded model predictions:")
+        test_inputs = [1.0, 5.0, 8.0]
+        for test_val in test_inputs:
+            try:
+                # Normalize input to match training scaling
+                norm_test_val = (test_val - X_min) / (X_max - X_min)
+                test_tensor = Tensor.list_to_tensor([norm_test_val])
+                prediction = new_model.forward(test_tensor)
+                # De-normalize prediction for comparison
+                pred_val = prediction[0] * (y_max - y_min) + y_min
+                expected = 2 * test_val + 3
+
+                print(f"Input: {test_val}, Predicted: {pred_val:.3f}, Expected: {expected:.3f}")
+            except Exception as e:
+                print(f"Error testing with input {test_val}: {e}")
+
+        new_model2 = ExampleModel()
+        new_model2.set_optimizer(OptimizerType.RMSPROP)
+        new_model2.load_model("example")
+
+        print("\nTesting loaded model predictions:")
+        test_inputs = [1.0, 5.0, 8.0]
+        for test_val in test_inputs:
+            try:
+                # Normalize input to match training scaling
+                norm_test_val = (test_val - X_min) / (X_max - X_min)
+                test_tensor = Tensor.list_to_tensor([norm_test_val])
+                prediction = new_model.forward(test_tensor)
+                # De-normalize prediction for comparison
+                pred_val = prediction[0] * (y_max - y_min) + y_min
+                expected = 2 * test_val + 3
+
                 print(f"Input: {test_val}, Predicted: {pred_val:.3f}, Expected: {expected:.3f}")
             except Exception as e:
                 print(f"Error testing with input {test_val}: {e}")

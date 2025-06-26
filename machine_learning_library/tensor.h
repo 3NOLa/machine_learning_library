@@ -28,19 +28,21 @@ EXPORT void tensor_set(Tensor* t, int* indices, float  value);
 EXPORT void tensor_set_by_index(Tensor* t, int index, float  value);
 
 // Dimension manipulation
+EXPORT Tensor* tensor_transpose(Tensor* t);
+EXPORT void tensor_transpose_inplace(Tensor* t);
 EXPORT Tensor* tensor_reshape(Tensor* t, int dims, int* shape);
 EXPORT Tensor* tensor_flatten(Tensor* t); // Convert to 1D tensor
 EXPORT Tensor* tensor_slice_range(Tensor* t, int start, int end);
 EXPORT void tensor_squeeze(Tensor* t);
 EXPORT Tensor* tensor_get_row(Tensor* t, int row);
-EXPORT Tensor* tensor_get_col(Tensor* t, int col);
 
 // Math operations
 EXPORT Tensor* tensor_add(Tensor* a, Tensor* b);
 EXPORT Tensor* tensor_subtract(Tensor* a, Tensor* b);
 EXPORT Tensor* tensor_multiply(Tensor* a, Tensor* b); // Element-wise multiplication
 EXPORT Tensor* tensor_div(Tensor* a, Tensor* b);
-EXPORT Tensor* tensor_mmul(Tensor* a, Tensor* b);      // Matrix multiplication when applicable
+EXPORT void matmul(float* a, float* b, float* result, int a_dim, int b_dim, int same_dim);// assuming b is transpoed for fatser calc
+EXPORT void tensor_mmul(Tensor* a, Tensor* b, Tensor* result, bool transposed);     // Matrix multiplication when applicable
 //EXPORT float sum8(__m256 v); // sum a simd register (8 elements)
 EXPORT float tensor_dot(Tensor* a, Tensor* b);
 EXPORT Tensor* tensor_add_scalar(Tensor* t, float  scalar);
@@ -55,6 +57,8 @@ EXPORT float  tensor_mean(Tensor* t);
 // In-place operations (to minimize memory allocations)
 EXPORT void tensor_add_inplace(Tensor* target, Tensor* other);
 EXPORT void tensor_add_more_inplace(Tensor* target, Tensor* others[], int amount);
+EXPORT void tensor_div_scalar_inplace(Tensor* t, float  scalar);
+EXPORT void tensor_mul_scalar_inplace(Tensor* t, float scalar);
 EXPORT void tensor_subtract_inplace(Tensor* target, Tensor* other);
 EXPORT void tensor_multiply_inplace(Tensor* target, Tensor* other);
 EXPORT void tensor_add_scalar_inplace(Tensor* target, float  scalar);
