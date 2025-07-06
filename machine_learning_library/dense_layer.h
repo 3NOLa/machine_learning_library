@@ -6,25 +6,31 @@
 #include "export.h"
 
 typedef struct Initializer Initializer;
+typedef struct optimizer optimizer;
 typedef enum initializerType initializerType;
 typedef enum OptimizerType OptimizerType;
 
 EXPORT typedef struct {
 	int neuronAmount;
+	
 	Tensor* output;
+	Tensor* input;
 	Tensor* weights;
+	Tensor* bias;
+
+	Tensor* input_grad;
+	Tensor* grad_weights;
+	Tensor* grad_bias;
+
 	ActivationType Activationenum;
+	Initializer* init;
+	optimizer* opt;
 }dense_layer;
 
-EXPORT dense_layer* layer_create(int neuronAmount,int neuronDim ,ActivationType Activationfunc);
-EXPORT void layer_removeLastNeuron(dense_layer* l);
-EXPORT void layer_addNeuron(dense_layer* l);
-EXPORT void layer_set_neuronAmount(dense_layer* l,int neuronAmount);
+EXPORT dense_layer* dense_layer_create(int neuronAmount,int neuronDim ,ActivationType Activationfunc);
 EXPORT void layer_set_activtion(dense_layer* l, ActivationType Activationfunc);
-EXPORT Tensor* layer_forward(dense_layer* l, Tensor* input);
-EXPORT void dense_layer_forward_batch(dense_layer* l, Tensor* input, Tensor* output);
-EXPORT Tensor* layer_backward(dense_layer* l, Tensor* input_gradients);
-EXPORT void dense_layer_backward_batch(dense_layer* l, Tensor* output_gradients, Tensor* input_grad);
+EXPORT void dense_layer_forward(dense_layer* l, Tensor* input);
+EXPORT void dense_layer_backward(dense_layer* l, Tensor* output_gradients);
 EXPORT void dense_layer_update(dense_layer* layer, float learning_rate);
 EXPORT void dense_layer_set_optimizer(dense_layer* layer, OptimizerType type);
 EXPORT void dense_layer_zero_grad(dense_layer* dl);

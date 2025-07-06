@@ -1,5 +1,6 @@
 #pragma once
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 
 typedef struct HashNode {
@@ -8,7 +9,7 @@ typedef struct HashNode {
     struct HashNode* next;
 } HashNode;
 
-typedef struct {
+typedef struct HashMap{
     HashNode** buckets;
     int size;  // Number of buckets
     int count; // Number of items
@@ -18,4 +19,5 @@ HashMap* hashmap_create(int size);
 unsigned int hash_string(const char* str, int size);
 int hashmap_put(HashMap* map, const char* key, int value);
 int hashmap_get(HashMap* map, const char* key);
+bool hashmap_containes(HashMap* map, const char* key);
 void hashmap_free(HashMap* map);

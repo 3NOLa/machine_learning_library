@@ -76,6 +76,22 @@ int hashmap_get(HashMap* map, const char* key) {
     return -1;  // Not found
 }
 
+bool hashmap_containes(HashMap* map, const char* key){
+    if (!map || !key) return false;
+
+    unsigned int index = hash_string(key, map->size);
+    HashNode* current = map->buckets[index];
+
+    while (current) {
+        if (strcmp(current->key, key) == 0) {
+            return true;
+        }
+        current = current->next;
+    }
+
+    return false;  // Not found
+}
+
 // Free the hashmap
 void hashmap_free(HashMap* map) {
     if (!map) return;

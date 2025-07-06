@@ -10,7 +10,7 @@ layer* general_layer_Initialize(LayerType type, int neuronAmount, int neuronDim,
 	switch (type)
 	{
 	case LAYER_DENSE:
-		l->params = layer_create(neuronAmount, neuronDim, Activationfunc);
+		l->params = dense_layer_create(neuronAmount, neuronDim, Activationfunc);
 		l->forward = wrapper_dense_forward;
 		l->backward = wrapper_dense_backward;
 		l->update = wrapper_dense_update;
@@ -78,12 +78,14 @@ void wrapper_rnn_opt_init(layer* base_layer, Initializer* init, initializerType 
 
 Tensor* wrapper_dense_forward(layer* base_layer, Tensor* input) {
 	dense_layer* dl = (dense_layer*)base_layer->params;
-	return layer_forward(dl, input);
+	dense_layer_forward(dl, input);
+	return dl->output;
 }
 
 Tensor* wrapper_dense_backward(layer* base_layer, Tensor* grad) {
 	dense_layer* dl = (dense_layer*)base_layer->params;
-	return layer_backward(dl, grad);
+	dense_layer_backward(dl, grad);
+	return dl->input_grad;
 }
 
 void wrapper_dense_update(layer* base_layer, float lr) {

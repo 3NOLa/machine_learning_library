@@ -14,10 +14,11 @@ void print_network_weights(network* net) {
         printf("Layer %d:\n", l);
         for (int n = 0; n < net->layersSize[l]; n++) {
             dense_layer* dl = (dense_layer*)(net->layers[l]->params);
-            neuron* neuron = dl->neurons[n];
-            printf("  Neuron %d: bias=%.4f weights=[", n, neuron->bias);
-            tensor_print(neuron->weights);
-            printf("]\n");
+            printf("  batch %d: bias=%.4f weights={", n, dl->bias[n]);
+            for(int i=0;i<dl->weights->shape[1];i++){
+                printf("", n, dl->weights[n * dl->weights->shape[0] + i]);
+            }
+            printf("}\n");
         }
     }
 }
@@ -249,7 +250,7 @@ void test_single_layer() {
     printf("\n===== Testing Single Layer =====\n");
 
     // Create a layer with 3 neurons, each with 2 inputs
-    dense_layer* l = layer_create(3, 2, SIGMOID);
+    dense_layer* l = dense_layer_create(2, 3, SIGMOID);
     if (!l) {
         fprintf(stderr, "Layer creation failed\n");
         return;
@@ -257,7 +258,7 @@ void test_single_layer() {
 
     // Print layer structure
     printf("Layer created with %d neurons, each with %d inputs\n",
-        l->neuronAmount, l->neurons[0]->weights->shape[0]);
+        l->neuronAmount, l->weights->shape[0]);
 
     // Test forward pass
     int shape[1] = { 2 };
@@ -273,19 +274,14 @@ void test_single_layer() {
     tensor_set(input, index1, 0.5);
     tensor_set(input, index2, -0.5);
 
-    Tensor* output = layer_forward(l, input);
-    if (output) {
+    dense_layer_forward(l, input);
+    if (l->output) {
         printf("Layer output for input [0.5, -0.5]:\n[");
-        for (int i = 0; i < output->shape[0]; i++) {
-            int index3[1] = { i };
-            printf("%.4lf", tensor_get_element(output, index3));
-            if (i < output->shape[1] - 1) printf(", ");
-        }
-        printf("]\n");
+        tensor_print(l->output);
 
         // Test backward pass
         printf("\nTesting backward pass...\n");
-        int shape3[1] = { 3 };
+        int shape3[1] = { 2 };
         Tensor* gradients = tensor_create(1,shape3);
         if (gradients) {
             // Set some gradients for the output
@@ -294,17 +290,14 @@ void test_single_layer() {
                 tensor_set(gradients, index4, 1.0);
             }
 
-            Tensor* input_gradients = layer_backward(l, gradients, 0.1);
-            if (input_gradients) {
+            dense_layer_backward(l, gradients);
+            if (l->input_grad) {
                 printf("Input gradients: [%.4f, %.4f]\n",
-                    tensor_get_element(input_gradients, index1),
-                    tensor_get_element(input_gradients, index2));
-                tensor_free(input_gradients);
+                    tensor_get_element(l->input_grad, index1),
+                    tensor_get_element(l->input_grad, index2));
             }
             tensor_free(gradients);
         }
-
-        tensor_free(output);
     }
 
     // Clean up

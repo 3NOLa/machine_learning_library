@@ -1,8 +1,9 @@
 #include "dense_layer.h"
+#include <stdlib.h>
 #include "weights_initialization.h"
 #include "optimizers.h"
 
-dense_layer* layer_create(int neuronAmount, int neuronDim, ActivationType Activationfunc)
+dense_layer* dense_layer_create(int neuronAmount, int neuronDim, ActivationType Activationfunc)
 {
     if (neuronAmount <= 0 || neuronDim <= 0) {
         fprintf(stderr, "Error: Invalid dimensions in layer_create - neurons: %d, dimension: %d\n",
@@ -18,43 +19,27 @@ dense_layer* layer_create(int neuronAmount, int neuronDim, ActivationType Activa
 
     L->Activationenum = Activationfunc;
     L->neuronAmount = neuronAmount;
-    L->output = NULL;
+    L->init = initializer_xavier_normal(neuronDim,neuronAmount);
+    L->opt = (optimizer*)malloc(sizeof(optimizer));
+    optimizer_set(L->opt,SGD);
 
     L->weights = tensor_create(2, (int[]) { neuronAmount, neuronDim });
-    
+    L->init->tensor_init(L->weights, L->init);
+
+    L->bias = tensor_create(1,(int []) {neuronAmount});
+    L->init->tensor_init(L->bias, L->init);
+
+    L->output = NULL;
+    L->input = NULL;
+
+    L->grad_weights = tensor_zero_create(2, (int[]) { neuronAmount, neuronDim });
+    L->grad_bias = tensor_zero_create(1,(int []) {neuronAmount});
+    L->input_grad = NULL;
+
+    L->init->tensor_init(L->weights,L->init);
+    L->init->tensor_init(L->bias,L->init);
+
     return L;
-}
-
-void layer_removeLastNeuron(dense_layer* l)
-{
-    neuron* last = l->neurons[l->neuronAmount - 1];
-    if (!last)return;
-    neuron_free(last);
-
-    l->neurons = (neuron**)realloc(l->neurons, sizeof(neuron*) * (--l->neuronAmount));
-}
-
-void layer_addNeuron(dense_layer* l)
-{
-    neuron* newn = neuron_create(l->neurons[0]->weights->shape[1],l->Activationenum);
-    l->neurons = (neuron**)realloc(l->neurons, sizeof(neuron*) * (l->neuronAmount+1));
-    l->neurons[l->neuronAmount++] = newn;
-}
-
-void layer_set_neuronAmount(dense_layer* l, int neuronAmount)
-{
-    if (l->neuronAmount == neuronAmount) return;
-    else if(l->neuronAmount > neuronAmount)
-    {
-        for (int i = l->neuronAmount; i > neuronAmount; i--)
-            layer_removeLastNeuron(l);
-    }
-    else
-    {
-        for (int i = neuronAmount; i < neuronAmount; i++)
-            layer_addNeuron(l);
-    }
-    
 }
 
 void layer_set_activtion(dense_layer* l, ActivationType Activationfunc)
@@ -64,172 +49,76 @@ void layer_set_activtion(dense_layer* l, ActivationType Activationfunc)
         return NULL;
     }
 
-    for (int i = 0; i < l->neuronAmount; i++)
-    {
-        neuron_set_ActivationType(l->neurons[i], Activationfunc);
-    }
+    l->Activationenum = Activationfunc;
 }
 
-Tensor* layer_forward(dense_layer* l, Tensor* input)
-{
-    if (!l || !input) {
-        fprintf(stderr, "Error: NULL dense_layer or input in layer_forward\n");
-        return NULL;
-    }
-
-    Tensor* output = tensor_create(1, (int[]){ l->neuronAmount });
-    if (!output) {
-        fprintf(stderr, "Error: Failed to create output tensor in layer_forward\n");
-        return NULL;
-    }
-
-    for (int i = 0; i < l->neuronAmount; i++) {
-        float  activation = neuron_activation(input, l->neurons[i]);
-
-        tensor_set(output, (int[]) {  i }, activation);
-    }
-
-    if (l->output)
-        free(l->output);
-    l->output = tensor_create(output->dims,output->shape);
-    tensor_copy(l->output, output);
-
-    return output;
-}
-
-void dense_layer_forward_batch(dense_layer* l, Tensor* input, Tensor* output) {
-    if (!l || !input || input->dims < 2) {
-        fprintf(stderr, "Error: Invalid input to dense_layer_forward_batch\n");
+void dense_layer_forward(dense_layer* l, Tensor* input) {
+    if (!l || !input || input->dims < 1) {
+        fprintf(stderr, "Error: Invalid input to dense_layer_forward\n");
         return;
     }
 
-    int batch_size = input->shape[0];
-    int input_dim = input->shape[1];
-    int output_dim = l->neuronAmount;
-
-    if (input->dims == 2){
-        for (int i = 0; i < batch_size; i++) {
-            Tensor* input_batch = tensor_get_row(input, i);
-
-            for (int j = 0; j < output_dim; j++) {
-                float activation = neuron_activation(input_batch, l->neurons[j]);
-                tensor_set(output, (int[]) { i, j }, activation);
-            }
+    if (!l->output) {
+        int* new_shape = (int*)malloc(sizeof(int) * input->dims);
+        if (!new_shape) {
+            fprintf(stderr, "Error: Memory allocation failed\n");
+            return;
         }
-    }
-    else if (input->dims == 3){
-        int seq_len = input_dim;
-        input_dim = input->shape[2];
 
-        for (int i = 0; i < batch_size; i++) {
-            Tensor* input_batch = tensor_get_row(input, i);
-            for (int k = 0; k < seq_len; k++) {
-                Tensor* input_vec = tensor_get_row(input_batch, k);
-                for (int j = 0; j < output_dim; j++) {
-                    float activation = neuron_activation(input_vec, l->neurons[j]);
-                    tensor_set(output, (int[]) { i, j }, activation);
-                }
-            }
+        memcpy(new_shape, input->shape, sizeof(int) * input->dims);
+        new_shape[input->dims - 1] = l->weights->shape[1];
 
-        }
+        l->output = tensor_zero_create(input->dims, new_shape);
+
+        free(new_shape); 
     }
 
+
+    if (!l->input && !l->input_grad){
+        l->input = tensor_create(input->dims,input->shape);
+        l->input_grad = tensor_zero_create(input->dims,input->shape);
+    }    
+    tensor_copy(l->input,input);
     
+    tensor_mmul(input,l->weights,l->output,false);
+    tensor_brodcast_inplace(l->output,l->bias);
 }
 
-
-Tensor* layer_backward(dense_layer* l, Tensor* input_gradients)
-{
-    if (!l || !input_gradients) {
-        fprintf(stderr, "Error: NULL dense_layer or gradients in layer_backward\n");
-        return NULL;
-    }
-
-    if (input_gradients->count != l->neuronAmount) { // count because only one row
-        fprintf(stderr, "Error: Gradient size mismatch in layer_backward - got: %d, expected: %d\n",
-            input_gradients->count, l->neuronAmount);
-        return NULL;
-    }
-
-    if (l->neuronAmount <= 0 || !l->neurons[0]) {
-        fprintf(stderr, "Error: Layer has no neurons in layer_backward\n");
-        return NULL;
-    }
-
-    // Output gradients with respect to this layer's inputs
-    // Create a tensor with the same shape as neuron weights
-    Tensor* output_gradients = tensor_zero_create(l->neurons[0]->weights->dims, l->neurons[0]->weights->shape);
-    if (!output_gradients) {
-        fprintf(stderr, "Error: Failed to create output gradients in layer_backward\n");
-        return NULL;
-    }
-
-    for (int i = 0; i < l->neuronAmount; i++) {
-        int grad_indices[1] = { i };
-        float  neuron_gradient = tensor_get_element(input_gradients, grad_indices);
-        neuron_backward(neuron_gradient, l->neurons[i], output_gradients);
-    }
-
-    return output_gradients;
-}
-
-void dense_layer_backward_batch(dense_layer* l, Tensor* output_gradients, Tensor* input_grad) {
+void dense_layer_backward(dense_layer* l, Tensor* output_gradients) {
     if (!l || !output_gradients) {
         fprintf(stderr, "Error: NULL dense_layer or gradients\n");
         return;
     }
-    int output_dim = l->neuronAmount;
-    int input_dim = l->neurons[0]->weights->count;
+
+    int output_dim = l->weights->shape[1];
+    int input_dim = l->weights->shape[0];
 
     int batch = output_gradients->shape[0];
-    int out_dim_check = output_gradients->shape[1];
+    int out_dim_check = output_gradients->shape[output_gradients->dims - 1];
     if (out_dim_check != output_dim) {
-        fprintf(stderr, "Error: Gradient size mismatch (2D case)\n");
+        fprintf(stderr, "Error: Gradient size mismatch %d , %d(2D and 3d case)\n",output_dim,out_dim_check);
         return;
     }
 
-    for (int b = 0; b < batch; b++) {
-        for (int i = 0; i < output_dim; i++) {
-            float grad = tensor_get_element(output_gradients, (int[]) { b, i });
-
-            // Create temp 1D gradient vector
-            Tensor* grad_tensor = tensor_create(1, (int[]) { 1 });
-            tensor_set(grad_tensor, (int[]) { 0 }, grad);
-
-            // Compute grad w.r.t input
-            Tensor* tmp_input_grad = tensor_zero_create(1, (int[]) { input_dim });
-            neuron_backward(grad, l->neurons[i], tmp_input_grad);
-
-            // Accumulate into batch input grad
-            for (int j = 0; j < input_dim; j++) {
-                float prev = tensor_get_element(input_grad, (int[]) { b, j });
-                float delta = tensor_get_element(tmp_input_grad, (int[]) { j });
-                tensor_set(input_grad, (int[]) { b, j }, prev + delta);
-            }
-
-            tensor_free(tmp_input_grad);
-            tensor_free(grad_tensor);
-        }
-    }
+    tensor_mmul(output_gradients,l->input,l->grad_weights,true);
+    tensor_mmul(output_gradients,l->weights,l->input_grad,true);
+    
 }
 
-void dense_layer_update(dense_layer* layer, float learning_rate) {
-    for (int i = 0; i < layer->neuronAmount; i++) {
-        neuron_update(layer->neurons[i], learning_rate);
-    }
+void dense_layer_update(dense_layer* l, float learning_rate) {
+    l->opt->tensor_update(l->weights, l->grad_weights, learning_rate, &(l->opt->args));
+    l->opt->tensor_update(l->bias, l->grad_bias, learning_rate, &(l->opt->args));
 }
 
 void dense_layer_set_optimizer(dense_layer* layer, OptimizerType type) {
-    for (int i = 0; i < layer->neuronAmount; i++)
-        optimizer_set(layer->neurons[i]->opt, type);
+    optimizer_set(layer->opt, type);
 }
 
-void dense_layer_zero_grad(dense_layer* layer)
-{
-    if (!layer) return;
-    for (int i = 0; i < layer->neuronAmount; i++) {
-        neuron_zero_grad(layer->neurons[i]);
-    }
+void dense_layer_zero_grad(dense_layer* l){
+    if (!l) return;
+    tensor_fill(l->grad_weights, 0.0f);
+    tensor_fill(l->grad_bias, 0.0f);
+    tensor_fill(l->input_grad, 0.0f);
 }
 
 void dense_layer_opt_init(dense_layer* dl, Initializer* init, initializerType type)
@@ -243,22 +132,22 @@ void dense_layer_opt_init(dense_layer* dl, Initializer* init, initializerType ty
             init = initializer_random_uniform(-1, 1);
             break;
         case XavierNormal:
-            init = initializer_xavier_normal(dl->neurons[0]->weights->count, dl->neuronAmount);
+            init = initializer_xavier_normal(dl->weights->shape[1], dl->neuronAmount);
             break;
         case XavierUniform:
-            init = initializer_xavier_uniform(dl->neurons[0]->weights->count, dl->neuronAmount);
+            init = initializer_xavier_uniform(dl->weights->shape[1], dl->neuronAmount);
             break;
         case HeNormal:
-            init = initializer_he_normal(dl->neurons[0]->weights->count);
+            init = initializer_he_normal(dl->weights->shape[1]);
             break;
         case HeUniform:
-            init = initializer_he_uniform(dl->neurons[0]->weights->count);
+            init = initializer_he_uniform(dl->weights->shape[1]);
             break;
         case LeCunNormal:
-            init = initializer_lecun_normal(dl->neurons[0]->weights->count);
+            init = initializer_lecun_normal(dl->weights->shape[1]);
             break;
         case LeCunUniform:
-            init = initializer_lecun_uniform(dl->neurons[0]->weights->count);
+            init = initializer_lecun_uniform(dl->weights->shape[1]);
             break;
         //case Orthogonal:
          //   init = initializer_orthogonal(f1, i1, i2);
@@ -270,24 +159,21 @@ void dense_layer_opt_init(dense_layer* dl, Initializer* init, initializerType ty
         }
     }
 
-    for (int i = 0; i < dl->neuronAmount; i++) {
-        neuron_opt_init(dl->neurons[i], init);
-    }
+    init->tensor_init(dl->weights, init);
+    init->tensor_init(dl->bias, init);
 }
 
 void layer_free(dense_layer* l)
 {
     if (l) {
-        if (l->neurons) {
-            for (int i = 0; i < l->neuronAmount; i++) {
-                if (l->neurons[i]) {
-                    neuron_free(l->neurons[i]);
-                }
-            }
-            free(l->neurons);
-        }
-        if (l->output)
-            free(l->output);
+        if (l->bias) tensor_free(l->bias);
+        if (l->weights) tensor_free(l->weights);
+        if (l->grad_bias) tensor_free(l->grad_bias);
+        if (l->grad_weights) tensor_free(l->grad_weights);
+        if (l->input) tensor_free(l->input);
+        if (l->input_grad) tensor_free(l->input_grad);
+        if (l->output) tensor_free(l->output);
+        
         free(l);
     }
 }
@@ -296,28 +182,27 @@ int save_dense_layer_model(const FILE* wfp, const FILE* cfp, dense_layer* dl) {
     fprintf(cfp, "Layer Type = dense layer\n");
     fprintf(cfp, "neurons amount = %d\n", dl->neuronAmount);
     fprintf(cfp, "Activation type = %d\n", dl->Activationenum);
-    fprintf(cfp, "Layer input dim = %d\n", dl->neurons[0]->weights->dims);
+    fprintf(cfp, "Layer input dim = %d\n", dl->weights->dims);
     fprintf(cfp, "Layer shape = ");
-    for (int i = 0; i < dl->neurons[0]->weights->dims; i++) {
-        fprintf(cfp, "%d, ", dl->neurons[0]->weights->shape[i]);
+    for (int i = 0; i < dl->weights->dims; i++) {
+        fprintf(cfp, "%d, ", dl->weights->shape[i]);
     }
     fprintf(cfp, "\n");
 
     for (int i = 0; i < dl->neuronAmount; i++){
-        fwrite(dl->neurons[i]->weights->data, sizeof(float), dl->neurons[i]->weights->count, wfp);
-        fwrite(&dl->neurons[i]->bias, sizeof(float), 1, wfp);
+        fwrite(dl->weights->data, sizeof(float), dl->weights->count, wfp);
+        fwrite(dl->bias->data, sizeof(float), dl->bias->count, wfp);
     }
 
     return 1;
 }
 
 int load_dense_layer_weights_model(const FILE* wfp, dense_layer* dl) {
-
     for (int i = 0; i < dl->neuronAmount; i++) {
-        fprintf(stderr, "before weight: %f\n", dl->neurons[i]->weights->data[0]);
-        fprintf(stderr,"bytes read: %d\t", fread(dl->neurons[i]->weights->data, sizeof(float), dl->neurons[i]->weights->count, wfp));
-        fprintf(stderr,"bytes read: %d\t", fread(&dl->neurons[i]->bias, sizeof(float), 1, wfp));
-        fprintf(stderr, "new weight: %f\n", dl->neurons[i]->weights->data[0]);
+        fprintf(stderr, "before weight: %f\n", dl->weights->data[0]);
+        fprintf(stderr,"bytes read: %d\t", fread(dl->weights->data, sizeof(float), dl->weights->count, wfp));
+        fprintf(stderr,"bytes read: %d\t", fread(&dl->bias, sizeof(float), 1, wfp));
+        fprintf(stderr, "new weight: %f\n", dl->weights->data[0]);
     }
     fprintf(stderr, "\n");
 

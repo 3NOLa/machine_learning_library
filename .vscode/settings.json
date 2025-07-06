@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "optimizers.h": "c",
+        "stdio.h": "c",
+        "tensor_header.h": "c",
+        "string.h": "c"
+    }
+}
