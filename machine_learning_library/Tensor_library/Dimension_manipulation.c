@@ -64,14 +64,18 @@ void transpose_blocked(const float* src, float* dst, int rows, int cols) {
 }
 
 Tensor* tensor_transpose(Tensor* t) {
-    int* result_shape = t->shape;
+    int* result_shape = malloc(sizeof(int) * t->dims);
+    if (!result_shape) return NULL;
+    memcpy(result_shape, t->shape, sizeof(int) * t->dims);
+    
     result_shape[t->dims - 1] ^= result_shape[t->dims - 2];
     result_shape[t->dims - 2] ^= result_shape[t->dims - 1];
     result_shape[t->dims - 1] ^= result_shape[t->dims - 2];
 
     Tensor* result = tensor_create(t->dims, result_shape);
     if (!result) return NULL;
-
+    free(result_shape);
+    
     if(t->dims == 2)
         transpose_blocked(t->data, result->data, t->shape[0], t->shape[1]);
     else if (t->dims == 3) {

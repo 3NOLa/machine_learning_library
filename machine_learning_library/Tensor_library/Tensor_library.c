@@ -34,8 +34,8 @@ Tensor* tensor_create(int dims, int* shape) {
         t->strides[i] = t->strides[i + 1] * t->shape[i + 1];
     }
 
-    t->data = (float *)malloc(sizeof(float ) * t->count);
-    t->grad = (float *)calloc( t->count, sizeof(float));
+    t->data = (float*)malloc(sizeof(float) * t->count);
+    t->grad = (float*)calloc( t->count, sizeof(float));
     if (!t->data || !t->grad) {
         fprintf(stderr, "Error: Memory allocation failed for tensor data\n");
         free(t->shape);
@@ -260,42 +260,34 @@ bool tensor_copy(Tensor* dest,Tensor* src) {
     return true;
 }
 
-void tensor_print(Tensor* t) {
-    if (!t) {
-        printf("NULL tensor\n");
-        return;
-    }
-
-    printf("Tensor: dims=%d, shape=[", t->dims);
-    for (int i = 0; i < t->dims; i++) {
-        printf("%d", t->shape[i]);
-        if (i < t->dims - 1) printf(", ");
-    }
-    printf("], count=%d\n", t->count);
-
-    // Simple printing for 1D and 2D tensors
-    if (t->dims == 1) {
-        printf("[");
-        for (int i = 0; i < t->shape[0]; i++) {
-            printf("%.4f", t->data[i]);
-            if (i < t->shape[0] - 1) printf(", ");
+void print_tensor_recursive(float* data, int* shape, int dims, int depth, int offset) {
+    if (depth == dims - 1) {
+        // Last dimension: print flat array
+        fprintf(stderr, "[");
+        for (int i = 0; i < shape[depth]; i++) {
+            fprintf(stderr, "%.4f", data[offset + i]);
+            if (i < shape[depth] - 1) fprintf(stderr, ", ");
         }
-        printf("]\n");
-    }
-    else if (t->dims == 2) {
-        printf("[\n");
-        for (int i = 0; i < t->shape[0]; i++) {
-            printf("  [");
-            for (int j = 0; j < t->shape[1]; j++) {
-                int indices[2] = { i, j };
-                printf("%.4f", tensor_get_element(t, indices));
-                if (j < t->shape[1] - 1) printf(", ");
-            }
-            printf("]\n");
+        fprintf(stderr, "]");
+    } else {
+        fprintf(stderr, "[\n");
+        int stride = 1;
+        for (int i = depth + 1; i < dims; i++) {
+            stride *= shape[i];
         }
-        printf("]\n");
-    }
-    else {
-        printf("(Tensor data omitted for dims > 2)\n");
+        for (int i = 0; i < shape[depth]; i++) {
+            for (int j = 0; j < depth; j++) fprintf(stderr, "  "); // indentation
+            print_tensor_recursive(data, shape, dims, depth + 1, offset + i * stride);
+            if (i < shape[depth] - 1) fprintf(stderr, ",\n");
+        }
+        fprintf(stderr, "\n");
+        for (int j = 0; j < depth - 1; j++) fprintf(stderr, "  ");
+        fprintf(stderr, "]");
     }
 }
+
+void tensor_print(Tensor* t) {
+    print_tensor_recursive(t->data, t->shape, t->dims, 0, 0);
+    fprintf(stderr, "\n");
+}
+

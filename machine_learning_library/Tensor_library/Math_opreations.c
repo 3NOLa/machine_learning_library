@@ -323,13 +323,12 @@ void mul_backward(Function* f, Tensor* output_grad){
         array_multiply(mul_sum->data, f->inputs[i]->data, mul_sum->data, output_grad->count);
     }
 
-    float *mul_grad = (float*)malloc(output_grad->count);
+    float *mul_grad = (float*)malloc(output_grad->count * sizeof(float));
     for(int i=0; i < f->num_inputs; i++){
         fprintf(stderr,"\ni: %d\n", i);
         array_div(mul_sum->data, f->inputs[i]->data, mul_grad, output_grad->count);
         array_add(mul_grad, output_grad->grad, f->inputs[i]->grad, output_grad->count);
     }
-
     free(mul_grad);
     tensor_free(mul_sum);
 }
@@ -522,7 +521,7 @@ void div_backward(Function* f, Tensor* output_grad){
         array_div(div_sum->data, f->inputs[i]->data, div_sum->data, output_grad->count);
     }
 
-    float *div_grad = (float*)malloc(output_grad->count);
+    float *div_grad = (float*)malloc(output_grad->count * sizeof(float));
     for(int i=0; i<f->num_inputs;i++){
         array_multiply(div_sum->data, f->inputs[i]->data, div_grad, output_grad->count);
         array_add(div_grad, output_grad->data, f->inputs[i]->grad, output_grad->count);
@@ -549,35 +548,33 @@ void tensor_div_scalar_inplace(Tensor* t, float  scalar) {
 }
 
 float sum8(__m256 v) {
-    __m128 vlow = _mm256_castps256_ps128(v);             // low 128
-    __m128 vhigh = _mm256_extractf128_ps(v, 1);            // high 128
-    __m128 sum128 = _mm_add_ps(vlow, vhigh); //{s0,s1,s2,s3}              // add low and high
-
-    // now do 4-lane horizontal sum
-    __m128 shuf = _mm_movehdup_ps(sum128);  // {s1, s1, s3, s3}
-    __m128 sums = _mm_add_ps(sum128, shuf); // {s0+s1, 2s1, s2+s3, 2s3}
-    shuf = _mm_movehl_ps(shuf, sums); // {s2+s3, 2s3, ?, ?}
-    sums = _mm_add_ss(sums, shuf); // {s0+s1+s2+s3, 2s1 + 2s3,?,?}
-
-    return _mm_cvtss_f32(sums);  // from register first num to a float
+    __m256 hsum = _mm256_hadd_ps(v, v);
+    hsum = _mm256_hadd_ps(hsum, hsum);
+    __m128 sum128 = _mm256_extractf128_ps(hsum, 1);
+    sum128 = _mm_add_ps(sum128, _mm256_castps256_ps128(hsum));
+    return _mm_cvtss_f32(sum128);
 }
 
-void matmul(float* a, float* b, float* result, int a_dim, int b_dim, int same_dim) {// assuming b is transpoed for fatser calc
+void matmul(float* a, float* b, float* result, int a_dim, int b_dim, int same_dim) {
+    // assuming b is transposed for faster calc
     for (int i = 0; i < a_dim; i++) {
         for (int j = 0; j < b_dim; j++) {
-            float  sum = 0.0;
+            float sum = 0.0;
             int k = 0;
-            for (; k < same_dim - 8; k += 8) {
+            
+            // Vectorized loop - process 8 elements at a time
+            for (; k <= same_dim - 8; k += 8) {
                 __m256 va = _mm256_loadu_ps(&a[i * same_dim + k]);
-                __m256 vb = _mm256_loadu_ps(&b[j * b_dim + k]);
+                __m256 vb = _mm256_loadu_ps(&b[j * same_dim + k]);
                 __m256 vr = _mm256_mul_ps(va, vb);
                 sum += sum8(vr);
             }
 
+            // Handle remaining elements
             for (; k < same_dim; k++) {
                 sum += a[i * same_dim + k] * b[j * same_dim + k];
             }
-            result[i * b_dim + k] = sum;
+            result[i * b_dim + j] = sum;
         }
     }
 }
@@ -597,8 +594,7 @@ Tensor* tensor_mmul(Tensor* a, Tensor* b, bool transposed) {
     if (adims == 1) {
         a_rows = 1;
         a_cols = a->shape[0];
-    }
-    else {
+    } else {
         a_rows = a->shape[adims - 2];
         a_cols = a->shape[adims - 1];
     }
@@ -606,83 +602,126 @@ Tensor* tensor_mmul(Tensor* a, Tensor* b, bool transposed) {
     if (bdims == 1) {
         b_rows = b->shape[0];
         b_cols = 1;
-    }
-    else {
+    } else {
         b_rows = b->shape[bdims - 2];
         b_cols = b->shape[bdims - 1];
     }
 
-    result_shape[0] = r_rows = a_rows;
-    result_shape[1] = r_cols = b_cols;
+    // Determine result dimensions first
+    if (transposed) {
+        r_rows = a_rows;
+        r_cols = b_rows;
+    } else {
+        r_rows = a_rows;
+        r_cols = b_cols;
+    }
 
     // Batch size for 3D tensors
     if (adims == 3 || bdims == 3) {
-        if (a->shape[0] != b->shape[0]) {
+        if (adims == 3 && bdims == 3 && a->shape[0] != b->shape[0]) {
             fprintf(stderr, "Error: Mismatched batch dimensions\n");
             return NULL;
         }
         rdims = 3;
-        result_shape[0] = batch = a->shape[0];
-        result_shape[1] = r_rows = a_rows;
-        result_shape[2] = r_cols = b_cols;
+        batch = (adims == 3) ? a->shape[0] : b->shape[0];
+        result_shape[0] = batch;
+        result_shape[1] = r_rows;
+        result_shape[2] = r_cols;
+    } else {
+        result_shape[0] = r_rows;
+        result_shape[1] = r_cols;
+    }
+
+    // Validate dimensions
+    if (!transposed) {
+        if (a_cols != b_rows) {
+            fprintf(stderr, "Error: Cannot multiply matrices with shapes [%d, %d] and [%d, %d]\n", 
+                    a_rows, a_cols, b_rows, b_cols);
+            return NULL;
+        }
+    } else {
+        if (a_cols != b_cols) {
+            fprintf(stderr, "Error: Cannot multiply matrices with shapes [%d, %d] and [%d, %d]T\n", 
+                    a_rows, a_cols, b_rows, b_cols);
+            return NULL;
+        }
     }
 
     Tensor* result = tensor_create(rdims, result_shape);
     if (!result) return NULL;
-    
-    result->grad_func = function_create(2,(Tensor*[]) {a , b}, matmul_backward);
+        
+    result->grad_func = function_create(2, (Tensor*[]) {a, b}, matmul_backward);
     result->is_leaf = false;
-    if(a->requires_grad || b->requires_grad){
+    if (a->requires_grad || b->requires_grad) {
         result->requires_grad = true;
     }
 
-
-    // Transpose logic
+    // Perform multiplication
     if (!transposed) {
         Tensor* b_t = tensor_transpose(b);
+        if (!b_t) {
+            tensor_free(result);
+            return NULL;
+        }
 
         if (batch == 1) {
-            if (a_cols != b_rows || r_rows != a_rows || r_cols != b_cols) {
-                printf("a_cols = %d b_rows = %d b_cols = %d r_rows = %d a_rows = %d r_col = %d",a_cols,b_rows,b_cols,r_rows,a_rows,r_cols);
-                fprintf(stderr, "Error: Invalid shapes (non-batched)\n");
-                return NULL;
-            }
             matmul(a->data, b_t->data, result->data, a_rows, b_cols, a_cols);
-        }
-        else {
+        } else {
             for (int i = 0; i < batch; i++) {
                 matmul(&a->data[i * a->strides[0]],
-                    &b_t->data[i * b_t->strides[0]],
-                    &result->data[i * result->strides[0]],
-                    a_rows, b_cols, a_cols);
+                       &b_t->data[i * b_t->strides[0]],
+                       &result->data[i * result->strides[0]],
+                       a_rows, b_cols, a_cols);
             }
         }
-
         tensor_free(b_t);
-    }
-    else {
+    } else {
         if (batch == 1) {
-            if (a_cols != b_cols || r_rows != a_rows || r_cols != b_rows) {
-                fprintf(stderr, "Error: Invalid shapes for transposed multiply\n");
-                return NULL;
-            }
             matmul(a->data, b->data, result->data, a_rows, b_rows, a_cols);
-        }
-        else {
+        } else {
             for (int i = 0; i < batch; i++) {
                 matmul(&a->data[i * a->strides[0]],
-                    &b->data[i * b->strides[0]],
-                    &result->data[i * result->strides[0]],
-                    a_rows, b_rows, a_cols);
+                       &b->data[i * b->strides[0]],
+                       &result->data[i * result->strides[0]],
+                       a_rows, b_rows, a_cols);
             }
         }
     }
+
+    return result;
 }
 
 void matmul_backward(Function* f, Tensor* output_grad){
-    for(int i=0; i < f->num_inputs; i+=2){
-        f->inputs[i]->grad = tensor_free_data(tensor_mmul(output_grad, f->inputs[i + 1],true)); 
-        f->inputs[i + 1]->grad = tensor_free_data(tensor_mmul(tensor_transpose(f->inputs[i + 1]), output_grad,false)); 
+    // For matrix multiplication C = A @ B:
+    // grad_A = grad_C @ B.T
+    // grad_B = A.T @ grad_C
+    
+    Tensor* a = f->inputs[0];
+    Tensor* b = f->inputs[1];
+
+    if (a->requires_grad) {
+        // grad_A = grad_C @ B.T
+        Tensor* grad_a = tensor_mmul(output_grad, b, true);
+        if (a->grad) {
+            // Accumulate gradients
+            array_add(a->grad, grad_a->data, a->grad, grad_a->count);
+        } else {
+            a->grad = grad_a->data;
+        }
+    }
+    
+    if (b->requires_grad) {
+        // grad_B = A.T @ grad_C
+        Tensor* a_t = tensor_transpose(a);
+        Tensor* grad_b = tensor_mmul(a_t, output_grad, false);
+        tensor_free(a_t);
+        
+        if (b->grad) {
+            // Accumulate gradients
+            array_add(b->grad, grad_b->data, b->grad, grad_b->count);
+        } else {
+            b->grad = grad_b-> data;
+        }
     }
 }
 

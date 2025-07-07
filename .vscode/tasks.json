@@ -1,0 +1,27 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Tensor_checks.exe",
+            "type": "shell",
+            "command": "gcc",
+            "args": [
+                "-O2",
+                "-mavx",
+                "-mfma",
+                "machine_learning_library/Tensor_library/*.c",
+                "machine_learning_library/hashmap.c",
+                "-o",
+                "Tensor_checks.exe",
+                "-I",
+                "machine_learning_library"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$gcc"],
+            "detail": "Custom build for Tensor_checks.exe using GCC with AVX and FMA"
+        }
+    ]
+}

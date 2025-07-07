@@ -19,13 +19,13 @@ EXPORT typedef struct Tensor{
 } Tensor;
 
 EXPORT typedef struct Function{
-    void (*backward)(struct Function*, Tensor* grad_output);
+    void (*backward)(struct Function*, Tensor* );
     Tensor** inputs;
     int num_inputs;
 }Function;
 
 EXPORT Tensor* tensor_create(int dims, int* shape);
-EXPORT Function* function_create(int num_inputs, Tensor** inputs, void (*backward)(struct Function*, Tensor* grad_output));
+EXPORT Function* function_create(int num_inputs, Tensor** inputs, void (*backward)(struct Function*, Tensor* ));
 EXPORT Tensor* tensor_create_flatten(int dims, int* shape,float* flatten, int count);
 EXPORT Tensor* tensor_zero_create(int dims, int* shape);
 EXPORT Tensor* tensor_random_create(int dims, int* shape);
@@ -43,5 +43,6 @@ EXPORT bool tensor_copy(Tensor* dest, Tensor* src);
 EXPORT void tensor_fill(Tensor* t,float value);
 
 // Print tensor
+EXPORT void print_tensor_recursive(float* data, int* shape, int dims, int depth, int offset);
 EXPORT void tensor_print(Tensor* t);
 
