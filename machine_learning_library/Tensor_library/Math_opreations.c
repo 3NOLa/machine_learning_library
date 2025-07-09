@@ -51,7 +51,7 @@ Tensor* tensor_add(Tensor* a, Tensor* b) {
 
 void add_backward(Function *f, Tensor *output_grad){
     for (int i = 0; i < f->num_inputs; i++){
-        array_add(f->inputs[i]->grad, output_grad->data, f->inputs[i]->grad, output_grad->count);
+        array_add(f->inputs[i]->grad, output_grad->grad, f->inputs[i]->grad, output_grad->count);
     }
 }
 
@@ -205,13 +205,13 @@ void subtract_backward(Function* f, Tensor* output_grad){
     Tensor *sub_tensor = tensor_create(output_grad->dims,output_grad->shape);
     tensor_fill(sub_tensor, -1.0f);
 
-    array_multiply(sub_tensor->data, output_grad->data, sub_tensor->data, output_grad->count);
+    array_multiply(sub_tensor->data, output_grad->grad, sub_tensor->data, output_grad->count);
 
     for (int i = 0; i < f->num_inputs; i++){
         if(i % 2 == 1)
-            array_add(f->inputs[i]->grad, sub_tensor->data, f->inputs[i]->grad, sub_tensor->count);
+            array_add(f->inputs[i]->grad, sub_tensor->grad, f->inputs[i]->grad, sub_tensor->count);
         else
-            array_add(f->inputs[i]->grad, output_grad->data, f->inputs[i]->grad, output_grad->count);
+            array_add(f->inputs[i]->grad, output_grad->grad, f->inputs[i]->grad, output_grad->count);
     }
 }
 
@@ -524,7 +524,7 @@ void div_backward(Function* f, Tensor* output_grad){
     float *div_grad = (float*)malloc(output_grad->count * sizeof(float));
     for(int i=0; i<f->num_inputs;i++){
         array_multiply(div_sum->data, f->inputs[i]->data, div_grad, output_grad->count);
-        array_add(div_grad, output_grad->data, f->inputs[i]->grad, output_grad->count);
+        array_add(div_grad, output_grad->grad, f->inputs[i]->grad, output_grad->count);
     }
     tensor_free(div_sum);
     free(div_grad);
@@ -589,7 +589,7 @@ Tensor* tensor_mmul(Tensor* a, Tensor* b, bool transposed) {
 
     // Normalize 1D to 2D
     int a_rows, a_cols, b_rows, b_cols, r_rows, r_cols;
-    int batch = 1;
+    int a_batch = 1, b_batch = 1;
 
     if (adims == 1) {
         a_rows = 1;
@@ -618,13 +618,22 @@ Tensor* tensor_mmul(Tensor* a, Tensor* b, bool transposed) {
 
     // Batch size for 3D tensors
     if (adims == 3 || bdims == 3) {
-        if (adims == 3 && bdims == 3 && a->shape[0] != b->shape[0]) {
-            fprintf(stderr, "Error: Mismatched batch dimensions\n");
-            return NULL;
+        if (adims == 3 && bdims == 3) {
+            a_batch = a->shape[0];
+            b_batch = b->shape[0];
+
+            if (a_batch != b_batch) {
+                fprintf(stderr, "Error: Mismatched batch dimensions\n");
+                return NULL;
+            }
+        }else if (adims == 3 && bdims != 3){
+            a_batch = a->shape[0];
+        }else{
+            b_batch = b->shape[0];
         }
+        
         rdims = 3;
-        batch = (adims == 3) ? a->shape[0] : b->shape[0];
-        result_shape[0] = batch;
+        result_shape[0] = (a_batch > b_batch) ? a_batch : b_batch;
         result_shape[1] = r_rows;
         result_shape[2] = r_cols;
     } else {
@@ -663,27 +672,38 @@ Tensor* tensor_mmul(Tensor* a, Tensor* b, bool transposed) {
             tensor_free(result);
             return NULL;
         }
-
-        if (batch == 1) {
+        if (a_batch == 1 && b_batch == 1) {
             matmul(a->data, b_t->data, result->data, a_rows, b_cols, a_cols);
         } else {
-            for (int i = 0; i < batch; i++) {
-                matmul(&a->data[i * a->strides[0]],
-                       &b_t->data[i * b_t->strides[0]],
-                       &result->data[i * result->strides[0]],
-                       a_rows, b_cols, a_cols);
+            int result_batch = (a_batch > b_batch) ? a_batch : b_batch;
+        
+            for (int k = 0; k < result_batch; k++) {
+                int a_idx = (a_batch == 1) ? 0 : k;
+                int b_idx = (b_batch == 1) ? 0 : k;
+                
+                float* a_slice = (a_batch == 1) ? a->data : &a->data[a_idx * a->strides[0]];
+                float* b_slice = (b_batch == 1) ? b_t->data : &b_t->data[b_idx * b_t->strides[0]];
+                float* result_slice = &result->data[k * result->strides[0]];
+                
+                matmul(a_slice, b_slice, result_slice, a_rows, b_cols, a_cols);
             }
         }
         tensor_free(b_t);
     } else {
-        if (batch == 1) {
+        if (a_batch == 1 && b_batch == 1) {
             matmul(a->data, b->data, result->data, a_rows, b_rows, a_cols);
         } else {
-            for (int i = 0; i < batch; i++) {
-                matmul(&a->data[i * a->strides[0]],
-                       &b->data[i * b->strides[0]],
-                       &result->data[i * result->strides[0]],
-                       a_rows, b_rows, a_cols);
+            int result_batch = (a_batch > b_batch) ? a_batch : b_batch;
+        
+            for (int k = 0; k < result_batch; k++) {
+                int a_idx = (a_batch == 1) ? 0 : k;
+                int b_idx = (b_batch == 1) ? 0 : k;
+                
+                float* a_slice = (a_batch == 1) ? a->data : &a->data[a_idx * a->strides[0]];
+                float* b_slice = (b_batch == 1) ? b->data : &b->data[b_idx * b->strides[0]];
+                float* result_slice = &result->data[k * result->strides[0]];
+                
+                matmul(a_slice, b_slice, result_slice, a_rows, b_rows, a_cols);
             }
         }
     }
@@ -691,38 +711,109 @@ Tensor* tensor_mmul(Tensor* a, Tensor* b, bool transposed) {
     return result;
 }
 
-void matmul_backward(Function* f, Tensor* output_grad){
+void matmul_backward(Function* f, Tensor* output_grad) {
     // For matrix multiplication C = A @ B:
     // grad_A = grad_C @ B.T
     // grad_B = A.T @ grad_C
     
     Tensor* a = f->inputs[0];
     Tensor* b = f->inputs[1];
-
+    
+    // Create a copy of output gradient for computation
+    Tensor* grad = tensor_create(output_grad->dims, output_grad->shape);
+    memcpy(grad->data, output_grad->grad, sizeof(float) * output_grad->count);
+    
     if (a->requires_grad) {
+        Tensor* b_for_grad = b;
+        bool should_free_b = false;
+        
+        // Handle 1D case by reshaping
+        if (b->dims == 1) {
+            b_for_grad = tensor_reshape(b, 2, (int[]) {1, b->shape[0]});
+            should_free_b = true;
+        }
+        
         // grad_A = grad_C @ B.T
-        Tensor* grad_a = tensor_mmul(output_grad, b, true);
+        //Tensor* b_t = tensor_transpose(b_for_grad);
+        Tensor* grad_a = tensor_mmul(grad, b_for_grad, true);
+        //tensor_free(b_t);
+
+        // Handle broadcasting: if original A had fewer batch dimensions, sum across batches
+        if (a->dims < grad_a->dims) {
+            // Sum across the batch dimension to match original A shape
+            Tensor* grad_a_summed = tensor_sum_axis(grad_a, 0);
+            tensor_free(grad_a);
+            grad_a = grad_a_summed;
+        }
+        // If A was broadcasted (batch size 1 but result has larger batch), sum the gradient
+        else if (a->dims == 3 && grad_a->dims == 3 && a->shape[0] == 1 && grad_a->shape[0] > 1) {
+            Tensor* grad_a_summed = tensor_sum_axis(grad_a, 0);
+            tensor_free(grad_a);
+            grad_a = grad_a_summed;
+        }
+        
         if (a->grad) {
             // Accumulate gradients
             array_add(a->grad, grad_a->data, a->grad, grad_a->count);
+            tensor_free(grad_a);
         } else {
-            a->grad = grad_a->data;
+            // Initialize gradient
+            a->grad = malloc(sizeof(float) * a->count);
+            memcpy(a->grad, grad_a->data, sizeof(float) * a->count);
+            tensor_free(grad_a);
+        }
+        
+        if (should_free_b) {
+            tensor_free(b_for_grad);
         }
     }
     
     if (b->requires_grad) {
+        Tensor* a_for_grad = a;
+        bool should_free_a = false;
+        
+        // Handle 1D case by reshaping
+        if (a->dims == 1) {
+            a_for_grad = tensor_reshape(a, 2, (int[]) {1, a->shape[0]});
+            should_free_a = true;
+        }
+        
         // grad_B = A.T @ grad_C
-        Tensor* a_t = tensor_transpose(a);
-        Tensor* grad_b = tensor_mmul(a_t, output_grad, false);
+        Tensor* a_t = tensor_transpose(a_for_grad);
+        Tensor* grad_b = tensor_mmul(a_t, grad, false);
         tensor_free(a_t);
+        
+        // Handle broadcasting: if original B had fewer batch dimensions, sum across batches
+        if (b->dims < grad_b->dims) {
+            // Sum across the batch dimension to match original B shape
+            Tensor* grad_b_summed = tensor_sum_axis(grad_b, 0);
+            tensor_free(grad_b);
+            grad_b = grad_b_summed;
+        }
+        // If B was broadcasted (batch size 1 but result has larger batch), sum the gradient
+        else if (b->dims == 3 && grad_b->dims == 3 && b->shape[0] == 1 && grad_b->shape[0] > 1) {
+            Tensor* grad_b_summed = tensor_sum_axis(grad_b, 0);
+            tensor_free(grad_b);
+            grad_b = grad_b_summed;
+        }
         
         if (b->grad) {
             // Accumulate gradients
             array_add(b->grad, grad_b->data, b->grad, grad_b->count);
+            tensor_free(grad_b);
         } else {
-            b->grad = grad_b-> data;
+            // Initialize gradient
+            b->grad = malloc(sizeof(float) * b->count);
+            memcpy(b->grad, grad_b->data, sizeof(float) * b->count);
+            tensor_free(grad_b);
+        }
+        
+        if (should_free_a) {
+            tensor_free(a_for_grad);
         }
     }
+    
+    tensor_free(grad);
 }
 
 void tensor_brodcast_inplace(Tensor* target, Tensor* other){

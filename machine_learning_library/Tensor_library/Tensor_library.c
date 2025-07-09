@@ -153,7 +153,7 @@ Tensor* tensor_random_create(int dims, int* shape) {
 
     srand(time(NULL));
     for (int i = 0; i < t->count; i++) {
-        t->data[i] = ((float )rand() / RAND_MAX) * 2.0 - 1.0; // Range [-1, 1]
+        t->data[i] = ((float )rand() / RAND_MAX); // Range [-1, 1]
     }
 
     return t;
@@ -288,6 +288,12 @@ void print_tensor_recursive(float* data, int* shape, int dims, int depth, int of
 
 void tensor_print(Tensor* t) {
     print_tensor_recursive(t->data, t->shape, t->dims, 0, 0);
+    fprintf(stderr, "\n");
+}
+
+void tensor_print_grad(Tensor* t) {
+    fprintf(stderr, "\n");
+    print_tensor_recursive(t->grad, t->shape, t->dims, 0, 0);
     fprintf(stderr, "\n");
 }
 

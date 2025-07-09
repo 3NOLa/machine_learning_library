@@ -2,88 +2,76 @@
 
 int main(){
     srand(time(NULL));
-    int shape[] = {8,8};
+    int shape[] = {4,4};
     Tensor *a = tensor_random_create(2,shape);
-    fprintf(stderr, "a: ");
+    fprintf(stderr, "\na: ");
     tensor_print(a);
-    fprintf(stderr, " \n");
 
     Tensor *b = tensor_random_create(2,shape);
-    fprintf(stderr, ": ");
+    fprintf(stderr, "\nb: ");
     tensor_print(b);
-    fprintf(stderr, " \n");
 
     Tensor *c = tensor_add(a, b);
-    fprintf(stderr, "c: ");
+    fprintf(stderr, "\nc: ");
     tensor_print(c);
-    fprintf(stderr, " \n");
 
     Tensor *d = tensor_subtract(a, b);
-    fprintf(stderr, "d: ");
+    fprintf(stderr, "\nd: ");
     tensor_print(d);
-    fprintf(stderr, " \n");
     
     Tensor *e = tensor_multiply(a, b);
-    fprintf(stderr, "e: ");
+    fprintf(stderr, "\ne: ");
     tensor_print(e);
-    fprintf(stderr, " \n");
     
     Tensor *h = tensor_div(a, b);
-    fprintf(stderr, "h: ");
+    fprintf(stderr, "\nh: ");
     tensor_print(h);
-    fprintf(stderr, " \n");
 
     tensor_backward(e);
-    fprintf(stderr, "a grad: ");
-    for (int i = 0; i < a->count; i++){
-        fprintf(stderr,"%f\t,", a->grad[i]);
-    }
+    fprintf(stderr, "\na grad: ");
+    tensor_print_grad(a);
 
-    fprintf(stderr, " \n");
-    fprintf(stderr, "b grad: ");
-    for (int i = 0; i < b->count; i++){
-        fprintf(stderr,"%f\t,", b->grad[i]);
-    }
+    fprintf(stderr, "\nb grad: ");
+    tensor_print_grad(b);
 
-    fprintf(stderr, " \n");
     Tensor *eh = tensor_div(e, a);
-    fprintf(stderr, "eh: ");
+    fprintf(stderr, "\neh: ");
     tensor_print(eh);
     tensor_backward(eh);
 
-    fprintf(stderr, "a again grad: ");
-    for (int i = 0; i < a->count; i++){
-        fprintf(stderr,"%f\t,", a->grad[i]);
-    }
+    fprintf(stderr, "\na again grad: ");
+    tensor_print_grad(a);
 
-    fprintf(stderr, " \n");
-    fprintf(stderr, "e grad: ");
-    for (int i = 0; i < e->count; i++){
-        fprintf(stderr,"%f\t,", e->grad[i]);
-    }
+    fprintf(stderr, "\ne grad: ");
+    tensor_print_grad(e);
 
 
-    Tensor *mat1 = tensor_random_create(2,(int []) {3,5});
-    fprintf(stderr, "mat1: ");
+    Tensor *mat1 = tensor_random_create(3,(int []) {2,2,2});
+    fprintf(stderr, "\nmat1: ");
     tensor_print(mat1);
-    fprintf(stderr, " \n");
 
-    Tensor *mat2 = tensor_random_create(2,(int []) {5,4});
-    fprintf(stderr, "mat2: ");
+    Tensor *mat2 = tensor_random_create(2,(int []) {2,4});
+    fprintf(stderr, "\nmat2: ");
     tensor_print(mat2);
-    fprintf(stderr, " \n");
 
     Tensor* k = tensor_mmul(mat1, mat2, false);
-    fprintf(stderr, "k: ");
+    fprintf(stderr, "\nk: ");
     tensor_print(k);
     tensor_backward(k);
-    fprintf(stderr, " \n");
 
     fprintf(stderr, "\n mat1 grad for matmul: \n");
-    for (int i = 0; i < mat1->count; i++){
-        fprintf(stderr,"%f\t,", mat1->grad[i]);
-    }
+    tensor_print_grad(mat1);
 
+    fprintf(stderr, "\n mat2 grad for matmul: \n");
+    tensor_print_grad(mat2);
+
+    Tensor *mat = tensor_random_create(3,(int []) {2,2,5});
+    fprintf(stderr, "\nmat: ");
+    tensor_print(mat);
+
+    Tensor *mat_t = tensor_transpose(mat);
+    fprintf(stderr, "\n mat_t: \n");
+    tensor_print(mat_t);
 
     tensor_free(a);
     tensor_free(b);
@@ -94,5 +82,6 @@ int main(){
     tensor_free(k); 
     tensor_free(eh);  
     tensor_free(mat1); 
-    tensor_free(mat2);   
+    tensor_free(mat2);  
+    tensor_free(mat_t); 
 }

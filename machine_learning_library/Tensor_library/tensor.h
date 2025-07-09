@@ -45,4 +45,5 @@ EXPORT void tensor_fill(Tensor* t,float value);
 // Print tensor
 EXPORT void print_tensor_recursive(float* data, int* shape, int dims, int depth, int offset);
 EXPORT void tensor_print(Tensor* t);
+EXPORT void tensor_print_grad(Tensor* t);
 
