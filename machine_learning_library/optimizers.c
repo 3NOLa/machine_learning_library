@@ -1,4 +1,4 @@
-#include "tensor.h"
+#include "Tensor_Header.h"
 #include "neuron.h"
 #include "rnn_neuron.h"
 #include "lstm_neuron.h"
@@ -7,15 +7,18 @@
 #include <math.h>
 
 
-void optimizer_set(optimizer* op, OptimizerType type)
+optimizer* optimizer_set(OptimizerType type, Tensor **parmeters, int parmeters_amount)
 {
+    optimizer *op = (optimizer*)malloc(sizeof(optimizer));
 	if (!op) {
 		fprintf(stderr, "Error: NULL optimizer in optimizer_set\n");
 		return NULL;
 	}
 
 	op->type = type;
-
+    op->parmeters = parmeters;
+    op->parmeters_amount = parmeters_amount;
+    
     switch (type)
     {
     case SGD:
@@ -26,55 +29,77 @@ void optimizer_set(optimizer* op, OptimizerType type)
     case SGDM:
         op->tensor_update = sgdm_tensor_update;
         op->float_update = sgdm_float_update;
-        op->args.momentum.velocity = NULL;
-        op->args.momentum.fvelocity = 0.0f;
-        op->args.momentum.momentum = 0.9f;
+        for(int i = 0; i < parmeters_amount; i++){
+            op->args[i].momentum.velocity = NULL;
+            op->args[i].momentum.fvelocity = 0.0f;
+            op->args[i].momentum.momentum = 0.9f;
+        }
         break;
 
     case NESTEROV:
         op->tensor_update = nesterov_tensor_update;
         op->float_update = nesterov_float_update;
-        op->args.nesterov.velocity = NULL;
-        op->args.nesterov.fvelocity = 0.0f;
-        op->args.nesterov.momentum = 0.9f;
+        for(int i = 0; i < parmeters_amount; i++){
+            op->args[i].nesterov.velocity = NULL;
+            op->args[i].nesterov.fvelocity = 0.0f;
+            op->args[i].nesterov.momentum = 0.9f;
+        }
         break;
 
     case RMSPROP:
         op->tensor_update = rmsprop_tensor_update;
         op->float_update = rmsprop_float_update;
-        op->args.rmsprop.avg_sq_grad = NULL;
-        op->args.rmsprop.favg_sq_grad = 0.0f;
-        op->args.rmsprop.decay = 0.9f;
-        op->args.rmsprop.epsilon = 1e-8f;
+        for(int i = 0; i < parmeters_amount; i++){
+            op->args[i].rmsprop.avg_sq_grad = NULL;
+            op->args[i].rmsprop.favg_sq_grad = 0.0f;
+            op->args[i].rmsprop.decay = 0.9f;
+            op->args[i].rmsprop.epsilon = 1e-8f;
+        }
         break;
 
     case ADAM:
         op->tensor_update = adam_tensor_update;
         op->float_update = adam_float_update;
-        op->args.adam.m = NULL;
-        op->args.adam.v = NULL;
-        op->args.adam.t = 0;
-        op->args.adam.fm = 0;
-        op->args.adam.fv = 0;
-        op->args.adam.beta1 = 0.9f;
-        op->args.adam.beta2 = 0.999f;
-        op->args.adam.epsilon = 1e-8f;
+        for(int i = 0; i < parmeters_amount; i++){
+            op->args[i].adam.m = NULL;
+            op->args[i].adam.v = NULL;
+            op->args[i].adam.t = 0;
+            op->args[i].adam.fm = 0;
+            op->args[i].adam.fv = 0;
+            op->args[i].adam.beta1 = 0.9f;
+            op->args[i].adam.beta2 = 0.999f;
+            op->args[i].adam.epsilon = 1e-8f;
+        }
         break;
 
     default:
         fprintf(stderr, "Error: Unknown optimizer type in optimizer_set\n");
         break;
     }
+
+    return op;
 }
 
-void sgd_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* args)
+void optimzer_step(optimizer* op){
+    for(int i = 0; i < op->parmeters_amount; i++){
+        op->tensor_update(op->parmeters[i], op->lr, &op->args[i]);
+    }
+}
+
+void sgd_tensor_update(Tensor* data, float lr, OptimizerArgs* args)
 {
-    if (!data || !grad || data->count != grad->count) {
-        fprintf(stderr, "Error: NULL data or grad or size isnt matching in sgd_tensor_update\n");
+    if (!data || !args) {
+        fprintf(stderr, "Error: NULL parmeters in sgd_tensor_update\n");
         return;
     }
 
-    tensor_multiply_scalar_exsting(data, grad, lr);
+    float *grad_x_lr = (float*)malloc(sizeof(float) * data->count);
+    if (!grad_x_lr){
+        fprintf(stderr, "Error: malloc can allocate in sgd_tensor_update\n");
+    }
+    
+    array_mul_scalar(data->grad, lr, grad_x_lr, data->count);
+    array_add(data->data, grad_x_lr, data->data, data->count);
 }
 
 void sgd_float_update(float* data, float* grad, float lr, OptimizerArgs* args)
@@ -82,10 +107,10 @@ void sgd_float_update(float* data, float* grad, float lr, OptimizerArgs* args)
     *data += *grad * lr;
 }
 
-void sgdm_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* args)
+void sgdm_tensor_update(Tensor* data, float lr, OptimizerArgs* args)
 {
-    if(!data || !grad || data->count != grad->count){
-		fprintf(stderr, "Error: NULL data or grad or size isnt matching in sgdm_tensor_update\n");
+    if(!data || !args){
+		fprintf(stderr, "Error: NULL paramaters in sgdm_tensor_update\n");
 		return;
 	}
 
@@ -96,6 +121,7 @@ void sgdm_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* arg
             return;
         }
     }
+
     __m256 vm = _mm256_set1_ps(args->momentum.momentum);
     __m256 vmn = _mm256_set1_ps((1 - args->momentum.momentum));
     __m256 vlr = _mm256_set1_ps(lr);
@@ -103,7 +129,7 @@ void sgdm_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* arg
     for (; i < data->count - 8; i+=8)
     {
         __m256 amv = _mm256_loadu_ps(&args->momentum.velocity->data[i]);
-        __m256 vg = _mm256_loadu_ps(&grad->data[i]);
+        __m256 vg = _mm256_loadu_ps(&data->grad[i]);
         __m256 vr = _mm256_add_ps(_mm256_mul_ps(vm, amv), _mm256_mul_ps(vmn, vg));
 
         __m256 vd = _mm256_loadu_ps(&data->data[i]);
@@ -115,7 +141,7 @@ void sgdm_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* arg
 
     for (; i < data->count; i++)
     {
-        args->momentum.velocity->data[i] = args->momentum.momentum * args->momentum.velocity->data[i] + (1 - args->momentum.momentum) * grad->data[i];
+        args->momentum.velocity->data[i] = args->momentum.momentum * args->momentum.velocity->data[i] + (1 - args->momentum.momentum) * data->grad[i];
 
         data->data[i] += lr * args->momentum.velocity->data[i];
     }
@@ -129,10 +155,10 @@ void sgdm_float_update(float* data, float* grad, float lr, OptimizerArgs* args)
     *data += lr * args->momentum.fvelocity;
 }
 
-void nesterov_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* args)
+void nesterov_tensor_update(Tensor* data, float lr, OptimizerArgs* args)
 {
-    if (!data || !grad || data->count != grad->count) {
-        fprintf(stderr, "Error: NULL data or grad or size isnt matching in nesterov_tensor_update\n");
+    if (!data || !args) {
+        fprintf(stderr, "Error: NULL parameters in nesterov_tensor_update\n");
         return;
     }
 
@@ -150,7 +176,7 @@ void nesterov_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs*
     for (; i < data->count - 8; i += 8)
     {
         __m256 anv = _mm256_loadu_ps(&args->nesterov.velocity->data[i]);
-        __m256 vg = _mm256_loadu_ps(&grad->data[i]);
+        __m256 vg = _mm256_loadu_ps(&data->grad[i]);
         __m256 vr = _mm256_add_ps(_mm256_mul_ps(vm, anv), _mm256_mul_ps(vg, vlr));
 
 
@@ -165,9 +191,9 @@ void nesterov_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs*
     {
         float v_prev = args->nesterov.velocity->data[i];
 
-        args->nesterov.velocity->data[i] = args->nesterov.momentum * args->nesterov.velocity->data[i] + lr * grad->data[i];
+        args->nesterov.velocity->data[i] = args->nesterov.momentum * args->nesterov.velocity->data[i] + lr * data->grad[i];
 
-        data->data[i] += args->nesterov.momentum * v_prev + lr * grad->data[i];
+        data->data[i] += args->nesterov.momentum * v_prev + lr * data->grad[i];
     }
 }
 
@@ -180,9 +206,9 @@ void nesterov_float_update(float* data, float* grad, float lr, OptimizerArgs* ar
     *data += args->nesterov.momentum * v_prev + lr * (*grad);
 }
 
-void adam_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* args)
+void adam_tensor_update(Tensor* data, float lr, OptimizerArgs* args)
 {
-    if (!data || !grad || data->count != grad->count) {
+    if (!data || !args) {
         fprintf(stderr, "Error: NULL data or grad or size isnt matching in adam_tensor_update\n");
         return;
     }
@@ -211,7 +237,7 @@ void adam_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* arg
     {
         __m256 vmd = _mm256_loadu_ps(&args->adam.m->data[i]);
         __m256 vvd = _mm256_loadu_ps(&args->adam.v->data[i]);
-        __m256 vg = _mm256_loadu_ps(&grad->data[i]);
+        __m256 vg = _mm256_loadu_ps(&data->grad[i]);
 
         __m256 vf1 = _mm256_fmadd_ps(vb1, vmd, _mm256_mul_ps(vb1n, vg));
 
@@ -232,8 +258,8 @@ void adam_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* arg
     for (; i < data->count; i++)
     {
 
-        args->adam.m->data[i] = args->adam.beta1 * args->adam.m->data[i] + (1.0f - args->adam.beta1) * grad->data[i];
-        args->adam.v->data[i] = args->adam.beta2 * args->adam.v->data[i] + (1.0f - args->adam.beta2) * grad->data[i] * grad->data[i];
+        args->adam.m->data[i] = args->adam.beta1 * args->adam.m->data[i] + (1.0f - args->adam.beta1) * data->grad[i];
+        args->adam.v->data[i] = args->adam.beta2 * args->adam.v->data[i] + (1.0f - args->adam.beta2) * data->grad[i] * data->grad[i];
 
         float m_hat = args->adam.m->data[i] / (1.0f - powf(args->adam.beta1, args->adam.t));
         float v_hat = args->adam.v->data[i] / (1.0f - powf(args->adam.beta2, args->adam.t));
@@ -255,9 +281,9 @@ void adam_float_update(float* data, float* grad, float lr, OptimizerArgs* args)
     *data += (lr * m_hat) / (sqrtf(v_hat) + args->adam.epsilon);
 }
 
-void rmsprop_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* args)
+void rmsprop_tensor_update(Tensor* data, float lr, OptimizerArgs* args)
 {
-    if (!data || !grad || data->count != grad->count) {
+    if (!data || !args) {
         fprintf(stderr, "Error: NULL data or grad or size isnt matching in rmsprop_tensor_update\n");
         return;
     }
@@ -279,7 +305,7 @@ void rmsprop_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* 
     for (; i < data->count - 8; i += 8)
     {
         __m256 varad = _mm256_loadu_ps(&args->rmsprop.avg_sq_grad->data[i]);
-        __m256 vg = _mm256_load_ps(&grad->data[i]);
+        __m256 vg = _mm256_load_ps(&data->grad[i]);
         __m256 vg2 = _mm256_mul_ps(vg, vg);
         
         __m256 vr = _mm256_mul_ps(vard, varad);
@@ -295,9 +321,9 @@ void rmsprop_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* 
 
     for (; i < data->count; i++)
     {
-        args->rmsprop.avg_sq_grad->data[i] = args->rmsprop.decay * args->rmsprop.avg_sq_grad->data[i] + (1 - args->rmsprop.decay) * grad->data[i] * grad->data[i];
+        args->rmsprop.avg_sq_grad->data[i] = args->rmsprop.decay * args->rmsprop.avg_sq_grad->data[i] + (1 - args->rmsprop.decay) * data->grad[i] * data->grad[i];
 
-        data->data[i] += lr * (grad->data[i] / (sqrtf(args->rmsprop.avg_sq_grad->data[i]) + args->rmsprop.epsilon));
+        data->data[i] += lr * (data->grad[i] / (sqrtf(args->rmsprop.avg_sq_grad->data[i]) + args->rmsprop.epsilon));
     }
 }
 
@@ -310,7 +336,7 @@ void rmsprop_float_update(float* data, float* grad, float lr, OptimizerArgs* arg
 
 void neuron_opt_update(neuron* n, optimizer* opt, float lr)
 {
-    opt->tensor_update(n->weights, n->grad_weights,lr ,&(opt->args));
+    opt->tensor_update(n->weights, lr ,&(opt->args));
     opt->float_update(&(n->bias), &(n->grad_bias), lr, &(opt->args));
 }
 

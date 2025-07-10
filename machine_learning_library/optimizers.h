@@ -54,27 +54,31 @@ EXPORT typedef union {
 
 EXPORT typedef struct optimizer{
     OptimizerType type;
-	OptimizerArgs args;
-	void (*tensor_update)(Tensor*, Tensor*, float, OptimizerArgs*);
+	OptimizerArgs* args; // a list of parmeters to each tensors
+	Tensor** parmeters;//a list of tensors 
+	int parmeters_amount;
+	float lr;
+	void (*tensor_update)(Tensor*, float, OptimizerArgs*);
 	void (*float_update)(float*, float*, float, OptimizerArgs*);
 } optimizer;
 
 
-EXPORT void optimizer_set(optimizer* op, OptimizerType type);
+EXPORT optimizer* optimizer_set(OptimizerType type, Tensor **parmeters, int parmeters_amount);
+EXPORT void optimzer_step(optimizer* op);
 
-EXPORT void sgd_tensor_update(Tensor* data, Tensor* grad,float lr, OptimizerArgs* args);
+EXPORT void sgd_tensor_update(Tensor* data, float lr, OptimizerArgs* args);
 EXPORT void sgd_float_update(float* data, float* grad, float lr, OptimizerArgs* args);
 
-EXPORT void sgdm_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* args);
+EXPORT void sgdm_tensor_update(Tensor* data, float lr, OptimizerArgs* args);
 EXPORT void sgdm_float_update(float* data, float* grad, float lr, OptimizerArgs* args);
 
-EXPORT void nesterov_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* args);
+EXPORT void nesterov_tensor_update(Tensor* data, float lr, OptimizerArgs* args);
 EXPORT void nesterov_float_update(float* data, float* grad, float lr, OptimizerArgs* args);
 
-EXPORT void adam_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* args);
+EXPORT void adam_tensor_update(Tensor* data, float lr, OptimizerArgs* args);
 EXPORT void adam_float_update(float* data, float* grad, float lr, OptimizerArgs* args);
 
-EXPORT void rmsprop_tensor_update(Tensor* data, Tensor* grad, float lr, OptimizerArgs* args);
+EXPORT void rmsprop_tensor_update(Tensor* data, float lr, OptimizerArgs* args);
 EXPORT void rmsprop_float_update(float* data, float* grad, float lr, OptimizerArgs* args);
 
 EXPORT void neuron_opt_update(neuron* n, optimizer* opt, float lr);
